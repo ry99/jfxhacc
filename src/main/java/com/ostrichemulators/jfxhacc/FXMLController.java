@@ -24,7 +24,7 @@ public class FXMLController implements Initializable {
 	@FXML
 	private TitledPane accountsPane;
 	@FXML
-	private TreeTableView accounts;
+	private TreeTableView<Account> accounts;
 	@FXML
 	private TreeTableColumn<Account, String> accountName;
 	@FXML
@@ -34,14 +34,14 @@ public class FXMLController implements Initializable {
 
 	@Override
 	public void initialize( URL url, ResourceBundle rb ) {
-		final TreeItem<String> root = new TreeItem<>( "root" );
+		final TreeItem<Account> root = new TreeItem<>();
 
 		accordion.setExpandedPane( accountsPane );
 
 		AccountMapper amap = MainApp.getEngine().getAccountMapper();
 		try {
 			for ( Account acct : amap.getAll() ) {
-				root.getChildren().add( new TreeItem( acct ) );
+				root.getChildren().add( new TreeItem<>( acct ) );
 			}
 		}
 		catch ( MapperException me ) {
@@ -51,7 +51,7 @@ public class FXMLController implements Initializable {
 				-> new ReadOnlyStringWrapper( p.getValue().getValue().getName() ) );
 
 		accountBalance.setCellValueFactory( ( CellDataFeatures<Account, Money> p )
-				-> new ReadOnlyObjectWrapper( amap.getBalance( p.getValue().getValue(),
+				-> new ReadOnlyObjectWrapper<>( amap.getBalance( p.getValue().getValue(),
 								AccountMapper.BalanceType.CURRENT ) ) );
 
 		root.setExpanded( true );
