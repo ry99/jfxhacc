@@ -15,15 +15,18 @@ import com.ostrichemulators.jfxhacc.model.impl.TransactionImpl;
 import com.ostrichemulators.jfxhacc.model.vocabulary.JfxHacc;
 import com.ostrichemulators.jfxhacc.model.vocabulary.Transactions;
 import com.ostrichemulators.jfxhacc.utility.DbUtil;
+import info.aduna.iteration.Iterations;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.log4j.Logger;
 import org.openrdf.model.Literal;
+import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.ValueFactory;
+import org.openrdf.model.impl.StatementImpl;
 import org.openrdf.query.BindingSet;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
@@ -44,7 +47,27 @@ public class TransactionMapperImpl extends SimpleEntityRdfMapper<Transaction>
 	@Override
 	protected void icreate( Transaction a, URI id, RepositoryConnection rc,
 			ValueFactory vf ) throws RepositoryException {
+		rc.add( new StatementImpl( id, Transactions.PAYEE_PRED, a.getPayee() ) );
+		rc.add( new StatementImpl( id, Transactions.DATE_PRED,
+				vf.createLiteral( a.getDate() ) ) );
+	}
 
+	@Override
+	public void remove( URI id ) throws MapperException {
+		RepositoryConnection rc = getConnection();
+		try {
+			rc.begin();
+			super.remove( id );
+			for ( Statement s : Iterations.asList( rc.getStatements( id,
+					Transactions.SPLIT_PRED, null, false ) ) ) {
+				rc.remove( new StatementImpl( URI.class.cast( s.getObject() ), null, null ) );
+			}
+
+			rc.commit();
+		}
+		catch ( RepositoryException re ) {
+			rollback( rc );
+		}
 	}
 
 	@Override

@@ -193,4 +193,15 @@ public abstract class RdfMapper<T extends IDable> implements DataMapper<T> {
 		map.put( bind, rc.getValueFactory().createLiteral( val ) );
 		return map;
 	}
+
+	protected static boolean rollback( RepositoryConnection rc ) {
+		try {
+			rc.rollback();
+			return true;
+		}
+		catch ( RepositoryException re ) {
+			log.warn( re, re );
+			return false;
+		}
+	}
 }

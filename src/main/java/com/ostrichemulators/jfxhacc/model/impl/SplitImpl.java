@@ -21,8 +21,12 @@ public class SplitImpl extends IDableImpl implements Split {
 	private boolean isdebit = false;
 	private ReconcileState reco = ReconcileState.NOT_RECONCILED;
 
-	public SplitImpl( URI id ) {
+	public SplitImpl() {
 		super( JfxHacc.SPLIT_TYPE );
+	}
+
+	public SplitImpl( URI id ) {
+		super( JfxHacc.SPLIT_TYPE, id );
 	}
 
 	public SplitImpl( Money m ) {

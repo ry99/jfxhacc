@@ -21,7 +21,7 @@ import org.openrdf.repository.RepositoryException;
  */
 public abstract class SimpleEntityRdfMapper<T extends IDable> extends RdfMapper<T> {
 
-	private static final Logger log = Logger.getLogger(SimpleEntityRdfMapper.class );
+	private static final Logger log = Logger.getLogger( SimpleEntityRdfMapper.class );
 
 	public SimpleEntityRdfMapper( RepositoryConnection repoc, URI type ) {
 		super( repoc, type );
@@ -37,13 +37,8 @@ public abstract class SimpleEntityRdfMapper<T extends IDable> extends RdfMapper<
 			rc.commit();
 		}
 		catch ( RepositoryException re ) {
+			rollback( rc );
 			log.error( re, re );
-			try {
-				rc.rollback();
-			}
-			catch ( RepositoryException x ) {
-				log.error( x, x );
-			}
 		}
 
 		return a;
