@@ -6,20 +6,16 @@
 package com.ostrichemulators.jfxhacc.mapper;
 
 import com.ostrichemulators.jfxhacc.model.Account;
-import com.ostrichemulators.jfxhacc.model.Money;
+import com.ostrichemulators.jfxhacc.model.Split;
+import com.ostrichemulators.jfxhacc.model.Transaction;
+import java.util.List;
+import java.util.Map;
 
 /**
  *
  * @author ryan
  */
-public interface AccountMapper extends DataMapper<Account> {
+public interface SplitMapper extends DataMapper<Split> {
 
-	public static enum BalanceType {
-
-		OPENING, CURRENT, RECONCILED
-	};
-
-	public Money getBalance( Account a, BalanceType type );
-
-	public Account create( Account a ) throws MapperException;
+	public Map<Transaction, Map<Split, Account>> getSplits( List<Transaction> trans ) throws MapperException;
 }

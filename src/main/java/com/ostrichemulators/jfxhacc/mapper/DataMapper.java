@@ -17,8 +17,6 @@ public interface DataMapper<T extends IDable> {
 
 	public Collection<T> getAll() throws MapperException;
 
-	public T create( T t ) throws MapperException;
-
 	public T get( URI id ) throws MapperException;
 
 	public void remove( T t ) throws MapperException;

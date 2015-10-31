@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import java.net.*?>
 <?import java.lang.*?>
 <?import java.util.*?>
 <?import javafx.scene.*?>
@@ -7,66 +8,56 @@
 <?import javafx.scene.layout.*?>
 
 <AnchorPane id="AnchorPane" prefHeight="594.0" prefWidth="944.0" xmlns="http://javafx.com/javafx/8.0.40" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.ostrichemulators.jfxhacc.FXMLController">
-   <children>
-      <BorderPane prefHeight="604.0" prefWidth="944.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-         <top>
-            <ToolBar prefHeight="40.0" prefWidth="200.0" BorderPane.alignment="CENTER">
-              <items>
-                <Button mnemonicParsing="false" text="New Transaction" />
-              </items>
-            </ToolBar>
-         </top>
-         <center>
-            <SplitPane dividerPositions="0.29797979797979796" prefHeight="160.0" prefWidth="200.0" BorderPane.alignment="CENTER">
-              <items>
-                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="160.0" prefWidth="100.0">
-                     <children>
-                        <Accordion fx:id="accordion" layoutX="14.0" layoutY="84.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-                          <panes>
-                            <TitledPane fx:id="accountsPane" animated="false" text="Accounts">
-                              <content>
-                                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
-                                       <children>
-                                          <TreeTableView fx:id="accounts" prefHeight="200.0" prefWidth="200.0" showRoot="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-                                            <columns>
-                                              <TreeTableColumn fx:id="accountName" editable="false" prefWidth="150.0" text="Account" />
-                                              <TreeTableColumn fx:id="accountBalance" editable="false" prefWidth="75.0" text="Balance" />
-                                            </columns>
-                                             <columnResizePolicy>
-                                                <TreeTableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
-                                             </columnResizePolicy>
-                                          </TreeTableView>
-                                       </children>
-                                    </AnchorPane>
-                              </content>
-                            </TitledPane>
-                            <TitledPane animated="false" text="Favorites">
-                              <content>
-                                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
-                              </content>
-                            </TitledPane>
-                            <TitledPane animated="false" text="untitled 3">
-                              <content>
-                                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
-                              </content>
-                            </TitledPane>
-                          </panes>
-                        </Accordion>
-                     </children>
-                  </AnchorPane>
-                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="160.0" prefWidth="100.0">
-                     <children>
-                        <SplitPane dividerPositions="0.7036363636363636" layoutX="131.0" layoutY="117.0" orientation="VERTICAL" prefHeight="200.0" prefWidth="160.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-                          <items>
-                            <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="100.0" prefWidth="160.0" />
-                            <AnchorPane fx:id="dataentry" minHeight="0.0" minWidth="0.0" prefHeight="100.0" prefWidth="160.0" />
-                          </items>
-                        </SplitPane>
-                     </children>
-                  </AnchorPane>
-              </items>
-            </SplitPane>
-         </center>
-      </BorderPane>
-   </children>
+	<children>
+		<BorderPane prefHeight="604.0" prefWidth="944.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+			<top>
+				<ToolBar prefHeight="40.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+					<items>
+						<Button mnemonicParsing="false" text="New Transaction" />
+					</items>
+				</ToolBar>
+			</top>
+			<center>
+				<SplitPane fx:id="splitter" prefHeight="160.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+					<items>
+						<AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="160.0" prefWidth="100.0">
+							<children>
+								<Accordion fx:id="accordion" layoutX="14.0" layoutY="84.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+									<panes>
+										<TitledPane fx:id="accountsPane" animated="false" text="Accounts">
+											<content>
+												<AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+													<children>
+														<TreeTableView fx:id="accounts" prefHeight="473.0" prefWidth="940.0" showRoot="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+															<columns>
+																<TreeTableColumn fx:id="accountName" editable="false" prefWidth="150.0" text="Account" />
+																<TreeTableColumn fx:id="accountBalance" editable="false" prefWidth="75.0" text="Balance" />
+															</columns>
+															<columnResizePolicy>
+																<TreeTableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+															</columnResizePolicy>
+														</TreeTableView>
+													</children>
+												</AnchorPane>
+											</content>
+										</TitledPane>
+										<TitledPane animated="false" text="Favorites">
+											<content>
+												<AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
+											</content>
+										</TitledPane>
+										<TitledPane animated="false" text="untitled 3">
+											<content>
+												<AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
+											</content>
+										</TitledPane>
+									</panes>
+								</Accordion>
+							</children>
+						</AnchorPane>
+					</items>
+				</SplitPane>
+			</center>
+		</BorderPane>
+	</children>
 </AnchorPane>

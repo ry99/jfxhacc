@@ -9,9 +9,12 @@ import com.ostrichemulators.jfxhacc.model.vocabulary.Accounts;
 import com.ostrichemulators.jfxhacc.model.vocabulary.JfxHacc;
 import com.ostrichemulators.jfxhacc.model.vocabulary.Splits;
 import java.io.File;
+import java.util.Date;
+import org.openrdf.model.Literal;
 import org.openrdf.model.URI;
 import org.openrdf.model.impl.StatementImpl;
 import org.openrdf.model.impl.URIImpl;
+import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.model.vocabulary.XMLSchema;
@@ -89,4 +92,13 @@ public class DbUtil {
 		rc.commit();
 		rc.close();
 	}
+
+	public static Literal fromDate( Date date ) {
+		return new ValueFactoryImpl().createLiteral( date );
+	}
+
+	public static Date toDate( Literal cal ) {
+		return cal.calendarValue().toGregorianCalendar().getTime();
+	}
+
 }

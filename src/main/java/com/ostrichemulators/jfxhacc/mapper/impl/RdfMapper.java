@@ -54,34 +54,17 @@ public abstract class RdfMapper<T extends IDable> implements DataMapper<T> {
 		return rc;
 	}
 
-	@Override
-	public T create( T a ) throws MapperException {
+	protected URI createBaseEntity( T a ) throws RepositoryException {
 		URI id = a.getId();
 		if ( null == id ) {
 			id = UriUtil.randomUri( type );
 			a.setId( id );
 		}
 
-		try {
-			rc.begin();
-			rc.add( new StatementImpl( id, RDF.TYPE, type ) );
-			icreate( a, rc.getValueFactory() );
-			rc.commit();
-		}
-		catch ( RepositoryException re ) {
-			log.error( re, re );
-			try {
-				rc.rollback();
-			}
-			catch ( RepositoryException x ) {
-				log.error( x, x );
-			}
-		}
+		rc.add( new StatementImpl( id, RDF.TYPE, type ) );
 
-		return a;
+		return id;
 	}
-
-	protected abstract void icreate( T t, ValueFactory vf ) throws RepositoryException;
 
 	@Override
 	public Collection<T> getAll() throws MapperException {

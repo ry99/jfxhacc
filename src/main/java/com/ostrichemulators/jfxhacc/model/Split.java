@@ -20,9 +20,23 @@ public interface Split extends IDable {
 
 	public void setMemo( String memo );
 
+	/**
+	 * Gets the (always positive) value of this split.
+	 *
+	 * @return
+	 */
 	public Money getValue();
 
+	/**
+	 * Sets the value of this split.
+	 *
+	 * @param m the value. If negative, {@link #isDebit()} will be true.
+	 */
 	public void setValue( Money m );
+
+	public boolean isDebit();
+
+	public boolean isCredit();
 
 	public void setReconciled( ReconcileState rs );
 

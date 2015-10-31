@@ -11,6 +11,7 @@ import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Accordion;
+import javafx.scene.control.SplitPane;
 import javafx.scene.control.TitledPane;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeTableColumn;
@@ -31,6 +32,10 @@ public class FXMLController implements Initializable {
 	private TreeTableColumn<Account, Money> accountBalance;
 	@FXML
 	private Accordion accordion;
+	@FXML
+	private SplitPane splitter;
+	@FXML
+	private TransactionViewer transactions;
 
 	@Override
 	public void initialize( URL url, ResourceBundle rb ) {
@@ -56,5 +61,9 @@ public class FXMLController implements Initializable {
 
 		root.setExpanded( true );
 		accounts.setRoot( root );
+
+		transactions = new TransactionViewer();
+		splitter.getItems().add( transactions );
+
 	}
 }

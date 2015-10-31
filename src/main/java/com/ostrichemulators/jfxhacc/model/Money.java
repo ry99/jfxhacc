@@ -10,7 +10,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * An immutable class for a single amount of money
+ * An immutable class for a single amount of money. We use the convention that a
+ * negative amount of money is a DEBIT while a positive amount is a CREDIT
  *
  * @author ryan
  */

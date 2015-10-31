@@ -22,32 +22,22 @@ import org.openrdf.repository.RepositoryException;
  *
  * @author ryan
  */
-public class JournalMapperImpl extends RdfMapper<Journal> implements JournalMapper {
+public class JournalMapperImpl extends SimpleEntityRdfMapper<Journal> implements JournalMapper {
 
 	public JournalMapperImpl( RepositoryConnection rc ) {
 		super( rc, JfxHacc.ACCOUNT_TYPE );
 	}
 
 	@Override
-	protected void icreate( Journal a, ValueFactory vf ) throws RepositoryException {
-		getConnection().add( new StatementImpl( a.getId(), RDFS.LABEL,
-				vf.createLiteral( a.getName() ) ) );
+	protected void icreate( Journal a, URI id, RepositoryConnection rc,
+			ValueFactory vf ) throws RepositoryException {
+		rc.add( new StatementImpl( id, RDFS.LABEL, vf.createLiteral( a.getName() ) ) );
 	}
 
 	@Override
 	public Journal get( URI id ) throws MapperException {
 		Value label = oneval( id, RDFS.LABEL );
 		return new JournalImpl( id, label.stringValue() );
-	}
-
-	@Override
-	public void remove( URI id ) throws MapperException {
-		try {
-			getConnection().remove( id, null, null );
-		}
-		catch ( Exception e ) {
-			throw new MapperException( e );
-		}
 	}
 
 	@Override

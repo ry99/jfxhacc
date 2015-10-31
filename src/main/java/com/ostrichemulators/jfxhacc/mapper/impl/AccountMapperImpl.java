@@ -32,7 +32,7 @@ import org.openrdf.repository.RepositoryException;
  *
  * @author ryan
  */
-public class AccountMapperImpl extends RdfMapper<Account> implements AccountMapper {
+public class AccountMapperImpl extends SimpleEntityRdfMapper<Account> implements AccountMapper {
 
 	private static final Logger log = Logger.getLogger( AccountMapperImpl.class );
 
@@ -41,14 +41,12 @@ public class AccountMapperImpl extends RdfMapper<Account> implements AccountMapp
 	}
 
 	@Override
-	protected void icreate( Account a, ValueFactory vf ) throws RepositoryException {
-		getConnection().add( new StatementImpl( a.getId(), RDFS.LABEL,
-				vf.createLiteral( a.getName() ) ) );
-		getConnection().add( new StatementImpl( a.getId(), Accounts.TYPE_PRED,
-				a.getAccountType().getUri() ) );
-		getConnection().add( new StatementImpl( a.getId(), Accounts.OBAL_PRED,
+	protected void icreate( Account a, URI id, RepositoryConnection rc,
+			ValueFactory vf ) throws RepositoryException {
+		rc.add( new StatementImpl( id, RDFS.LABEL, vf.createLiteral( a.getName() ) ) );
+		rc.add( new StatementImpl( id, Accounts.TYPE_PRED, a.getAccountType().getUri() ) );
+		rc.add( new StatementImpl( id, Accounts.OBAL_PRED,
 				vf.createLiteral( a.getOpeningBalance().value() ) ) );
-
 	}
 
 	@Override
@@ -81,19 +79,9 @@ public class AccountMapperImpl extends RdfMapper<Account> implements AccountMapp
 				} );
 	}
 
-	@Override
-	public void remove( URI id ) throws MapperException {
-		try {
-			getConnection().remove( id, null, null );
-		}
-		catch ( Exception e ) {
-			throw new MapperException( e );
-		}
-	}
 
 	@Override
 	public void update( Account t ) throws MapperException {
-
 	}
 
 	@Override
