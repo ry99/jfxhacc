@@ -6,9 +6,12 @@
 package com.ostrichemulators.jfxhacc.mapper.impl;
 
 import com.ostrichemulators.jfxhacc.mapper.MapperException;
+import com.ostrichemulators.jfxhacc.mapper.PayeeMapper;
 import com.ostrichemulators.jfxhacc.mapper.QueryHandler;
+import com.ostrichemulators.jfxhacc.mapper.SplitMapper;
 import com.ostrichemulators.jfxhacc.mapper.TransactionMapper;
 import com.ostrichemulators.jfxhacc.model.Account;
+import com.ostrichemulators.jfxhacc.model.Payee;
 import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.Transaction;
 import com.ostrichemulators.jfxhacc.model.impl.TransactionImpl;
@@ -17,6 +20,7 @@ import com.ostrichemulators.jfxhacc.model.vocabulary.Transactions;
 import com.ostrichemulators.jfxhacc.utility.DbUtil;
 import info.aduna.iteration.Iterations;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,21 +39,43 @@ import org.openrdf.repository.RepositoryException;
  *
  * @author ryan
  */
-public class TransactionMapperImpl extends SimpleEntityRdfMapper<Transaction>
+public class TransactionMapperImpl extends RdfMapper<Transaction>
 		implements TransactionMapper {
 
 	private static final Logger log = Logger.getLogger( TransactionMapperImpl.class );
+	private final PayeeMapper pmap;
+	private final SplitMapper smap;
 
-	public TransactionMapperImpl( RepositoryConnection repoc ) {
+	public TransactionMapperImpl( RepositoryConnection repoc, SplitMapper smap, PayeeMapper pmap ) {
 		super( repoc, JfxHacc.TRANSACTION_TYPE );
+		this.pmap = pmap;
+		this.smap = smap;
 	}
 
 	@Override
-	protected void icreate( Transaction a, URI id, RepositoryConnection rc,
-			ValueFactory vf ) throws RepositoryException {
-		rc.add( new StatementImpl( id, Transactions.PAYEE_PRED, a.getPayee() ) );
-		rc.add( new StatementImpl( id, Transactions.DATE_PRED,
-				vf.createLiteral( a.getDate() ) ) );
+	public Transaction create( Date d, Payee p, Map<Split, Account> splits )
+			throws MapperException {
+		RepositoryConnection rc = getConnection();
+		ValueFactory vf = rc.getValueFactory();
+		TransactionImpl trans = new TransactionImpl();
+		try {
+			rc.begin();
+
+			URI id = createBaseEntity( trans );
+
+			rc.add( new StatementImpl( id, Transactions.PAYEE_PRED, p.getId() ) );
+			rc.add( new StatementImpl( id, Transactions.DATE_PRED,
+					vf.createLiteral( d ) ) );
+			for ( Map.Entry<Split, Account> en : splits.entrySet() ) {
+				smap.create( en.getKey(), en.getValue() );
+			}
+			rc.commit();
+			return trans;
+		}
+		catch ( RepositoryException re ) {
+			rollback( rc );
+			throw new MapperException( re );
+		}
 	}
 
 	@Override
@@ -57,10 +83,10 @@ public class TransactionMapperImpl extends SimpleEntityRdfMapper<Transaction>
 		RepositoryConnection rc = getConnection();
 		try {
 			rc.begin();
-			super.remove( id );
+			rc.remove( id, null, null );
 			for ( Statement s : Iterations.asList( rc.getStatements( id,
 					Transactions.SPLIT_PRED, null, false ) ) ) {
-				rc.remove( new StatementImpl( URI.class.cast( s.getObject() ), null, null ) );
+				smap.remove( URI.class.cast( s.getObject() ) );
 			}
 
 			rc.commit();
@@ -84,7 +110,7 @@ public class TransactionMapperImpl extends SimpleEntityRdfMapper<Transaction>
 						final URI uri = URI.class.cast( set.getValue( "p" ) );
 
 						if ( Transactions.PAYEE_PRED.equals( uri ) ) {
-							trans.setPayee( URI.class.cast( set.getValue( "o" ) ) );
+							setPayee( trans, URI.class.cast( set.getValue( "o" ) ) );
 						}
 						else if ( Transactions.DATE_PRED.equals( uri ) ) {
 							final Literal literal = Literal.class.cast( set.getValue( "o" ) );
@@ -118,7 +144,7 @@ public class TransactionMapperImpl extends SimpleEntityRdfMapper<Transaction>
 
 						final URI uri = URI.class.cast( set.getValue( "p" ) );
 						if ( Transactions.PAYEE_PRED.equals( uri ) ) {
-							trans.setPayee( URI.class.cast( set.getValue( "o" ) ) );
+							setPayee( trans, URI.class.cast( set.getValue( "o" ) ) );
 						}
 						else if ( Transactions.DATE_PRED.equals( uri ) ) {
 							final Literal literal = Literal.class.cast( set.getValue( "o" ) );
@@ -157,7 +183,7 @@ public class TransactionMapperImpl extends SimpleEntityRdfMapper<Transaction>
 
 						final URI uri = URI.class.cast( set.getValue( "p" ) );
 						if ( Transactions.PAYEE_PRED.equals( uri ) ) {
-							last.setPayee( URI.class.cast( set.getValue( "o" ) ) );
+							setPayee( last, URI.class.cast( set.getValue( "o" ) ) );
 						}
 						else if ( Transactions.DATE_PRED.equals( uri ) ) {
 							final Literal literal = Literal.class.cast( set.getValue( "o" ) );
@@ -170,5 +196,14 @@ public class TransactionMapperImpl extends SimpleEntityRdfMapper<Transaction>
 						return tlist;
 					}
 				} );
+	}
+
+	private void setPayee( Transaction t, URI payeeid ) {
+		try {
+			t.setPayee( pmap.get( payeeid ) );
+		}
+		catch ( MapperException me ) {
+			log.error( me, me );
+		}
 	}
 }

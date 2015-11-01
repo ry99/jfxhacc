@@ -5,9 +5,14 @@
  */
 package com.ostrichemulators.jfxhacc.model.impl;
 
+import com.ostrichemulators.jfxhacc.model.Account;
+import com.ostrichemulators.jfxhacc.model.Payee;
+import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.Transaction;
 import com.ostrichemulators.jfxhacc.model.vocabulary.JfxHacc;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import org.openrdf.model.URI;
 
 /**
@@ -17,7 +22,8 @@ import org.openrdf.model.URI;
 public class TransactionImpl extends IDableImpl implements Transaction {
 
 	private Date date;
-	private URI payee;
+	private Payee payee;
+	private final Map<Split, Account> splits = new HashMap<>();
 
 	public TransactionImpl() {
 		super( JfxHacc.TRANSACTION_TYPE );
@@ -27,11 +33,11 @@ public class TransactionImpl extends IDableImpl implements Transaction {
 		super( JfxHacc.TRANSACTION_TYPE, id );
 	}
 
-	public TransactionImpl( URI id, URI payee ) {
+	public TransactionImpl( URI id, Payee payee ) {
 		this( id, payee, new Date() );
 	}
 
-	public TransactionImpl( URI id, URI payee, Date date ) {
+	public TransactionImpl( URI id, Payee payee, Date date ) {
 		super( JfxHacc.TRANSACTION_TYPE, id );
 		this.payee = payee;
 		this.date = date;
@@ -48,13 +54,28 @@ public class TransactionImpl extends IDableImpl implements Transaction {
 	}
 
 	@Override
-	public URI getPayee() {
+	public Payee getPayee() {
 		return payee;
 	}
 
 	@Override
-	public void setPayee( URI payee ) {
+	public void setPayee( Payee payee ) {
 		this.payee = payee;
 	}
 
+	@Override
+	public Map<Split, Account> getSplits() {
+		return new HashMap<>( splits );
+	}
+
+	@Override
+	public void setSplits( Map<Split, Account> splts ) {
+		splits.clear();
+		splits.putAll( splts );
+	}
+
+	@Override
+	public void addSplit( Split s, Account a ) {
+		splits.put( s, a );
+	}
 }

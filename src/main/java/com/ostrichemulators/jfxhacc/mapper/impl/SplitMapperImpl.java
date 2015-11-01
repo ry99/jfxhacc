@@ -24,8 +24,10 @@ import org.openrdf.model.Literal;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.ValueFactory;
+import org.openrdf.model.impl.StatementImpl;
 import org.openrdf.query.BindingSet;
 import org.openrdf.repository.RepositoryConnection;
+import org.openrdf.repository.RepositoryException;
 
 /**
  *
@@ -84,6 +86,30 @@ public class SplitMapperImpl extends RdfMapper<Split> implements SplitMapper {
 	@Override
 	public Map<Transaction, Map<Split, Account>> getSplits( List<Transaction> trans ) throws MapperException {
 		throw new UnsupportedOperationException( "Not supported yet." ); //To change body of generated methods, choose Tools | Templates.
+	}
+
+	@Override
+	public Split create( Split s, Account a ) throws MapperException {
+		RepositoryConnection rc = getConnection();
+		ValueFactory vf = rc.getValueFactory();
+		try {
+			rc.begin();
+			URI id = createBaseEntity( s );
+			rc.add( new StatementImpl( id, Splits.ACCOUNT_PRED, a.getId() ) );
+			rc.add( new StatementImpl( id, Splits.MEMO_PRED,
+					vf.createLiteral( s.getMemo() ) ) );
+			rc.add( new StatementImpl( id, Splits.VALUE_PRED,
+					vf.createLiteral( s.getValue().value() ) ) );
+			rc.add( new StatementImpl( id, Splits.RECO_PRED,
+					vf.createLiteral( s.getReconciled().toString() ) ) );
+			rc.commit();
+		}
+		catch ( RepositoryException re ) {
+			rollback( rc );
+			throw new MapperException( re );
+		}
+
+		return s;
 	}
 
 }

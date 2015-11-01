@@ -6,6 +6,7 @@
 package com.ostrichemulators.jfxhacc.model;
 
 import java.util.Date;
+import java.util.Map;
 import org.openrdf.model.URI;
 
 /**
@@ -18,8 +19,13 @@ public interface Transaction extends IDable {
 
 	public void setDate( Date date );
 
-	public void setPayee( URI payee );
+	public void setPayee( Payee payee );
 
-	public URI getPayee();
+	public Payee getPayee();
 
+	public Map<Split, Account> getSplits();
+
+	public void setSplits( Map<Split, Account> splits );
+
+	public void addSplit( Split s, Account a );
 }

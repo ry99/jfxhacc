@@ -18,4 +18,7 @@ import java.util.Map;
 public interface SplitMapper extends DataMapper<Split> {
 
 	public Map<Transaction, Map<Split, Account>> getSplits( List<Transaction> trans ) throws MapperException;
+
+	public Split create( Split s, Account a ) throws MapperException;
+
 }

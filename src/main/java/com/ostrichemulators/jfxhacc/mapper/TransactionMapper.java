@@ -7,8 +7,10 @@ package com.ostrichemulators.jfxhacc.mapper;
 
 import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.AccountType;
+import com.ostrichemulators.jfxhacc.model.Payee;
 import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.Transaction;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -68,4 +70,7 @@ public interface TransactionMapper extends DataMapper<Transaction> {
 	 * @throws MapperException
 	 */
 	public List<Transaction> getAll( Account acct ) throws MapperException;
+
+	public Transaction create( Date d, Payee p, Map<Split, Account> splits )
+			throws MapperException;
 }
