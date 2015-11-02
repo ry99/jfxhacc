@@ -16,7 +16,6 @@ import java.util.Map;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.ValueFactory;
-import org.openrdf.model.impl.StatementImpl;
 import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.query.BindingSet;
 import org.openrdf.repository.RepositoryConnection;
@@ -33,9 +32,21 @@ public class PayeeMapperImpl extends SimpleEntityRdfMapper<Payee> implements Pay
 	}
 
 	@Override
-	protected void icreate( Payee a, URI id, RepositoryConnection rc,
-			ValueFactory vf ) throws RepositoryException {
-		rc.add( new StatementImpl( id, RDFS.LABEL, vf.createLiteral( a.getName() ) ) );
+	public Payee create( String name ) throws MapperException {
+		RepositoryConnection rc = getConnection();
+		ValueFactory vf = rc.getValueFactory();
+		try {
+			rc.begin();
+			URI id = createBaseEntity();
+			rc.add( id, RDFS.LABEL, vf.createLiteral( name ) );
+			rc.commit();
+			return new PayeeImpl( id, name );
+		}
+		catch ( RepositoryException re ) {
+			rollback( rc );
+			throw new MapperException( re );
+		}
+
 	}
 
 	@Override

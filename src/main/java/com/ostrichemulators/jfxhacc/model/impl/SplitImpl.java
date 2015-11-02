@@ -17,6 +17,7 @@ import org.openrdf.model.URI;
 public class SplitImpl extends IDableImpl implements Split {
 
 	private String memo = "";
+	private String number = "";
 	private Money value = new Money();
 	private boolean isdebit = false;
 	private ReconcileState reco = ReconcileState.NOT_RECONCILED;
@@ -80,5 +81,20 @@ public class SplitImpl extends IDableImpl implements Split {
 	@Override
 	public ReconcileState getReconciled() {
 		return reco;
+	}
+
+	@Override
+	public String getNumber() {
+		return number;
+	}
+
+	@Override
+	public void setNumber( String number ) {
+		this.number = number;
+	}
+
+	@Override
+	public String toString() {
+		return ( isDebit() ? "debit" : "credit" ) + ": " + value;
 	}
 }

@@ -6,6 +6,7 @@
 package com.ostrichemulators.jfxhacc.mapper;
 
 import com.ostrichemulators.jfxhacc.model.Account;
+import com.ostrichemulators.jfxhacc.model.AccountType;
 import com.ostrichemulators.jfxhacc.model.Money;
 
 /**
@@ -21,5 +22,5 @@ public interface AccountMapper extends DataMapper<Account> {
 
 	public Money getBalance( Account a, BalanceType type );
 
-	public Account create( Account a ) throws MapperException;
+	public Account create( String name, AccountType type, Money obal ) throws MapperException;
 }

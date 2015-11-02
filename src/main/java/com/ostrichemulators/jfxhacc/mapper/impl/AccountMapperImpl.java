@@ -9,11 +9,13 @@ import com.ostrichemulators.jfxhacc.mapper.AccountMapper;
 import com.ostrichemulators.jfxhacc.mapper.MapperException;
 import com.ostrichemulators.jfxhacc.mapper.QueryHandler;
 import com.ostrichemulators.jfxhacc.model.Account;
+import com.ostrichemulators.jfxhacc.model.AccountType;
 import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
 import com.ostrichemulators.jfxhacc.model.impl.AccountImpl;
 import com.ostrichemulators.jfxhacc.model.vocabulary.Accounts;
 import com.ostrichemulators.jfxhacc.model.vocabulary.JfxHacc;
+import com.ostrichemulators.jfxhacc.model.vocabulary.Splits;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.log4j.Logger;
@@ -22,7 +24,6 @@ import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.LiteralImpl;
-import org.openrdf.model.impl.StatementImpl;
 import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.query.BindingSet;
 import org.openrdf.repository.RepositoryConnection;
@@ -41,12 +42,24 @@ public class AccountMapperImpl extends SimpleEntityRdfMapper<Account> implements
 	}
 
 	@Override
-	protected void icreate( Account a, URI id, RepositoryConnection rc,
-			ValueFactory vf ) throws RepositoryException {
-		rc.add( new StatementImpl( id, RDFS.LABEL, vf.createLiteral( a.getName() ) ) );
-		rc.add( new StatementImpl( id, Accounts.TYPE_PRED, a.getAccountType().getUri() ) );
-		rc.add( new StatementImpl( id, Accounts.OBAL_PRED,
-				vf.createLiteral( a.getOpeningBalance().value() ) ) );
+	public Account create( String name, AccountType type, Money obal ) throws MapperException {
+
+		RepositoryConnection rc = getConnection();
+		ValueFactory vf = rc.getValueFactory();
+		try {
+			rc.begin();
+			URI id = createBaseEntity();
+			rc.add( id, RDFS.LABEL, vf.createLiteral( name ) );
+			rc.add( id, Accounts.TYPE_PRED, type.getUri() );
+			rc.add( id, Accounts.OBAL_PRED, vf.createLiteral( obal.value() ) );
+			rc.commit();
+
+			return new AccountImpl( id, name, type, obal );
+		}
+		catch ( RepositoryException re ) {
+			rollback( rc );
+			throw new MapperException( re );
+		}
 	}
 
 	@Override
@@ -54,7 +67,8 @@ public class AccountMapperImpl extends SimpleEntityRdfMapper<Account> implements
 		Map<String, Value> bindings = new HashMap<>();
 		bindings.put( "id", id );
 		Value typeuri = oneval( id, Accounts.TYPE_PRED );
-		Account acct = new AccountImpl( URI.class.cast( typeuri ) );
+		AccountType type = AccountType.valueOf( URI.class.cast( typeuri ) );
+		Account acct = new AccountImpl( type, id );
 
 		return query( "SELECT ?p ?o WHERE { ?id ?p ?o . FILTER isLiteral( ?o ) }",
 				bindings, new QueryHandler<Account>() {
@@ -79,7 +93,6 @@ public class AccountMapperImpl extends SimpleEntityRdfMapper<Account> implements
 				} );
 	}
 
-
 	@Override
 	public void update( Account t ) throws MapperException {
 	}
@@ -91,11 +104,14 @@ public class AccountMapperImpl extends SimpleEntityRdfMapper<Account> implements
 		}
 
 		String sparql = "SELECT ?val WHERE {"
-				+ "  ?split splits:value ?val . "
-				+ "  ?split splits:reconciled ?reco ."
-				+ "  ?split splits:account ?accountid "
+				+ "  ?split ?sval ?val . "
+				+ "  ?split ?sreco ?reco ."
+				+ "  ?split ?sacct ?accountid "
 				+ "}";
 		Map<String, Value> map = bindmap( "accountid", a.getId() );
+		map.put( "sval", Splits.VALUE_PRED );
+		map.put( "sreco", Splits.RECO_PRED );
+		map.put( "sacct", Splits.ACCOUNT_PRED );
 		if ( BalanceType.RECONCILED == type ) {
 			map.put( "reco", new LiteralImpl( ReconcileState.RECONCILED.toString() ) );
 		}

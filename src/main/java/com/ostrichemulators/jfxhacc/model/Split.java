@@ -41,4 +41,8 @@ public interface Split extends IDable {
 	public void setReconciled( ReconcileState rs );
 
 	public ReconcileState getReconciled();
+
+	public void setNumber( String n );
+
+	public String getNumber();
 }

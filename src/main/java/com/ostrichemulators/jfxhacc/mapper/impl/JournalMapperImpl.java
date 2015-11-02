@@ -13,7 +13,6 @@ import com.ostrichemulators.jfxhacc.model.vocabulary.JfxHacc;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.ValueFactory;
-import org.openrdf.model.impl.StatementImpl;
 import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
@@ -29,9 +28,21 @@ public class JournalMapperImpl extends SimpleEntityRdfMapper<Journal> implements
 	}
 
 	@Override
-	protected void icreate( Journal a, URI id, RepositoryConnection rc,
-			ValueFactory vf ) throws RepositoryException {
-		rc.add( new StatementImpl( id, RDFS.LABEL, vf.createLiteral( a.getName() ) ) );
+	public Journal create( String name ) throws MapperException {
+		RepositoryConnection rc = getConnection();
+		ValueFactory vf = rc.getValueFactory();
+
+		try {
+			rc.begin();
+			URI id = createBaseEntity();
+			rc.add( id, RDFS.LABEL, vf.createLiteral( name ) );
+			rc.commit();
+			return new JournalImpl( id, name );
+		}
+		catch ( RepositoryException re ) {
+			rollback( rc );
+			throw new MapperException( re );
+		}
 	}
 
 	@Override

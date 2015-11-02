@@ -94,7 +94,7 @@ public class TransactionViewer extends AnchorPane implements Initializable {
 		try {
 			List<Transaction> trans = engine.getTransactionMapper().getAll( account );
 			for ( Transaction t : trans ) {
-
+				view.getRoot().getChildren().add( new TreeItem<>( t ) );
 			}
 		}
 		catch ( MapperException me ) {

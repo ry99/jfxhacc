@@ -10,12 +10,10 @@ import com.ostrichemulators.jfxhacc.mapper.AccountMapper;
 import com.ostrichemulators.jfxhacc.mapper.DataMapper;
 import com.ostrichemulators.jfxhacc.mapper.JournalMapper;
 import com.ostrichemulators.jfxhacc.mapper.PayeeMapper;
-import com.ostrichemulators.jfxhacc.mapper.SplitMapper;
 import com.ostrichemulators.jfxhacc.mapper.TransactionMapper;
 import com.ostrichemulators.jfxhacc.mapper.impl.AccountMapperImpl;
 import com.ostrichemulators.jfxhacc.mapper.impl.JournalMapperImpl;
 import com.ostrichemulators.jfxhacc.mapper.impl.PayeeMapperImpl;
-import com.ostrichemulators.jfxhacc.mapper.impl.SplitMapperImpl;
 import com.ostrichemulators.jfxhacc.mapper.impl.TransactionMapperImpl;
 import java.io.File;
 import java.io.FileWriter;
@@ -49,15 +47,13 @@ public class RdfDataEngine implements DataEngine {
 	private final JournalMapper jmap;
 	private final PayeeMapper pmap;
 	private final TransactionMapper tmap;
-	private final SplitMapper smap;
 
 	public RdfDataEngine( RepositoryConnection conn ) {
 		rc = conn;
 		amap = new AccountMapperImpl( rc );
 		jmap = new JournalMapperImpl( rc );
-		smap = new SplitMapperImpl( rc );
 		pmap = new PayeeMapperImpl( rc );
-		tmap = new TransactionMapperImpl( rc, smap, pmap );
+		tmap = new TransactionMapperImpl( rc, amap, pmap );
 	}
 
 	@Override
@@ -81,13 +77,8 @@ public class RdfDataEngine implements DataEngine {
 	}
 
 	@Override
-	public SplitMapper getSplitMapper() {
-		return smap;
-	}
-
-	@Override
 	public void release() {
-		for ( DataMapper<?> mapper : Arrays.asList( amap, pmap, smap, tmap, jmap ) ) {
+		for ( DataMapper<?> mapper : Arrays.asList( amap, pmap, tmap, jmap ) ) {
 			mapper.release();
 		}
 	}

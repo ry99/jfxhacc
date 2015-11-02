@@ -8,12 +8,12 @@ package com.ostrichemulators.jfxhacc.mapper.impl;
 import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.AccountType;
 import com.ostrichemulators.jfxhacc.model.Money;
-import com.ostrichemulators.jfxhacc.model.impl.AccountImpl;
 import com.ostrichemulators.jfxhacc.model.vocabulary.Accounts;
 import com.ostrichemulators.jfxhacc.model.vocabulary.JfxHacc;
 import com.ostrichemulators.jfxhacc.utility.DbUtil;
 import com.ostrichemulators.jfxhacc.utility.UriUtil;
 import info.aduna.iteration.Iterations;
+import java.util.Collection;
 import java.util.List;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -75,10 +75,11 @@ public class AccountMapperImplTest {
 	@Test
 	public void testCreate() throws Exception {
 		Account acct
-				= ami.create( new AccountImpl( AccountType.ASSET, "Test Account" ) );
+				= ami.create( "Test Account", AccountType.ASSET, new Money( 4000 ) );
 		List<Statement> stmts = Iterations.asList( rc.getStatements( acct.getId(),
 				null, null, false ) );
 		assertEquals( 4, stmts.size() );
+		assertEquals( acct, ami.get( acct.getId() ) );
 	}
 
 	@Test
@@ -86,6 +87,13 @@ public class AccountMapperImplTest {
 		Account acct = ami.get( GETID );
 		assertEquals( AccountType.EQUITY, acct.getAccountType() );
 		assertEquals( new Money( 1507 ), acct.getOpeningBalance() );
+	}
+
+	@Test
+	public void testGetAll() throws Exception {
+		Account acct = ami.get( GETID );
+		Collection<Account> list = ami.getAll();
+		assertEquals( acct, list.iterator().next() );
 	}
 
 	@Test

@@ -3,29 +3,27 @@ package com.ostrichemulators.jfxhacc;
 import com.ostrichemulators.jfxhacc.engine.DataEngine;
 import com.ostrichemulators.jfxhacc.engine.impl.RdfDataEngine;
 import com.ostrichemulators.jfxhacc.mapper.MapperException;
-import com.ostrichemulators.jfxhacc.mapper.SplitMapper;
 import com.ostrichemulators.jfxhacc.mapper.TransactionMapper;
 import com.ostrichemulators.jfxhacc.mapper.impl.AccountMapperImpl;
 import com.ostrichemulators.jfxhacc.mapper.impl.PayeeMapperImpl;
-import com.ostrichemulators.jfxhacc.mapper.impl.SplitMapperImpl;
 import com.ostrichemulators.jfxhacc.mapper.impl.TransactionMapperImpl;
 import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.AccountType;
 import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.Payee;
 import com.ostrichemulators.jfxhacc.model.Split;
-import com.ostrichemulators.jfxhacc.model.impl.AccountImpl;
+import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
 import com.ostrichemulators.jfxhacc.model.impl.PayeeImpl;
-import com.ostrichemulators.jfxhacc.model.impl.SplitImpl;
 import com.ostrichemulators.jfxhacc.utility.DbUtil;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import javafx.application.Application;
 import static javafx.application.Application.launch;
 import javafx.application.Platform;
@@ -37,7 +35,6 @@ import org.apache.log4j.Logger;
 import org.openrdf.model.URI;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
-import org.openrdf.rio.turtle.TurtleWriter;
 
 public class MainApp extends Application {
 
@@ -133,48 +130,39 @@ public class MainApp extends Application {
 		PayeeMapperImpl pmap = new PayeeMapperImpl( rc );
 		for ( int i = 0; i < 10; i++ ) {
 			try {
-				pmap.create( new PayeeImpl( "payee-" + i ) );
+				pmap.create( "payee-" + i );
 			}
 			catch ( MapperException ne ) {
 				log.error( ne, ne );
 			}
 		}
 
-		AccountMapperImpl ami = new AccountMapperImpl( rc );
+		AccountMapperImpl amap = new AccountMapperImpl( rc );
 		String[] anames = { "Eh", "BEE", "si" };
+
+		Set<Account> testers = new HashSet<>();
+
 		for ( String name : anames ) {
-			Account a = new AccountImpl( AccountType.ASSET, name );
-			a.setOpeningBalance( new Money( r.nextInt( 50000 ) ) );
 			try {
-				ami.create( a );
-			}
-			catch ( MapperException ne ) {
-				log.error( ne, ne );
-			}
+				Account a = amap.create( name, AccountType.ASSET, new Money( r.nextInt( 50000 ) ) );
+				Account e = amap.create( "expense-" + name, AccountType.EXPENSE,
+						new Money( r.nextInt( 50000 ) ) );
 
-			Account e = new AccountImpl( AccountType.EXPENSE, "expense-" + name );
-			e.setOpeningBalance( new Money( r.nextInt( 50000 ) ) );
-			try {
-				ami.create( e );
+				testers.add( a );
+				testers.add( e );
 			}
 			catch ( MapperException ne ) {
 				log.error( ne, ne );
 			}
 		}
 
-		try ( FileWriter fw = new FileWriter( "/tmp/init.ttl" ) ) {
-			rc.export( new TurtleWriter( fw ) );
-		}
-		catch ( Exception e ) {
-			log.error( e, e );
-		}
-
-		SplitMapper smap = new SplitMapperImpl( rc );
-
-		TransactionMapper tmap = new TransactionMapperImpl( rc, smap, pmap );
+		TransactionMapper tmap = new TransactionMapperImpl( rc, amap, pmap );
 		try {
 			Map<String, Account> accts = new HashMap<>();
-			for ( Account a : ami.getAll() ) {
+			Set<Account> alls = new HashSet<>( amap.getAll() );
+			log.debug( testers.equals( alls ) );
+
+			for ( Account a : amap.getAll() ) {
 				accts.put( a.getName(), a );
 			}
 
@@ -187,10 +175,15 @@ public class MainApp extends Application {
 			for ( int i = 0; i < 100; i++ ) {
 				Map<Split, Account> splits = new HashMap<>();
 				Money m = new Money( r.nextInt( 5000 ) );
-				splits.put( new SplitImpl( m ),
-						accts.get( anames[r.nextInt( anames.length )] ) );
-				splits.put( new SplitImpl( m.opposite() ),
-						accts.get( "expense-" + anames[r.nextInt( anames.length )] ) );
+
+				Split credit = tmap.create( m, "", "", ReconcileState.NOT_RECONCILED );
+				Split debit = tmap.create( m.opposite(), "", "", ReconcileState.NOT_RECONCILED );
+
+				Account cacct = accts.get( anames[r.nextInt( anames.length )] );
+				Account dacct = accts.get( "expense-" + anames[r.nextInt( anames.length )] );
+
+				splits.put( credit, cacct );
+				splits.put( debit, dacct );
 
 				tmap.create( new Date(), flip.get( "payee-" + r.nextInt( 10 ) ), splits );
 			}
@@ -199,8 +192,7 @@ public class MainApp extends Application {
 			log.error( me, me );
 		}
 
-		ami.release();
-		smap.release();
+		amap.release();
 		pmap.release();
 		tmap.release();
 	}

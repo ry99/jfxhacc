@@ -14,7 +14,7 @@ import java.util.Map;
  *
  * @author ryan
  */
-public interface Transaction extends IDable {
+public interface Transaction extends IDable, Comparable<Transaction>{
 
 	public Date getDate();
 

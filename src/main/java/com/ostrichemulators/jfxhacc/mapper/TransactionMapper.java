@@ -7,8 +7,10 @@ package com.ostrichemulators.jfxhacc.mapper;
 
 import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.AccountType;
+import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.Payee;
 import com.ostrichemulators.jfxhacc.model.Split;
+import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
 import com.ostrichemulators.jfxhacc.model.Transaction;
 import java.util.Date;
 import java.util.List;
@@ -73,4 +75,18 @@ public interface TransactionMapper extends DataMapper<Transaction> {
 
 	public Transaction create( Date d, Payee p, Map<Split, Account> splits )
 			throws MapperException;
+
+	/**
+	 * Creates a split with the given data <strong>but does not add it to the data
+	 * store</strong>. This function is useful for creating splits to be used in a
+	 * call to {@link #create(java.util.Date,
+	 * com.ostrichemulators.jfxhacc.model.Payee, java.util.Map) }
+	 *
+	 * @param m
+	 * @param number
+	 * @param memo
+	 * @param rs
+	 * @return
+	 */
+	public Split create( Money m, String number, String memo, ReconcileState rs );
 }

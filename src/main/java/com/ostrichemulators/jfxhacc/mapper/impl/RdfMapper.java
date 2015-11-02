@@ -54,15 +54,16 @@ public abstract class RdfMapper<T extends IDable> implements DataMapper<T> {
 		return rc;
 	}
 
-	protected URI createBaseEntity( T a ) throws RepositoryException {
-		URI id = a.getId();
-		if ( null == id ) {
-			id = UriUtil.randomUri( type );
-			a.setId( id );
-		}
-
+	/**
+	 * Creates a rdf statement that creates a new ID and assigns this mapper's
+	 * type
+	 *
+	 * @return the new id
+	 * @throws RepositoryException
+	 */
+	protected URI createBaseEntity() throws RepositoryException {
+		URI id = UriUtil.randomUri( type );
 		rc.add( new StatementImpl( id, RDF.TYPE, type ) );
-
 		return id;
 	}
 
@@ -194,14 +195,12 @@ public abstract class RdfMapper<T extends IDable> implements DataMapper<T> {
 		return map;
 	}
 
-	protected static boolean rollback( RepositoryConnection rc ) {
+	protected void rollback( RepositoryConnection rc ) {
 		try {
 			rc.rollback();
-			return true;
 		}
 		catch ( RepositoryException re ) {
 			log.warn( re, re );
-			return false;
 		}
 	}
 }

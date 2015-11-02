@@ -36,4 +36,9 @@ public class PayeeImpl extends IDableImpl implements Payee {
 	public void setName( String n ) {
 		name = n;
 	}
+
+	@Override
+	public String toString() {
+		return name;
+	}
 }

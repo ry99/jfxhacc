@@ -34,10 +34,10 @@ public class TransactionImpl extends IDableImpl implements Transaction {
 	}
 
 	public TransactionImpl( URI id, Payee payee ) {
-		this( id, payee, new Date() );
+		this( id, new Date(), payee );
 	}
 
-	public TransactionImpl( URI id, Payee payee, Date date ) {
+	public TransactionImpl( URI id, Date date, Payee payee ) {
 		super( JfxHacc.TRANSACTION_TYPE, id );
 		this.payee = payee;
 		this.date = date;
@@ -77,5 +77,10 @@ public class TransactionImpl extends IDableImpl implements Transaction {
 	@Override
 	public void addSplit( Split s, Account a ) {
 		splits.put( s, a );
+	}
+
+	@Override
+	public int compareTo( Transaction o ) {
+		return getDate().compareTo( o.getDate() );
 	}
 }

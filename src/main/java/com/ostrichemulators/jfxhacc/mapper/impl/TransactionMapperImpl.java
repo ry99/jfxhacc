@@ -5,32 +5,39 @@
  */
 package com.ostrichemulators.jfxhacc.mapper.impl;
 
+import com.ostrichemulators.jfxhacc.mapper.AccountMapper;
 import com.ostrichemulators.jfxhacc.mapper.MapperException;
 import com.ostrichemulators.jfxhacc.mapper.PayeeMapper;
 import com.ostrichemulators.jfxhacc.mapper.QueryHandler;
-import com.ostrichemulators.jfxhacc.mapper.SplitMapper;
 import com.ostrichemulators.jfxhacc.mapper.TransactionMapper;
 import com.ostrichemulators.jfxhacc.model.Account;
+import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.Payee;
 import com.ostrichemulators.jfxhacc.model.Split;
+import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
 import com.ostrichemulators.jfxhacc.model.Transaction;
+import com.ostrichemulators.jfxhacc.model.impl.SplitImpl;
 import com.ostrichemulators.jfxhacc.model.impl.TransactionImpl;
 import com.ostrichemulators.jfxhacc.model.vocabulary.JfxHacc;
+import com.ostrichemulators.jfxhacc.model.vocabulary.Splits;
 import com.ostrichemulators.jfxhacc.model.vocabulary.Transactions;
 import com.ostrichemulators.jfxhacc.utility.DbUtil;
+import com.ostrichemulators.jfxhacc.utility.UriUtil;
 import info.aduna.iteration.Iterations;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.apache.log4j.Logger;
 import org.openrdf.model.Literal;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.ValueFactory;
-import org.openrdf.model.impl.StatementImpl;
+import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.query.BindingSet;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
@@ -44,12 +51,52 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 
 	private static final Logger log = Logger.getLogger( TransactionMapperImpl.class );
 	private final PayeeMapper pmap;
-	private final SplitMapper smap;
+	private final AccountMapper amap;
 
-	public TransactionMapperImpl( RepositoryConnection repoc, SplitMapper smap, PayeeMapper pmap ) {
+	public TransactionMapperImpl( RepositoryConnection repoc, AccountMapper amap,
+			PayeeMapper pmap ) {
 		super( repoc, JfxHacc.TRANSACTION_TYPE );
 		this.pmap = pmap;
-		this.smap = smap;
+		this.amap = amap;
+	}
+
+	@Override
+	public Split create( Money m, String number, String memo, ReconcileState rs ) {
+		Split s = new SplitImpl( m );
+		s.setMemo( memo );
+		s.setNumber( number );
+		s.setReconciled( rs );
+		return s;
+	}
+
+	private Split create( Split s, Account a, boolean dotrans ) throws RepositoryException {
+		RepositoryConnection rc = getConnection();
+		ValueFactory vf = rc.getValueFactory();
+
+		if ( dotrans ) {
+			rc.begin();
+		}
+
+		URI id = UriUtil.randomUri( JfxHacc.SPLIT_TYPE );
+		s.setId( id );
+		rc.add( id, RDF.TYPE, JfxHacc.SPLIT_TYPE );
+		rc.add( id, Splits.ACCOUNT_PRED, a.getId() );
+		rc.add( id, Splits.MEMO_PRED, vf.createLiteral( s.getMemo() ) );
+		rc.add( id, Splits.NUMBER_PRED, vf.createLiteral( s.getNumber() ) );
+
+		Money m = s.getValue();
+		if ( s.isDebit() ) {
+			m = m.opposite();
+		}
+
+		rc.add( id, Splits.VALUE_PRED, vf.createLiteral( m.value() ) );
+		rc.add( id, Splits.RECO_PRED, vf.createLiteral( s.getReconciled().toString() ) );
+
+		if ( dotrans ) {
+			rc.commit();
+		}
+
+		return s;
 	}
 
 	@Override
@@ -57,25 +104,28 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 			throws MapperException {
 		RepositoryConnection rc = getConnection();
 		ValueFactory vf = rc.getValueFactory();
-		TransactionImpl trans = new TransactionImpl();
 		try {
+			rc.begin();
+
+			Map<Split, Account> realsplits = new HashMap<>();
 			List<URI> splitids = new ArrayList<>();
 			for ( Map.Entry<Split, Account> en : splits.entrySet() ) {
-				Split s = smap.create( en.getKey(), en.getValue() );
+				Split s = create( en.getKey(), en.getValue(), false );
 				splitids.add( s.getId() );
+				realsplits.put( s, en.getValue() );
 			}
 
-			rc.begin();
-			URI id = createBaseEntity( trans );
+			URI id = createBaseEntity();
 
-			rc.add( new StatementImpl( id, Transactions.PAYEE_PRED, p.getId() ) );
-			rc.add( new StatementImpl( id, Transactions.DATE_PRED,
-					vf.createLiteral( d ) ) );
+			rc.add( id, Transactions.PAYEE_PRED, p.getId() );
+			rc.add( id, Transactions.DATE_PRED, vf.createLiteral( d ) );
 			for ( URI splitid : splitids ) {
-				rc.add( new StatementImpl( id, Transactions.SPLIT_PRED, splitid ) );
+				rc.add( id, Transactions.SPLIT_PRED, splitid );
 			}
 			rc.commit();
 
+			TransactionImpl trans = new TransactionImpl( id, d, p );
+			trans.setSplits( realsplits );
 			return trans;
 		}
 		catch ( RepositoryException re ) {
@@ -92,13 +142,14 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 			rc.remove( id, null, null );
 			for ( Statement s : Iterations.asList( rc.getStatements( id,
 					Transactions.SPLIT_PRED, null, false ) ) ) {
-				smap.remove( URI.class.cast( s.getObject() ) );
+				rc.remove( URI.class.cast( s.getObject() ), null, null );
 			}
 
 			rc.commit();
 		}
 		catch ( RepositoryException re ) {
 			rollback( rc );
+			throw new MapperException( re );
 		}
 	}
 
@@ -139,8 +190,9 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 	public Transaction getTransaction( Split s ) throws MapperException {
 		Map<String, Value> bindings = new HashMap<>();
 		bindings.put( "s", s.getId() );
+		bindings.put( "tentry", Transactions.SPLIT_PRED );
 
-		return query( "SELECT ?t ?p ?o WHERE { ?t trans:entry ?s. ?t p ?o }",
+		return query( "SELECT ?t ?p ?o WHERE { ?t ?tentry ?s. ?t p ?o }",
 				bindings, new QueryHandler<Transaction>() {
 					Transaction trans = new TransactionImpl();
 
@@ -165,15 +217,60 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 				} );
 	}
 
+	private Map<Split, URI> getSplits( URI transid, RepositoryConnection rc, ValueFactory vf )
+			throws MapperException {
+		return query( "SELECT ?s ?memo ?number ?reco ?val ?aid WHERE {"
+				+ "  ?t trans:entry ?s."
+				+ "  ?s splits:account ?aid ."
+				+ "  ?s splits:memo ?memo ."
+				+ "  ?s splits:value ?val ."
+				+ "  ?s splits:number ?number ."
+				+ "  ?s splits:reconciled ?reco ."
+				+ "} ORDER BY ?t", bindmap( "t", transid ), new QueryHandler<Map<Split, URI>>() {
+					Map<Split, URI> lkp = new HashMap<>();
+
+					@Override
+					public void handleTuple( BindingSet set, ValueFactory vf ) {
+						URI acctid = URI.class.cast( set.getValue( "aid" ) );
+						URI splitid = URI.class.cast( set.getValue( "s" ) );
+
+						Value val = set.getValue( "number" );
+						String number = ( null == val ? "" : val.stringValue() );
+						val = set.getValue( "memo" );
+						String memo = ( null == val ? "" : val.stringValue() );
+						val = set.getValue( "reco" );
+						ReconcileState rs = ( null == val
+								? ReconcileState.NOT_RECONCILED
+								: ReconcileState.valueOf( val.stringValue() ) );
+
+						val = set.getValue( "val" );
+						int value = ( null == val ? 0
+								: Literal.class.cast( val ).intValue() );
+
+						Split split = new SplitImpl( splitid, new Money( value ) );
+						split.setMemo( memo );
+						split.setNumber( number );
+						split.setReconciled( rs );
+
+						lkp.put( split, acctid );
+					}
+
+					@Override
+					public Map<Split, URI> getResult() {
+						return lkp;
+					}
+				} );
+	}
+
 	@Override
 	public List<Transaction> getAll( Account acct ) throws MapperException {
 		Map<String, Value> bindings = new HashMap<>();
 		bindings.put( "acct", acct.getId() );
 
-		return query( "SELECT ?t ?p ?o WHERE {"
+		List<Transaction> transactions = query( "SELECT ?t ?p ?o WHERE {"
 				+ "  ?t trans:entry ?s."
 				+ "  ?s splits:account ?acct ."
-				+ "  ?t p ?o "
+				+ "  ?t ?p ?o "
 				+ "} ORDER BY ?t",
 				bindings, new QueryHandler<List<Transaction>>() {
 					List<Transaction> tlist = new ArrayList<>();
@@ -182,6 +279,7 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 					@Override
 					public void handleTuple( BindingSet set, ValueFactory vf ) {
 						URI id = URI.class.cast( set.getValue( "t" ) );
+
 						if ( null == last || !last.getId().equals( id ) ) {
 							last = new TransactionImpl( URI.class.cast( set.getValue( "t" ) ) );
 							tlist.add( last );
@@ -202,6 +300,23 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 						return tlist;
 					}
 				} );
+
+		Map<URI, Account> accounts = new HashMap<>();
+		for ( Transaction t : transactions ) {
+			Map<Split, URI> splitos = getSplits( t.getId(), getConnection(),
+					getConnection().getValueFactory() );
+
+			for ( Map.Entry<Split, URI> en : splitos.entrySet() ) {
+				URI acctid = en.getValue();
+				if( !accounts.containsKey( acctid ) ){
+					accounts.put( acctid, amap.get( acctid ) );
+				}
+				
+				t.addSplit( en.getKey(), accounts.get( en.getValue() ) );
+			}
+		}
+
+		return transactions;
 	}
 
 	private void setPayee( Transaction t, URI payeeid ) {

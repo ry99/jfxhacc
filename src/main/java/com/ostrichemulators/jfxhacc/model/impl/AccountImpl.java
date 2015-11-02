@@ -37,9 +37,11 @@ public class AccountImpl extends IDableImpl implements Account {
 		this( AccountType.valueOf( atype ) );
 	}
 
-	public AccountImpl( AccountType atype, String name ) {
+	public AccountImpl( URI id, String name, AccountType atype, Money m ) {
 		this( atype );
 		this.name = name;
+		openingbal = m;
+		setId( id );
 	}
 
 	@Override
@@ -65,5 +67,10 @@ public class AccountImpl extends IDableImpl implements Account {
 	@Override
 	public Money getOpeningBalance() {
 		return openingbal;
+	}
+
+	@Override
+	public String toString() {
+		return name + " (" + type + "): " + openingbal;
 	}
 }

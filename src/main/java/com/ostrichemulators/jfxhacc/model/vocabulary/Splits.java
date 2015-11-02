@@ -25,4 +25,5 @@ public class Splits {
 	public static final URI VALUE_PRED = new URIImpl( NAMESPACE + "value" );
 	public static final URI RECO_PRED = new URIImpl( NAMESPACE + "reconciled" );
 	public static final URI MEMO_PRED = new URIImpl( NAMESPACE + "memo" );
+	public static final URI NUMBER_PRED = new URIImpl( NAMESPACE + "number" );
 }
