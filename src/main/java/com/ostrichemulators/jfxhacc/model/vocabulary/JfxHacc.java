@@ -17,7 +17,7 @@ public class JfxHacc {
 	private JfxHacc() {
 	}
 
-	public static final String PREFIX = "jhacc";
+	public static final String PREFIX = "jfxhacc";
 	public static final String BASE = "http://com.ostrich-emulators/jfxhacc";
 	public static final String NAMESPACE = BASE + "/";
 

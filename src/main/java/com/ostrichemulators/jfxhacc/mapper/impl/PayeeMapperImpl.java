@@ -9,7 +9,6 @@ import com.ostrichemulators.jfxhacc.mapper.MapperException;
 import com.ostrichemulators.jfxhacc.mapper.PayeeMapper;
 import com.ostrichemulators.jfxhacc.mapper.QueryHandler;
 import com.ostrichemulators.jfxhacc.model.Payee;
-import com.ostrichemulators.jfxhacc.model.Transaction;
 import com.ostrichemulators.jfxhacc.model.impl.PayeeImpl;
 import com.ostrichemulators.jfxhacc.model.vocabulary.JfxHacc;
 import java.util.HashMap;
@@ -30,7 +29,7 @@ import org.openrdf.repository.RepositoryException;
 public class PayeeMapperImpl extends SimpleEntityRdfMapper<Payee> implements PayeeMapper {
 
 	public PayeeMapperImpl( RepositoryConnection rc ) {
-		super( rc, JfxHacc.ACCOUNT_TYPE );
+		super( rc, JfxHacc.PAYEE_TYPE );
 	}
 
 	@Override

@@ -98,8 +98,14 @@ public class SplitMapperImpl extends RdfMapper<Split> implements SplitMapper {
 			rc.add( new StatementImpl( id, Splits.ACCOUNT_PRED, a.getId() ) );
 			rc.add( new StatementImpl( id, Splits.MEMO_PRED,
 					vf.createLiteral( s.getMemo() ) ) );
+
+			Money m = s.getValue();
+			if ( s.isDebit() ) {
+				m = m.opposite();
+			}
+
 			rc.add( new StatementImpl( id, Splits.VALUE_PRED,
-					vf.createLiteral( s.getValue().value() ) ) );
+					vf.createLiteral( m.value() ) ) );
 			rc.add( new StatementImpl( id, Splits.RECO_PRED,
 					vf.createLiteral( s.getReconciled().toString() ) ) );
 			rc.commit();

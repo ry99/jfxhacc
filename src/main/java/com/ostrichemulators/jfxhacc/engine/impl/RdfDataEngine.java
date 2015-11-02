@@ -7,14 +7,22 @@ package com.ostrichemulators.jfxhacc.engine.impl;
 
 import com.ostrichemulators.jfxhacc.engine.DataEngine;
 import com.ostrichemulators.jfxhacc.mapper.AccountMapper;
+import com.ostrichemulators.jfxhacc.mapper.DataMapper;
 import com.ostrichemulators.jfxhacc.mapper.JournalMapper;
+import com.ostrichemulators.jfxhacc.mapper.PayeeMapper;
+import com.ostrichemulators.jfxhacc.mapper.SplitMapper;
+import com.ostrichemulators.jfxhacc.mapper.TransactionMapper;
 import com.ostrichemulators.jfxhacc.mapper.impl.AccountMapperImpl;
 import com.ostrichemulators.jfxhacc.mapper.impl.JournalMapperImpl;
+import com.ostrichemulators.jfxhacc.mapper.impl.PayeeMapperImpl;
+import com.ostrichemulators.jfxhacc.mapper.impl.SplitMapperImpl;
+import com.ostrichemulators.jfxhacc.mapper.impl.TransactionMapperImpl;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.commons.io.FilenameUtils;
@@ -39,11 +47,17 @@ public class RdfDataEngine implements DataEngine {
 	private final RepositoryConnection rc;
 	private final AccountMapper amap;
 	private final JournalMapper jmap;
+	private final PayeeMapper pmap;
+	private final TransactionMapper tmap;
+	private final SplitMapper smap;
 
 	public RdfDataEngine( RepositoryConnection conn ) {
 		rc = conn;
 		amap = new AccountMapperImpl( rc );
 		jmap = new JournalMapperImpl( rc );
+		smap = new SplitMapperImpl( rc );
+		pmap = new PayeeMapperImpl( rc );
+		tmap = new TransactionMapperImpl( rc, smap, pmap );
 	}
 
 	@Override
@@ -57,9 +71,25 @@ public class RdfDataEngine implements DataEngine {
 	}
 
 	@Override
+	public PayeeMapper getPayeeMapper() {
+		return pmap;
+	}
+
+	@Override
+	public TransactionMapper getTransactionMapper() {
+		return tmap;
+	}
+
+	@Override
+	public SplitMapper getSplitMapper() {
+		return smap;
+	}
+
+	@Override
 	public void release() {
-		amap.release();
-		jmap.release();
+		for ( DataMapper<?> mapper : Arrays.asList( amap, pmap, smap, tmap, jmap ) ) {
+			mapper.release();
+		}
 	}
 
 	/**
@@ -101,5 +131,4 @@ public class RdfDataEngine implements DataEngine {
 			}
 		}
 	}
-
 }

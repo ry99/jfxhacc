@@ -7,6 +7,9 @@ package com.ostrichemulators.jfxhacc.engine;
 
 import com.ostrichemulators.jfxhacc.mapper.AccountMapper;
 import com.ostrichemulators.jfxhacc.mapper.JournalMapper;
+import com.ostrichemulators.jfxhacc.mapper.PayeeMapper;
+import com.ostrichemulators.jfxhacc.mapper.SplitMapper;
+import com.ostrichemulators.jfxhacc.mapper.TransactionMapper;
 
 /**
  *
@@ -17,6 +20,12 @@ public interface DataEngine {
 	public AccountMapper getAccountMapper();
 
 	public JournalMapper getJournalMapper();
+
+	public PayeeMapper getPayeeMapper();
+
+	public TransactionMapper getTransactionMapper();
+
+	public SplitMapper getSplitMapper();
 
 	public void release();
 }

@@ -14,7 +14,7 @@
 			<items>
 				<AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="100.0" prefWidth="160.0">
 					<children>
-						<TreeTableView prefHeight="268.0" prefWidth="598.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+						<TreeTableView fx:id="view" prefHeight="252.0" prefWidth="598.0" showRoot="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
 							<columns>
 								<TreeTableColumn fx:id="date" prefWidth="75.0" text="Date" />
 								<TreeTableColumn fx:id="number" prefWidth="40.0" text="Number" />

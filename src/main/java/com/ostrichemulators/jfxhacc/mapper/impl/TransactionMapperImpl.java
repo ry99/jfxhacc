@@ -59,17 +59,23 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 		ValueFactory vf = rc.getValueFactory();
 		TransactionImpl trans = new TransactionImpl();
 		try {
-			rc.begin();
+			List<URI> splitids = new ArrayList<>();
+			for ( Map.Entry<Split, Account> en : splits.entrySet() ) {
+				Split s = smap.create( en.getKey(), en.getValue() );
+				splitids.add( s.getId() );
+			}
 
+			rc.begin();
 			URI id = createBaseEntity( trans );
 
 			rc.add( new StatementImpl( id, Transactions.PAYEE_PRED, p.getId() ) );
 			rc.add( new StatementImpl( id, Transactions.DATE_PRED,
 					vf.createLiteral( d ) ) );
-			for ( Map.Entry<Split, Account> en : splits.entrySet() ) {
-				smap.create( en.getKey(), en.getValue() );
+			for ( URI splitid : splitids ) {
+				rc.add( new StatementImpl( id, Transactions.SPLIT_PRED, splitid ) );
 			}
 			rc.commit();
+
 			return trans;
 		}
 		catch ( RepositoryException re ) {

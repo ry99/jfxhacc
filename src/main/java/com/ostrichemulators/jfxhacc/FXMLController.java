@@ -64,6 +64,11 @@ public class FXMLController implements Initializable {
 
 		transactions = new TransactionViewer();
 		splitter.getItems().add( transactions );
+		splitter.setDividerPositions( 0.25d, 0.75d );
 
+		accounts.setOnMouseClicked( ( event ) -> {
+			Account acct = accounts.getSelectionModel().getSelectedItem().getValue();
+			transactions.setAccount( acct );
+		} );
 	}
 }

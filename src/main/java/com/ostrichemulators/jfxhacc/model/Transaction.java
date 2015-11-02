@@ -7,9 +7,10 @@ package com.ostrichemulators.jfxhacc.model;
 
 import java.util.Date;
 import java.util.Map;
-import org.openrdf.model.URI;
 
 /**
+ * A transaction is a complex class that brings together splits, accounts, and
+ * payees
  *
  * @author ryan
  */

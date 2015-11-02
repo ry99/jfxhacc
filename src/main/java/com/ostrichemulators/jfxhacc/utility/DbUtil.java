@@ -7,7 +7,9 @@ package com.ostrichemulators.jfxhacc.utility;
 
 import com.ostrichemulators.jfxhacc.model.vocabulary.Accounts;
 import com.ostrichemulators.jfxhacc.model.vocabulary.JfxHacc;
+import com.ostrichemulators.jfxhacc.model.vocabulary.Payees;
 import com.ostrichemulators.jfxhacc.model.vocabulary.Splits;
+import com.ostrichemulators.jfxhacc.model.vocabulary.Transactions;
 import java.io.File;
 import java.util.Date;
 import org.openrdf.model.Literal;
@@ -77,6 +79,8 @@ public class DbUtil {
 		rc.setNamespace( JfxHacc.PREFIX, JfxHacc.NAMESPACE );
 		rc.setNamespace( Accounts.PREFIX, Accounts.NAMESPACE );
 		rc.setNamespace( Splits.PREFIX, Splits.NAMESPACE );
+		rc.setNamespace( Transactions.PREFIX, Transactions.NAMESPACE );
+		rc.setNamespace( Payees.PREFIX, Payees.NAMESPACE );
 
 		rc.setNamespace( RDFS.PREFIX, RDFS.NAMESPACE );
 		rc.setNamespace( RDF.PREFIX, RDF.NAMESPACE );
