@@ -24,7 +24,7 @@ import org.openrdf.repository.RepositoryException;
 public class JournalMapperImpl extends SimpleEntityRdfMapper<Journal> implements JournalMapper {
 
 	public JournalMapperImpl( RepositoryConnection rc ) {
-		super( rc, JfxHacc.ACCOUNT_TYPE );
+		super( rc, JfxHacc.JOURNAL_TYPE );
 	}
 
 	@Override

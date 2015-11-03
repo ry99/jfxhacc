@@ -23,6 +23,7 @@ public class TransactionImpl extends IDableImpl implements Transaction {
 
 	private Date date;
 	private Payee payee;
+	private String number;
 	private final Map<Split, Account> splits = new HashMap<>();
 
 	public TransactionImpl() {
@@ -77,6 +78,16 @@ public class TransactionImpl extends IDableImpl implements Transaction {
 	@Override
 	public void addSplit( Split s, Account a ) {
 		splits.put( s, a );
+	}
+
+	@Override
+	public String getNumber() {
+		return number;
+	}
+
+	@Override
+	public void setNumber( String number ) {
+		this.number = number;
 	}
 
 	@Override

@@ -14,7 +14,7 @@ import java.util.Map;
  *
  * @author ryan
  */
-public interface Transaction extends IDable, Comparable<Transaction>{
+public interface Transaction extends IDable, Comparable<Transaction> {
 
 	public Date getDate();
 
@@ -29,4 +29,8 @@ public interface Transaction extends IDable, Comparable<Transaction>{
 	public void setSplits( Map<Split, Account> splits );
 
 	public void addSplit( Split s, Account a );
+
+	public String getNumber();
+
+	public void setNumber( String s );
 }

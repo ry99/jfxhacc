@@ -8,11 +8,13 @@ package com.ostrichemulators.jfxhacc;
 import com.ostrichemulators.jfxhacc.engine.DataEngine;
 import com.ostrichemulators.jfxhacc.mapper.MapperException;
 import com.ostrichemulators.jfxhacc.model.Account;
+import com.ostrichemulators.jfxhacc.model.Journal;
 import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
 import com.ostrichemulators.jfxhacc.model.Transaction;
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -92,7 +94,9 @@ public class TransactionViewer extends AnchorPane implements Initializable {
 
 		DataEngine engine = MainApp.getEngine();
 		try {
-			List<Transaction> trans = engine.getTransactionMapper().getAll( account );
+			List<Journal> journals = new ArrayList<>( engine.getJournalMapper().getAll() );
+			List<Transaction> trans = engine.getTransactionMapper().getAll( account,
+					journals.get( 0 ) );
 			for ( Transaction t : trans ) {
 				view.getRoot().getChildren().add( new TreeItem<>( t ) );
 			}
@@ -113,5 +117,8 @@ public class TransactionViewer extends AnchorPane implements Initializable {
 
 		payee.setCellValueFactory( ( TreeTableColumn.CellDataFeatures<Transaction, String> p )
 				-> new ReadOnlyStringWrapper( p.getValue().getValue().getPayee().getName() ) );
+
+		number.setCellValueFactory( ( TreeTableColumn.CellDataFeatures<Transaction, String> p )
+				-> new ReadOnlyStringWrapper( p.getValue().getValue().getNumber() ) );
 	}
 }

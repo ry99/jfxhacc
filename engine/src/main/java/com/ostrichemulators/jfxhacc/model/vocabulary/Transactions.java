@@ -25,4 +25,7 @@ public class Transactions {
 	public static final URI DATE_PRED = DCTERMS.CREATED;
 	public static final URI PAYEE_PRED = new URIImpl( NAMESPACE + "payee" );
 	public static final URI SPLIT_PRED = new URIImpl( NAMESPACE + "entry" );
+	public static final URI NUMBER_PRED = new URIImpl( NAMESPACE + "number" );
+	public static final URI JOURNAL_PRED = new URIImpl( NAMESPACE + "journal" );
+
 }

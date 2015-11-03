@@ -17,6 +17,8 @@ import com.ostrichemulators.jfxhacc.model.vocabulary.Accounts;
 import com.ostrichemulators.jfxhacc.model.vocabulary.JfxHacc;
 import com.ostrichemulators.jfxhacc.model.vocabulary.Splits;
 import com.ostrichemulators.jfxhacc.utility.TreeNode;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -116,7 +118,7 @@ public class AccountMapperImpl extends SimpleEntityRdfMapper<Account> implements
 				+ "  ?child a jfxhacc:account . "
 				+ "  ?child accounts:accountType ?type . "
 				+ "  OPTIONAL { ?parent a jfxhacc:account . ?child accounts:parent ?parent }"
-				+ "} ORDER BY ASC( ?parent )",
+				+ "} ORDER BY DESC( ?parent )",
 				bindmap( "type", type.getUri() ),
 				new QueryHandler<Map<URI, URI>>() {
 					Map<URI, URI> map = new LinkedHashMap<>();
@@ -146,10 +148,10 @@ public class AccountMapperImpl extends SimpleEntityRdfMapper<Account> implements
 			URI parentid = en.getValue();
 
 			Account acct = accts.get( childid );
-			TreeNode<Account> child = new TreeNode<>( acct );
-			if( !tree.containsKey( childid ) ){
-				tree.put( childid, child );
+			if ( !tree.containsKey( childid ) ) {
+				tree.put( childid, new TreeNode<>( acct ) );
 			}
+			TreeNode<Account> child = tree.get( childid );
 
 			if ( null == parentid ) {
 				root.addChild( child );
@@ -165,7 +167,10 @@ public class AccountMapperImpl extends SimpleEntityRdfMapper<Account> implements
 			}
 		}
 
-		//TreeNode.dump( root, new PrintWriter( new OutputStreamWriter( System.out ) ), 0 );
+		if ( log.isTraceEnabled() ) {
+			TreeNode.dump( root,
+					new PrintWriter( new OutputStreamWriter( System.out ) ), 0 );
+		}
 
 		return root;
 	}

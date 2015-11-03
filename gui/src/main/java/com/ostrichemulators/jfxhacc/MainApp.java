@@ -2,13 +2,16 @@ package com.ostrichemulators.jfxhacc;
 
 import com.ostrichemulators.jfxhacc.engine.DataEngine;
 import com.ostrichemulators.jfxhacc.engine.impl.RdfDataEngine;
+import com.ostrichemulators.jfxhacc.mapper.JournalMapper;
 import com.ostrichemulators.jfxhacc.mapper.MapperException;
 import com.ostrichemulators.jfxhacc.mapper.TransactionMapper;
 import com.ostrichemulators.jfxhacc.mapper.impl.AccountMapperImpl;
+import com.ostrichemulators.jfxhacc.mapper.impl.JournalMapperImpl;
 import com.ostrichemulators.jfxhacc.mapper.impl.PayeeMapperImpl;
 import com.ostrichemulators.jfxhacc.mapper.impl.TransactionMapperImpl;
 import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.AccountType;
+import com.ostrichemulators.jfxhacc.model.Journal;
 import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.Payee;
 import com.ostrichemulators.jfxhacc.model.Split;
@@ -16,6 +19,7 @@ import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
 import com.ostrichemulators.jfxhacc.model.impl.PayeeImpl;
 import com.ostrichemulators.jfxhacc.utility.DbUtil;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
@@ -35,6 +39,7 @@ import org.apache.log4j.Logger;
 import org.openrdf.model.URI;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
+import org.openrdf.rio.turtle.TurtleWriter;
 
 public class MainApp extends Application {
 
@@ -127,6 +132,15 @@ public class MainApp extends Application {
 
 		Random r = new Random();
 
+		JournalMapper jmap = new JournalMapperImpl( rc );
+		Journal journal = null;
+		try {
+			journal = jmap.create( "General" );
+		}
+		catch ( MapperException ne ) {
+			log.error( ne, ne );
+		}
+
 		PayeeMapperImpl pmap = new PayeeMapperImpl( rc );
 		for ( int i = 0; i < 10; i++ ) {
 			try {
@@ -185,7 +199,8 @@ public class MainApp extends Application {
 				splits.put( credit, cacct );
 				splits.put( debit, dacct );
 
-				tmap.create( new Date(), flip.get( "payee-" + r.nextInt( 10 ) ), splits );
+				tmap.create( new Date(), flip.get( "payee-" + r.nextInt( 10 ) ),
+						Integer.toString( i ), splits, journal );
 			}
 		}
 		catch ( MapperException me ) {

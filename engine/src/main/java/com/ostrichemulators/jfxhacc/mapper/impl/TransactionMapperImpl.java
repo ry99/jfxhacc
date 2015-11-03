@@ -11,6 +11,7 @@ import com.ostrichemulators.jfxhacc.mapper.PayeeMapper;
 import com.ostrichemulators.jfxhacc.mapper.QueryHandler;
 import com.ostrichemulators.jfxhacc.mapper.TransactionMapper;
 import com.ostrichemulators.jfxhacc.model.Account;
+import com.ostrichemulators.jfxhacc.model.Journal;
 import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.Payee;
 import com.ostrichemulators.jfxhacc.model.Split;
@@ -27,10 +28,8 @@ import info.aduna.iteration.Iterations;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import org.apache.log4j.Logger;
 import org.openrdf.model.Literal;
 import org.openrdf.model.Statement;
@@ -82,7 +81,6 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 		rc.add( id, RDF.TYPE, JfxHacc.SPLIT_TYPE );
 		rc.add( id, Splits.ACCOUNT_PRED, a.getId() );
 		rc.add( id, Splits.MEMO_PRED, vf.createLiteral( s.getMemo() ) );
-		rc.add( id, Splits.NUMBER_PRED, vf.createLiteral( s.getNumber() ) );
 
 		Money m = s.getValue();
 		if ( s.isDebit() ) {
@@ -100,8 +98,8 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 	}
 
 	@Override
-	public Transaction create( Date d, Payee p, Map<Split, Account> splits )
-			throws MapperException {
+	public Transaction create( Date d, Payee p, String number, Map<Split, Account> splits,
+			Journal journal ) throws MapperException {
 		RepositoryConnection rc = getConnection();
 		ValueFactory vf = rc.getValueFactory();
 		try {
@@ -119,6 +117,11 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 
 			rc.add( id, Transactions.PAYEE_PRED, p.getId() );
 			rc.add( id, Transactions.DATE_PRED, vf.createLiteral( d ) );
+			if ( null != number ) {
+				rc.add( id, Transactions.NUMBER_PRED, vf.createLiteral( number ) );
+			}
+
+			rc.add( id, Transactions.JOURNAL_PRED, journal.getId() );
 			for ( URI splitid : splitids ) {
 				rc.add( id, Transactions.SPLIT_PRED, splitid );
 			}
@@ -173,6 +176,9 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 							final Literal literal = Literal.class.cast( set.getValue( "o" ) );
 							trans.setDate( DbUtil.toDate( literal ) );
 						}
+						else if ( Transactions.NUMBER_PRED.equals( uri ) ) {
+							trans.setNumber( set.getValue( "o" ).stringValue() );
+						}
 					}
 
 					@Override
@@ -188,33 +194,19 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 
 	@Override
 	public Transaction getTransaction( Split s ) throws MapperException {
-		Map<String, Value> bindings = new HashMap<>();
-		bindings.put( "s", s.getId() );
-		bindings.put( "tentry", Transactions.SPLIT_PRED );
+		try {
+			List<Statement> stmts = Iterations.asList( getConnection().
+					getStatements( null, Transactions.SPLIT_PRED, s.getId(), false ) );
+			if ( stmts.isEmpty() ) {
+				log.warn( "split " + s.getId() + " is not part of any transaction" );
+				return null;
+			}
 
-		return query( "SELECT ?t ?p ?o WHERE { ?t ?tentry ?s. ?t p ?o }",
-				bindings, new QueryHandler<Transaction>() {
-					Transaction trans = new TransactionImpl();
-
-					@Override
-					public void handleTuple( BindingSet set, ValueFactory vf ) {
-						trans.setId( URI.class.cast( set.getValue( "t" ) ) );
-
-						final URI uri = URI.class.cast( set.getValue( "p" ) );
-						if ( Transactions.PAYEE_PRED.equals( uri ) ) {
-							setPayee( trans, URI.class.cast( set.getValue( "o" ) ) );
-						}
-						else if ( Transactions.DATE_PRED.equals( uri ) ) {
-							final Literal literal = Literal.class.cast( set.getValue( "o" ) );
-							trans.setDate( DbUtil.toDate( literal ) );
-						}
-					}
-
-					@Override
-					public Transaction getResult() {
-						return trans;
-					}
-				} );
+			return get( URI.class.cast( stmts.get( 0 ).getSubject() ) );
+		}
+		catch ( RepositoryException re ) {
+			throw new MapperException( re );
+		}
 	}
 
 	private Map<Split, URI> getSplits( URI transid, RepositoryConnection rc, ValueFactory vf )
@@ -263,13 +255,15 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 	}
 
 	@Override
-	public List<Transaction> getAll( Account acct ) throws MapperException {
-		Map<String, Value> bindings = new HashMap<>();
-		bindings.put( "acct", acct.getId() );
+	public List<Transaction> getAll( Account acct, Journal journal ) throws MapperException {
+
+		Map<String, Value> bindings = bindmap( "acct", acct.getId() );
+		bindings.put( "jnl", journal.getId() );
 
 		List<Transaction> transactions = query( "SELECT ?t ?p ?o WHERE {"
 				+ "  ?t trans:entry ?s."
 				+ "  ?s splits:account ?acct ."
+				+ "  ?t trans:journal ?jnl ."
 				+ "  ?t ?p ?o "
 				+ "} ORDER BY ?t",
 				bindings, new QueryHandler<List<Transaction>>() {
@@ -293,6 +287,9 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 							final Literal literal = Literal.class.cast( set.getValue( "o" ) );
 							last.setDate( DbUtil.toDate( literal ) );
 						}
+						else if ( Transactions.NUMBER_PRED.equals( uri ) ) {
+							last.setNumber( set.getValue( "o" ).stringValue() );
+						}
 					}
 
 					@Override
@@ -308,10 +305,10 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 
 			for ( Map.Entry<Split, URI> en : splitos.entrySet() ) {
 				URI acctid = en.getValue();
-				if( !accounts.containsKey( acctid ) ){
+				if ( !accounts.containsKey( acctid ) ) {
 					accounts.put( acctid, amap.get( acctid ) );
 				}
-				
+
 				t.addSplit( en.getKey(), accounts.get( en.getValue() ) );
 			}
 		}

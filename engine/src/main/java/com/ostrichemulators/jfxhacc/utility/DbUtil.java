@@ -85,6 +85,7 @@ public class DbUtil {
 		rc.setNamespace( "p", "http://com.ostrich-emulators/jfxhacc/payee#" );
 		rc.setNamespace( "a", "http://com.ostrich-emulators/jfxhacc/account#" );
 		rc.setNamespace( "s", "http://com.ostrich-emulators/jfxhacc/split#" );
+		rc.setNamespace( "j", "http://com.ostrich-emulators/jfxhacc/journal#" );
 
 		rc.setNamespace( RDFS.PREFIX, RDFS.NAMESPACE );
 		rc.setNamespace( RDF.PREFIX, RDF.NAMESPACE );
