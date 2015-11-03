@@ -16,7 +16,9 @@ import com.ostrichemulators.jfxhacc.model.impl.AccountImpl;
 import com.ostrichemulators.jfxhacc.model.vocabulary.Accounts;
 import com.ostrichemulators.jfxhacc.model.vocabulary.JfxHacc;
 import com.ostrichemulators.jfxhacc.model.vocabulary.Splits;
+import com.ostrichemulators.jfxhacc.utility.TreeNode;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import org.apache.log4j.Logger;
 import org.openrdf.model.Literal;
@@ -42,7 +44,8 @@ public class AccountMapperImpl extends SimpleEntityRdfMapper<Account> implements
 	}
 
 	@Override
-	public Account create( String name, AccountType type, Money obal ) throws MapperException {
+	public Account create( String name, AccountType type, Money obal, Account parent )
+			throws MapperException {
 
 		RepositoryConnection rc = getConnection();
 		ValueFactory vf = rc.getValueFactory();
@@ -52,6 +55,9 @@ public class AccountMapperImpl extends SimpleEntityRdfMapper<Account> implements
 			rc.add( id, RDFS.LABEL, vf.createLiteral( name ) );
 			rc.add( id, Accounts.TYPE_PRED, type.getUri() );
 			rc.add( id, Accounts.OBAL_PRED, vf.createLiteral( obal.value() ) );
+			if ( null != parent ) {
+				rc.add( id, Accounts.PARENT_PRED, parent.getId() );
+			}
 			rc.commit();
 
 			return new AccountImpl( id, name, type, obal );
@@ -95,6 +101,73 @@ public class AccountMapperImpl extends SimpleEntityRdfMapper<Account> implements
 
 	@Override
 	public void update( Account t ) throws MapperException {
+	}
+
+	@Override
+	public Account getParent( Account a ) throws MapperException {
+		Value pid = oneval( a.getId(), Accounts.PARENT_PRED );
+		return get( URI.class.cast( pid ) );
+	}
+
+	@Override
+	public TreeNode<Account> getAccounts( AccountType type ) throws MapperException {
+
+		Map<URI, URI> childparent = query( "SELECT ?child ?parent WHERE {"
+				+ "  ?child a jfxhacc:account . "
+				+ "  ?child accounts:accountType ?type . "
+				+ "  OPTIONAL { ?parent a jfxhacc:account . ?child accounts:parent ?parent }"
+				+ "} ORDER BY ASC( ?parent )",
+				bindmap( "type", type.getUri() ),
+				new QueryHandler<Map<URI, URI>>() {
+					Map<URI, URI> map = new LinkedHashMap<>();
+
+					@Override
+					public void handleTuple( BindingSet set, ValueFactory vf ) {
+						URI child = URI.class.cast( set.getValue( "child" ) );
+						URI parent = URI.class.cast( set.getValue( "parent" ) );
+						map.put( child, parent );
+					}
+
+					@Override
+					public Map<URI, URI> getResult() {
+						return map;
+					}
+				} );
+
+		Map<URI, Account> accts = new HashMap<>();
+		for ( Account acct : getAll() ) {
+			accts.put( acct.getId(), acct );
+		}
+
+		TreeNode<Account> root = new TreeNode<>();
+		Map<URI, TreeNode<Account>> tree = new HashMap<>();
+		for ( Map.Entry<URI, URI> en : childparent.entrySet() ) {
+			URI childid = en.getKey();
+			URI parentid = en.getValue();
+
+			Account acct = accts.get( childid );
+			TreeNode<Account> child = new TreeNode<>( acct );
+			if( !tree.containsKey( childid ) ){
+				tree.put( childid, child );
+			}
+
+			if ( null == parentid ) {
+				root.addChild( child );
+			}
+			else {
+
+				if ( !tree.containsKey( parentid ) ) {
+					tree.put( parentid, new TreeNode<>( accts.get( parentid ) ) );
+				}
+
+				TreeNode<Account> pnode = tree.get( parentid );
+				pnode.addChild( child );
+			}
+		}
+
+		//TreeNode.dump( root, new PrintWriter( new OutputStreamWriter( System.out ) ), 0 );
+
+		return root;
 	}
 
 	@Override

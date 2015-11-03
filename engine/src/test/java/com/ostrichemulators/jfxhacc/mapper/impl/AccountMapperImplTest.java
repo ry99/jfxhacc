@@ -11,10 +11,14 @@ import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.vocabulary.Accounts;
 import com.ostrichemulators.jfxhacc.model.vocabulary.JfxHacc;
 import com.ostrichemulators.jfxhacc.utility.DbUtil;
+import com.ostrichemulators.jfxhacc.utility.TreeNode;
 import com.ostrichemulators.jfxhacc.utility.UriUtil;
 import info.aduna.iteration.Iterations;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -75,7 +79,7 @@ public class AccountMapperImplTest {
 	@Test
 	public void testCreate() throws Exception {
 		Account acct
-				= ami.create( "Test Account", AccountType.ASSET, new Money( 4000 ) );
+				= ami.create( "Test Account", AccountType.ASSET, new Money( 4000 ), null );
 		List<Statement> stmts = Iterations.asList( rc.getStatements( acct.getId(),
 				null, null, false ) );
 		assertEquals( 4, stmts.size() );
@@ -102,6 +106,30 @@ public class AccountMapperImplTest {
 		List<Statement> stmts = Iterations.asList( rc.getStatements( GETID,
 				null, null, false ) );
 		assertTrue( stmts.isEmpty() );
+	}
+
+	@Test
+	public void testGetByType() throws Exception {
+		Account parent
+				= ami.create( "Parent", AccountType.ASSET, new Money( 6000 ), null );
+		Account child1
+				= ami.create( "Child 1", AccountType.ASSET, new Money( 5000 ), parent );
+		Account child2
+				= ami.create( "Child 2", AccountType.ASSET, new Money( 4000 ), parent );
+		Account child3
+				= ami.create( "Child 1's Child", AccountType.ASSET, new Money( 3000 ), child1 );
+		Account other	= ami.create( "Oddling", AccountType.EQUITY, new Money( 2000 ), null );
+
+		TreeNode<Account> tree = ami.getAccounts( AccountType.ASSET );
+		assertEquals( parent, tree.getChildren().get( 0 ) );
+
+		Set<Account> childlevel = new HashSet<>( Arrays.asList( child1, child2 ) );
+		assertEquals( childlevel, new HashSet<>( tree.findChild( parent ).getChildren() ) );
+
+		TreeNode<Account> node = tree.findChild( child1 );
+		assertEquals( child3, node.getChildren().get( 0 ) );
+
+		assertNull( tree.findChild( other ) );
 	}
 
 	//@Test
