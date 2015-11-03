@@ -84,10 +84,9 @@ public interface TransactionMapper extends DataMapper<Transaction> {
 	 * com.ostrichemulators.jfxhacc.model.Payee, java.util.Map) }
 	 *
 	 * @param m
-	 * @param number
 	 * @param memo
 	 * @param rs
 	 * @return
 	 */
-	public Split create( Money m, String number, String memo, ReconcileState rs );
+	public Split create( Money m, String memo, ReconcileState rs );
 }

@@ -47,4 +47,9 @@ sed -e"s/\([^|]\).\(.*\)/j:qhacc-journal-\1 a jfxhacc:journal ; rdfs:label \"\2\
 
 awk --field-separator \| '{printf("a:qhacc-account-%d a jfxhacc:account ; rdfs:label \"%s\" ; accounts:openingBalance \"%d\"^^xsd:int ; accounts:accountType jfxhacc:%s ",$1,$3,$4,tolower($5)); if( $2>0 ){ printf( "; accounts:parent a:qhacc-account-%d ", $2 ) } ; printf( ".\n" ) }' $ACCOUNTS
 
+cat $SPLITS | sed -e"s/Reconciled$/RECONCILED/g" \
+  -e "s/No$/NOT_RECONCILED/g" \
+  -e"s/Cleared$/CLEARED/g" $SPLITS | \
+  awk --field-separator \| '{printf( "s:qhacc-split-%d a jfxhacc:split ; splits:account a:qhacc-account-%d ; splits:value \"%d\"^^xsd:int ; splits:reconciled \"%s\" .\n",$1,$2,$3,$4)}'
+
 rm -rf $TMPDIR

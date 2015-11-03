@@ -19,7 +19,6 @@ import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
 import com.ostrichemulators.jfxhacc.model.impl.PayeeImpl;
 import com.ostrichemulators.jfxhacc.utility.DbUtil;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
@@ -39,7 +38,6 @@ import org.apache.log4j.Logger;
 import org.openrdf.model.URI;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
-import org.openrdf.rio.turtle.TurtleWriter;
 
 public class MainApp extends Application {
 
@@ -190,8 +188,8 @@ public class MainApp extends Application {
 				Map<Split, Account> splits = new HashMap<>();
 				Money m = new Money( r.nextInt( 5000 ) );
 
-				Split credit = tmap.create( m, "", "", ReconcileState.NOT_RECONCILED );
-				Split debit = tmap.create( m.opposite(), "", "", ReconcileState.NOT_RECONCILED );
+				Split credit = tmap.create( m, "", ReconcileState.NOT_RECONCILED );
+				Split debit = tmap.create( m.opposite(), "", ReconcileState.NOT_RECONCILED );
 
 				Account cacct = accts.get( anames[r.nextInt( anames.length )] );
 				Account dacct = accts.get( "expense-" + anames[r.nextInt( anames.length )] );

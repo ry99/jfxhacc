@@ -60,10 +60,9 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 	}
 
 	@Override
-	public Split create( Money m, String number, String memo, ReconcileState rs ) {
+	public Split create( Money m, String memo, ReconcileState rs ) {
 		Split s = new SplitImpl( m );
 		s.setMemo( memo );
-		s.setNumber( number );
 		s.setReconciled( rs );
 		return s;
 	}
@@ -211,12 +210,11 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 
 	private Map<Split, URI> getSplits( URI transid, RepositoryConnection rc, ValueFactory vf )
 			throws MapperException {
-		return query( "SELECT ?s ?memo ?number ?reco ?val ?aid WHERE {"
+		return query( "SELECT ?s ?memo ?reco ?val ?aid WHERE {"
 				+ "  ?t trans:entry ?s."
 				+ "  ?s splits:account ?aid ."
 				+ "  ?s splits:memo ?memo ."
 				+ "  ?s splits:value ?val ."
-				+ "  ?s splits:number ?number ."
 				+ "  ?s splits:reconciled ?reco ."
 				+ "} ORDER BY ?t", bindmap( "t", transid ), new QueryHandler<Map<Split, URI>>() {
 					Map<Split, URI> lkp = new HashMap<>();
@@ -226,9 +224,7 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 						URI acctid = URI.class.cast( set.getValue( "aid" ) );
 						URI splitid = URI.class.cast( set.getValue( "s" ) );
 
-						Value val = set.getValue( "number" );
-						String number = ( null == val ? "" : val.stringValue() );
-						val = set.getValue( "memo" );
+						Value val = set.getValue( "memo" );
 						String memo = ( null == val ? "" : val.stringValue() );
 						val = set.getValue( "reco" );
 						ReconcileState rs = ( null == val
@@ -241,7 +237,6 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 
 						Split split = new SplitImpl( splitid, new Money( value ) );
 						split.setMemo( memo );
-						split.setNumber( number );
 						split.setReconciled( rs );
 
 						lkp.put( split, acctid );
