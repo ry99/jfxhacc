@@ -144,9 +144,9 @@ public class MainApp extends Application {
 
 		for ( String name : anames ) {
 			try {
-				Account a = amap.create( name, AccountType.ASSET, new Money( r.nextInt( 50000 ) ) );
+				Account a = amap.create( name, AccountType.ASSET, new Money( r.nextInt( 50000 ) ), null );
 				Account e = amap.create( "expense-" + name, AccountType.EXPENSE,
-						new Money( r.nextInt( 50000 ) ) );
+						new Money( r.nextInt( 50000 ) ), null );
 
 				testers.add( a );
 				testers.add( e );
