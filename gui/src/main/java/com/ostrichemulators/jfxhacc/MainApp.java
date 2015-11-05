@@ -68,14 +68,25 @@ public class MainApp extends Application {
 		try {
 			final Parameters params = getParameters();
 			final List<String> parameters = params.getRaw();
-			datadir = ( parameters.isEmpty()
-					? new File( System.getProperty( "user.home" ), ".jfxhacc" )
-					: new File( parameters.get( 0 ) ) );
+			if ( parameters.isEmpty() ) {
+				datadir = new File( System.getProperty( "user.home" ), ".jfxhacc" );
+			}
+			else {
+				String param = parameters.get( 0 );
+				if ( param.startsWith( "http" ) ) {
+					rc = DbUtil.createRepository( param );
+				}
+				else {
+					datadir = new File( param );
+				}
+			}
 
-			boolean initdataset = ( !datadir.exists() );
-			rc = DbUtil.createRepository( datadir );
-			if ( initdataset ) {
-				initKb( rc );
+			if ( null == rc ) {
+				boolean initdataset = ( !datadir.exists() );
+				rc = DbUtil.createRepository( datadir );
+				if ( initdataset ) {
+					initKb( rc );
+				}
 			}
 
 			engine = new RdfDataEngine( rc );

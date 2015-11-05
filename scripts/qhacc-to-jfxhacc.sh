@@ -19,7 +19,7 @@ SPLITTRANS=$TMPDIR/splittrans
 
 $SQLITE3 $DB "SELECT a.id, a.parentid, a.name, a.openingbalance, t.description FROM account a JOIN accounttype t ON a.accounttypeid=t.id" > $ACCOUNTS
 
-$SQLITE3 $DB "SELECT s.id, s.accountid, s.amount, r.description, s.memo FROM split s JOIN reconcilestate r ON s.reconcilestateid=r.id" > $SPLITS
+$SQLITE3 $DB "SELECT s.id, s.accountid, s.amount, s.memo, r.description FROM split s JOIN reconcilestate r ON s.reconcilestateid=r.id" > $SPLITS
 
 $SQLITE3 $DB "SELECT t.id, t.num, t.date, t.payee, t.journalid FROM transentry t WHERE t.typeid=1" > $TRANS
 
@@ -41,6 +41,7 @@ cat << END_TEXT
 @prefix jfxhacc: <http://com.ostrich-emulators/jfxhacc/> .
 @prefix accounts: <http://com.ostrich-emulators/jfxhacc/accounts/> .
 @prefix trans: <http://com.ostrich-emulators/jfxhacc/transaction/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
 
 <http://com.ostrich-emulators/jfxhacc#qhacc-export-$$> a jfxhacc:dataset .
 END_TEXT
@@ -49,13 +50,14 @@ END_TEXT
 sed -e"s/\([^|]\+\).\(.*\)/j:qhacc-journal-\1 a jfxhacc:journal ; rdfs:label \"\2\" ./g" $JOURNALS
 
 # make accounts
-awk --field-separator \| '{printf("a:qhacc-account-%d a jfxhacc:account ; rdfs:label \"%s\" ; accounts:openingBalance \"%d\"^^xsd:int ; accounts:accountType jfxhacc:%s ",$1,$3,$4,tolower($5)); if( $2>0 ){ printf( "; accounts:parent a:qhacc-account-%d ", $2 ) } ; printf( ".\n" ) }' $ACCOUNTS
+sed -e's/"/\\"/g' $ACCOUNTS | awk --field-separator \| '{printf("a:qhacc-account-%d a jfxhacc:account ; rdfs:label \"%s\" ; accounts:openingBalance \"%d\"^^xsd:int ; accounts:accountType jfxhacc:%s ",$1,$3,$4,tolower($5)); if( $2>0 ){ printf( "; accounts:parent a:qhacc-account-%d ", $2 ) } ; printf( ".\n" ) }'
 
 # make splits
 cat $SPLITS | sed -e"s/Reconciled$/RECONCILED/g" \
   -e "s/No$/NOT_RECONCILED/g" \
-  -e"s/Cleared$/CLEARED/g" $SPLITS | \
-  awk --field-separator \| '{printf( "s:qhacc-split-%d a jfxhacc:split ; splits:account a:qhacc-account-%d ; splits:value \"%d\"^^xsd:int ; splits:reconciled \"%s\" ",$1,$2,$3,$4) ; if ( ""!=$5 ){ printf( "; splits:memo \"%s\" ",$5 ) }; printf( ".\n" ) }'
+  -e "s/Cleared$/CLEARED/g" \
+  -e 's/"/\\"/g'| \
+  awk --field-separator \| '{printf( "s:qhacc-split-%d a jfxhacc:split ; splits:account a:qhacc-account-%d ; splits:value \"%d\"^^xsd:int ; splits:reconciled \"%s\" ",$1,$2,$3,$5) ; if ( ""!=$4 ){ printf( "; splits:memo \"%s\" ",$4 ) }; printf( ".\n" ) }'
 
 # make payees
 declare -A PAYEES
@@ -68,7 +70,7 @@ done < <(cat $TRANS | cut -d\| -f4|sort -u)
 # make transactions
 while read line; do
   echo "$line" | awk --field-separator \| \
-  '{printf("t:qhacc-transaction-%d a jfxhacc:transaction ; trans:journal j:qhacc-journal-%s ; trans:date \"%s\"^^xsd:date ; ", $1,$5,$3); if( ""!=$2 ){ printf("trans:number \"%s\" ; ",$2) } }'
+  '{printf("t:qhacc-transaction-%d a jfxhacc:transaction ; trans:journal j:qhacc-journal-%s ; dcterms:created \"%sT00:00:00.000\"^^xsd:date ; ", $1,$5,$3); if( ""!=$2 ){ printf("trans:number \"%s\" ; ",$2) } }'
   
   payee=$(echo $line|cut -d\| -f4)
   echo " trans:payee p:qhacc-payee-${PAYEES[$payee]} ."  

@@ -17,12 +17,14 @@ import org.openrdf.model.URI;
 import org.openrdf.model.impl.StatementImpl;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.impl.ValueFactoryImpl;
+import org.openrdf.model.vocabulary.DCTERMS;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.model.vocabulary.XMLSchema;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
+import org.openrdf.repository.http.HTTPRepository;
 import org.openrdf.repository.sail.SailRepository;
 import org.openrdf.sail.inferencer.fc.ForwardChainingRDFSInferencer;
 import org.openrdf.sail.memory.MemoryStore;
@@ -63,6 +65,15 @@ public class DbUtil {
 		return rc;
 	}
 
+	public static RepositoryConnection createRepository( String http ) throws RepositoryException {
+		Repository repo = new HTTPRepository( http );
+		repo.initialize();
+		RepositoryConnection rc = repo.getConnection();
+		initNamespaces( rc );
+		return rc;
+	}
+
+
 	public static RepositoryConnection createInMemRepository() throws RepositoryException {
 		ForwardChainingRDFSInferencer fci
 				= new ForwardChainingRDFSInferencer( new MemoryStore() );
@@ -81,6 +92,7 @@ public class DbUtil {
 		rc.setNamespace( Splits.PREFIX, Splits.NAMESPACE );
 		rc.setNamespace( Transactions.PREFIX, Transactions.NAMESPACE );
 		rc.setNamespace( Payees.PREFIX, Payees.NAMESPACE );
+		rc.setNamespace( DCTERMS.PREFIX, DCTERMS.NAMESPACE );
 		rc.setNamespace( "t", "http://com.ostrich-emulators/jfxhacc/transaction#" );
 		rc.setNamespace( "p", "http://com.ostrich-emulators/jfxhacc/payee#" );
 		rc.setNamespace( "a", "http://com.ostrich-emulators/jfxhacc/account#" );
