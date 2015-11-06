@@ -5,16 +5,40 @@
  */
 package com.ostrichemulators.jfxhacc.utility;
 
+import com.ostrichemulators.jfxhacc.mapper.JournalMapper;
+import com.ostrichemulators.jfxhacc.mapper.MapperException;
+import com.ostrichemulators.jfxhacc.mapper.TransactionMapper;
+import com.ostrichemulators.jfxhacc.mapper.impl.AccountMapperImpl;
+import com.ostrichemulators.jfxhacc.mapper.impl.JournalMapperImpl;
+import com.ostrichemulators.jfxhacc.mapper.impl.PayeeMapperImpl;
+import com.ostrichemulators.jfxhacc.mapper.impl.TransactionMapperImpl;
+import com.ostrichemulators.jfxhacc.model.Account;
+import com.ostrichemulators.jfxhacc.model.AccountType;
+import com.ostrichemulators.jfxhacc.model.Journal;
+import com.ostrichemulators.jfxhacc.model.Money;
+import com.ostrichemulators.jfxhacc.model.Payee;
+import com.ostrichemulators.jfxhacc.model.Split;
+import com.ostrichemulators.jfxhacc.model.impl.PayeeImpl;
 import com.ostrichemulators.jfxhacc.model.vocabulary.Accounts;
 import com.ostrichemulators.jfxhacc.model.vocabulary.JfxHacc;
 import com.ostrichemulators.jfxhacc.model.vocabulary.Payees;
 import com.ostrichemulators.jfxhacc.model.vocabulary.Splits;
 import com.ostrichemulators.jfxhacc.model.vocabulary.Transactions;
+import info.aduna.iteration.Iterations;
 import java.io.File;
+import java.io.IOException;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import org.apache.log4j.Logger;
 import org.openrdf.model.Literal;
+import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
-import org.openrdf.model.impl.StatementImpl;
+import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.model.vocabulary.DCTERMS;
@@ -26,6 +50,8 @@ import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.http.HTTPRepository;
 import org.openrdf.repository.sail.SailRepository;
+import org.openrdf.rio.RDFFormat;
+import org.openrdf.rio.RDFParseException;
 import org.openrdf.sail.inferencer.fc.ForwardChainingRDFSInferencer;
 import org.openrdf.sail.memory.MemoryStore;
 
@@ -35,13 +61,71 @@ import org.openrdf.sail.memory.MemoryStore;
  */
 public class DbUtil {
 
+	private static final Logger log = Logger.getLogger( DbUtil.class );
+
 	private DbUtil() {
 	}
 
-	public static RepositoryConnection createRepository( File datadir ) throws RepositoryException {
+	public static RepositoryConnection createRepository( String db ) throws RepositoryException {
+		RepositoryConnection rc = null;
+		boolean doinit = true;
+		if ( db.endsWith( "memorystore.data" ) ) {
+			// make an in-memory repository
+			rc = createInMemRepository( new File( db ) );
+		}
+		else if ( db.endsWith( ".ttl" ) || db.endsWith( ".rdf" ) || db.endsWith( ".nt" ) ) {
+			// use the given file to populate an in-memory datastore
+			rc = createInMemRepository();
+			doinit = false;
+			RDFFormat fmt = RDFFormat.NTRIPLES;
+			if ( db.endsWith( ".ttl" ) ) {
+				fmt = RDFFormat.TURTLE;
+			}
+			else if ( db.endsWith( ".rdf" ) ) {
+				fmt = RDFFormat.RDFXML;
+			}
+
+			try {
+				log.info( "loading data from:" + db );
+				rc.add( new File( db ), "", fmt );
+			}
+			catch ( IOException | RDFParseException e ) {
+				log.error( e, e );
+			}
+		}
+		else if ( db.startsWith( "http" ) ) {
+			// make an http repository
+			Repository repo = new HTTPRepository( db );
+			repo.initialize();
+			rc = repo.getConnection();
+		}
+
+		initNamespaces( rc );
+
+		if ( doinit && initDb( rc ) ) {
+			firstTime( rc );
+		}
+
+		log.info( "database initialized" );
+		return rc;
+	}
+
+	public static RepositoryConnection createInMemRepository() throws RepositoryException {
+		ForwardChainingRDFSInferencer fci
+				= new ForwardChainingRDFSInferencer( new MemoryStore() );
+		Repository repo = new SailRepository( fci );
+		repo.initialize();
+		RepositoryConnection rc = repo.getConnection();
+		initDb( rc );
+		initNamespaces( rc );
+		firstTime( rc );
+		return rc;
+	}
+
+	private static RepositoryConnection createInMemRepository( File datadir ) throws RepositoryException {
 		boolean init = ( !datadir.exists() );
 
-		if ( !datadir.exists() ) {
+		if ( init ) {
 			if ( datadir.getName().equals( "memorystore.data" ) ) {
 				datadir.getParentFile().mkdirs();
 			}
@@ -54,35 +138,7 @@ public class DbUtil {
 				= new ForwardChainingRDFSInferencer( new MemoryStore( datadir ) );
 		Repository repo = new SailRepository( fci );
 		repo.initialize();
-
-		if ( init ) {
-			init( repo );
-		}
-
-		RepositoryConnection rc = repo.getConnection();
-		initNamespaces( rc );
-
-		return rc;
-	}
-
-	public static RepositoryConnection createRepository( String http ) throws RepositoryException {
-		Repository repo = new HTTPRepository( http );
-		repo.initialize();
-		RepositoryConnection rc = repo.getConnection();
-		initNamespaces( rc );
-		return rc;
-	}
-
-
-	public static RepositoryConnection createInMemRepository() throws RepositoryException {
-		ForwardChainingRDFSInferencer fci
-				= new ForwardChainingRDFSInferencer( new MemoryStore() );
-		Repository repo = new SailRepository( fci );
-		repo.initialize();
-		init( repo );
-		RepositoryConnection rc = repo.getConnection();
-		initNamespaces( rc );
-		return rc;
+		return repo.getConnection();
 	}
 
 	private static void initNamespaces( RepositoryConnection rc ) throws RepositoryException {
@@ -105,13 +161,35 @@ public class DbUtil {
 		rc.commit();
 	}
 
-	private static void init( Repository repo ) throws RepositoryException {
-		RepositoryConnection rc = repo.getConnection();
+	private static boolean initDb( RepositoryConnection rc ) throws RepositoryException {
+		List<Statement> stmts = Iterations.asList( rc.getStatements( null, RDF.TYPE,
+				JfxHacc.DATASET_TYPE, false ) );
+		URI dbid = null;
+		boolean wasCreated = true;
+
+		ValueFactory vf = rc.getValueFactory();
 		rc.begin();
-		URI dbid = UriUtil.randomUri( new URIImpl( JfxHacc.BASE ) );
-		rc.add( new StatementImpl( dbid, RDF.TYPE, JfxHacc.DATASET_TYPE ) );
+		if ( stmts.isEmpty() ) {
+			dbid = UriUtil.randomUri( new URIImpl( JfxHacc.BASE ) );
+			rc.add( dbid, RDF.TYPE, JfxHacc.DATASET_TYPE );
+			rc.add( dbid, DCTERMS.CREATED, vf.createLiteral( new Date() ) );
+			rc.add( dbid, DCTERMS.CREATOR, vf.createLiteral( System.getProperty( "user.name" ) ) );
+		}
+		else {
+			dbid = URI.class.cast( stmts.get( 0 ).getSubject() );
+			wasCreated = false;
+		}
+
+		rc.remove( dbid, DCTERMS.MODIFIED, null );
+		rc.add( dbid, DCTERMS.MODIFIED,
+				rc.getValueFactory().createLiteral( new Date() ) );
+
 		rc.commit();
-		rc.close();
+		return wasCreated;
+	}
+
+	private static void firstTime( RepositoryConnection rc ) throws RepositoryException {
+		// this is a good place to add the standard ontology
 	}
 
 	public static Literal fromDate( Date date ) {
@@ -121,5 +199,4 @@ public class DbUtil {
 	public static Date toDate( Literal cal ) {
 		return cal.calendarValue().toGregorianCalendar().getTime();
 	}
-
 }

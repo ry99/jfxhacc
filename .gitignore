@@ -10,3 +10,4 @@ nb-configuration.xml
 nbactions*
 *.log
 *.log.*
+test*
