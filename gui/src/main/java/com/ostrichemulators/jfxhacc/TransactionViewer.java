@@ -5,6 +5,13 @@
  */
 package com.ostrichemulators.jfxhacc;
 
+import com.ostrichemulators.jfxhacc.cells.AccountValueFactory;
+import com.ostrichemulators.jfxhacc.cells.CreditDebitCellFactory;
+import com.ostrichemulators.jfxhacc.cells.CreditDebitValueFactory;
+import com.ostrichemulators.jfxhacc.cells.DateCellFactory;
+import com.ostrichemulators.jfxhacc.cells.MemoValueFactory;
+import com.ostrichemulators.jfxhacc.cells.RecoCellFactory;
+import com.ostrichemulators.jfxhacc.cells.RecoValueFactory;
 import com.ostrichemulators.jfxhacc.engine.DataEngine;
 import com.ostrichemulators.jfxhacc.mapper.MapperException;
 import com.ostrichemulators.jfxhacc.model.Account;
@@ -69,6 +76,11 @@ public class TransactionViewer extends AnchorPane implements Initializable {
 	private ComboBox payeeCmb;
 
 	private Account account;
+	private final MemoValueFactory memofac = new MemoValueFactory();
+	private final CreditDebitValueFactory creditfac = new CreditDebitValueFactory( true );
+	private final CreditDebitValueFactory debitfac = new CreditDebitValueFactory( false );
+	private final AccountValueFactory accountfac = new AccountValueFactory();
+	private final RecoValueFactory recofac = new RecoValueFactory();
 
 	public TransactionViewer() {
 		FXMLLoader fxmlLoader
@@ -86,6 +98,11 @@ public class TransactionViewer extends AnchorPane implements Initializable {
 
 	public void setAccount( Account acct ) {
 		account = acct;
+		memofac.setAccount( acct );
+		accountfac.setAccount( acct );
+		creditfac.setAccount( acct );
+		debitfac.setAccount( acct );
+		recofac.setAccount( acct );
 		refresh();
 	}
 
@@ -95,8 +112,10 @@ public class TransactionViewer extends AnchorPane implements Initializable {
 		DataEngine engine = MainApp.getEngine();
 		try {
 			List<Journal> journals = new ArrayList<>( engine.getJournalMapper().getAll() );
+			log.debug( "fetching transactions for " + account );
 			List<Transaction> trans = engine.getTransactionMapper().getAll( account,
 					journals.get( 0 ) );
+			log.debug( "populating transaction viewer" );
 			for ( Transaction t : trans ) {
 				view.getRoot().getChildren().add( new TreeItem<>( t ) );
 			}
@@ -114,11 +133,21 @@ public class TransactionViewer extends AnchorPane implements Initializable {
 
 		date.setCellValueFactory( ( TreeTableColumn.CellDataFeatures<Transaction, Date> p )
 				-> new ReadOnlyObjectWrapper<>( p.getValue().getValue().getDate() ) );
+		date.setCellFactory( new DateCellFactory() );
 
 		payee.setCellValueFactory( ( TreeTableColumn.CellDataFeatures<Transaction, String> p )
 				-> new ReadOnlyStringWrapper( p.getValue().getValue().getPayee().getName() ) );
 
 		number.setCellValueFactory( ( TreeTableColumn.CellDataFeatures<Transaction, String> p )
 				-> new ReadOnlyStringWrapper( p.getValue().getValue().getNumber() ) );
+
+		memo.setCellValueFactory( memofac );
+
+		reco.setCellValueFactory( recofac );
+		reco.setCellFactory( new RecoCellFactory() );
+
+		credit.setCellValueFactory( creditfac );
+
+		debit.setCellValueFactory( debitfac );
 	}
 }

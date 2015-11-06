@@ -30,7 +30,7 @@ public interface TransactionMapper extends DataMapper<Transaction> {
 	 * @param splits a mapping of splits to their accounts
 	 * @return true, if both equations are true
 	 */
-	public static boolean isBalanced( Map<Split, Account> splits ) {
+	public static boolean isBalanced( Map<Account, Split> splits ) {
 		// make sure that debits = credits and
 		// ASSETS = LIABILITIES + EQUITY (we'll say lefts = rights)
 		int debits = 0;
@@ -38,9 +38,9 @@ public interface TransactionMapper extends DataMapper<Transaction> {
 		int lefts = 0;
 		int rights = 0;
 
-		for ( Map.Entry<Split, Account> en : splits.entrySet() ) {
-			Account acct = en.getValue();
-			Split split = en.getKey();
+		for ( Map.Entry<Account, Split> en : splits.entrySet() ) {
+			Account acct = en.getKey();
+			Split split = en.getValue();
 
 			AccountType atype = acct.getAccountType();
 			int value = split.getValue().value();
@@ -74,7 +74,7 @@ public interface TransactionMapper extends DataMapper<Transaction> {
 	 */
 	public List<Transaction> getAll( Account acct, Journal jnl ) throws MapperException;
 
-	public Transaction create( Date d, Payee p, String number, Map<Split, Account> splits,
+	public Transaction create( Date d, Payee p, String number, Map<Account, Split> splits,
 			Journal journal )	throws MapperException;
 
 	/**

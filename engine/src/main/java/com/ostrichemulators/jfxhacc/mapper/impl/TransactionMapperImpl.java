@@ -67,7 +67,7 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 		return s;
 	}
 
-	private Split create( Split s, Account a, boolean dotrans ) throws RepositoryException {
+	private Split create( Account a, Split s, boolean dotrans ) throws RepositoryException {
 		RepositoryConnection rc = getConnection();
 		ValueFactory vf = rc.getValueFactory();
 
@@ -97,19 +97,20 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 	}
 
 	@Override
-	public Transaction create( Date d, Payee p, String number, Map<Split, Account> splits,
+	public Transaction create( Date d, Payee p, String number, Map<Account, Split> splits,
 			Journal journal ) throws MapperException {
 		RepositoryConnection rc = getConnection();
 		ValueFactory vf = rc.getValueFactory();
 		try {
 			rc.begin();
 
-			Map<Split, Account> realsplits = new HashMap<>();
+			Map<Account, Split> realsplits = new HashMap<>();
 			List<URI> splitids = new ArrayList<>();
-			for ( Map.Entry<Split, Account> en : splits.entrySet() ) {
-				Split s = create( en.getKey(), en.getValue(), false );
+			for ( Map.Entry<Account, Split> en : splits.entrySet() ) {
+				Account a = en.getKey();
+				Split s = create( a, en.getValue(), false );
 				splitids.add( s.getId() );
-				realsplits.put( s, en.getValue() );
+				realsplits.put( a, s );
 			}
 
 			URI id = createBaseEntity();
@@ -304,7 +305,7 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 					accounts.put( acctid, amap.get( acctid ) );
 				}
 
-				t.addSplit( en.getKey(), accounts.get( en.getValue() ) );
+				t.addSplit( accounts.get( en.getValue() ), en.getKey() );
 			}
 		}
 

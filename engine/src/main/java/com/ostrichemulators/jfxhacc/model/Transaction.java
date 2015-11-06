@@ -24,11 +24,11 @@ public interface Transaction extends IDable, Comparable<Transaction> {
 
 	public Payee getPayee();
 
-	public Map<Split, Account> getSplits();
+	public Map<Account, Split> getSplits();
 
-	public void setSplits( Map<Split, Account> splits );
+	public void setSplits( Map<Account, Split> splits );
 
-	public void addSplit( Split s, Account a );
+	public void addSplit( Account a, Split s );
 
 	public String getNumber();
 

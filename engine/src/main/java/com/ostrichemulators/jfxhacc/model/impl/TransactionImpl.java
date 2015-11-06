@@ -24,7 +24,7 @@ public class TransactionImpl extends IDableImpl implements Transaction {
 	private Date date;
 	private Payee payee;
 	private String number;
-	private final Map<Split, Account> splits = new HashMap<>();
+	private final Map<Account, Split> splits = new HashMap<>();
 
 	public TransactionImpl() {
 		super( JfxHacc.TRANSACTION_TYPE );
@@ -65,19 +65,19 @@ public class TransactionImpl extends IDableImpl implements Transaction {
 	}
 
 	@Override
-	public Map<Split, Account> getSplits() {
+	public Map<Account, Split> getSplits() {
 		return new HashMap<>( splits );
 	}
 
 	@Override
-	public void setSplits( Map<Split, Account> splts ) {
+	public void setSplits( Map<Account, Split> splts ) {
 		splits.clear();
 		splits.putAll( splts );
 	}
 
 	@Override
-	public void addSplit( Split s, Account a ) {
-		splits.put( s, a );
+	public void addSplit( Account a, Split s ) {
+		splits.put( a, s );
 	}
 
 	@Override

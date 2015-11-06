@@ -196,7 +196,7 @@ public class MainApp extends Application {
 			}
 
 			for ( int i = 0; i < 100; i++ ) {
-				Map<Split, Account> splits = new HashMap<>();
+				Map<Account, Split> splits = new HashMap<>();
 				Money m = new Money( r.nextInt( 5000 ) );
 
 				Split credit = tmap.create( m, "", ReconcileState.NOT_RECONCILED );
@@ -205,8 +205,8 @@ public class MainApp extends Application {
 				Account cacct = accts.get( anames[r.nextInt( anames.length )] );
 				Account dacct = accts.get( "expense-" + anames[r.nextInt( anames.length )] );
 
-				splits.put( credit, cacct );
-				splits.put( debit, dacct );
+				splits.put( cacct, credit );
+				splits.put( dacct, debit );
 
 				tmap.create( new Date(), flip.get( "payee-" + r.nextInt( 10 ) ),
 						Integer.toString( i ), splits, journal );
