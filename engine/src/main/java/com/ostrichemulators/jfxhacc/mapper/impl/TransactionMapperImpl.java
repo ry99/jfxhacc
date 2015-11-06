@@ -214,9 +214,9 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 		return query( "SELECT ?s ?memo ?reco ?val ?aid WHERE {"
 				+ "  ?t trans:entry ?s."
 				+ "  ?s splits:account ?aid ."
-				+ "  ?s splits:memo ?memo ."
+				+ "  OPTIONAL { ?s splits:memo ?memo } ."
 				+ "  ?s splits:value ?val ."
-				+ "  ?s splits:reconciled ?reco ."
+				+ "  OPTIONAL { ?s splits:reconciled ?reco } ."
 				+ "} ORDER BY ?t", bindmap( "t", transid ), new QueryHandler<Map<Split, URI>>() {
 					Map<Split, URI> lkp = new HashMap<>();
 

@@ -32,6 +32,7 @@ public class MemoValueFactory implements Callback<TreeTableColumn.CellDataFeatur
 	public ObservableValue<String> call( TreeTableColumn.CellDataFeatures<Transaction, String> p ) {
 		Transaction trans = p.getValue().getValue();
 		Map<Account, Split> splits = trans.getSplits();
-		return new ReadOnlyStringWrapper( splits.get( selected ).getMemo() );
+		Split s = splits.get( selected );
+		return new ReadOnlyStringWrapper( null == s ? null : s.getMemo() );
 	}
 }

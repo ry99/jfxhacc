@@ -35,6 +35,6 @@ public class RecoValueFactory implements Callback<TreeTableColumn.CellDataFeatur
 		Map<Account, Split> splits = trans.getSplits();
 		Split s = splits.get( selected );
 
-		return new ReadOnlyObjectWrapper<>( s.getReconciled() );
+		return new ReadOnlyObjectWrapper<>( null == s ? null : s.getReconciled() );
 	}
 }

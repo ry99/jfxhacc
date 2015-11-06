@@ -6,7 +6,6 @@
 package com.ostrichemulators.jfxhacc;
 
 import com.ostrichemulators.jfxhacc.cells.AccountValueFactory;
-import com.ostrichemulators.jfxhacc.cells.CreditDebitCellFactory;
 import com.ostrichemulators.jfxhacc.cells.CreditDebitValueFactory;
 import com.ostrichemulators.jfxhacc.cells.DateCellFactory;
 import com.ostrichemulators.jfxhacc.cells.MemoValueFactory;
