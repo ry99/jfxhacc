@@ -7,8 +7,8 @@ package com.ostrichemulators.jfxhacc.cells;
 
 import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
 import com.ostrichemulators.jfxhacc.model.Transaction;
-import javafx.scene.control.TreeTableCell;
-import javafx.scene.control.TreeTableColumn;
+import javafx.scene.control.TableCell;
+import javafx.scene.control.TableColumn;
 import javafx.util.Callback;
 import org.apache.log4j.Logger;
 
@@ -16,17 +16,17 @@ import org.apache.log4j.Logger;
  *
  * @author ryan
  */
-public class RecoCellFactory implements Callback<TreeTableColumn<Transaction, ReconcileState>, TreeTableCell<Transaction, ReconcileState>> {
+public class RecoCellFactory implements Callback<TableColumn<Transaction, ReconcileState>, TableCell<Transaction, ReconcileState>> {
 
 	public static final Logger log = Logger.getLogger( RecoCellFactory.class );
 
 	@Override
-	public TreeTableCell<Transaction, ReconcileState> call( TreeTableColumn<Transaction, ReconcileState> p ) {
-		return new TreeTableCell<Transaction, ReconcileState>() {
+	public TableCell<Transaction, ReconcileState> call( TableColumn<Transaction, ReconcileState> p ) {
+		return new TableCell<Transaction, ReconcileState>() {
 			@Override
 			protected void updateItem( ReconcileState t, boolean empty ) {
 				super.updateItem( t, empty );
-				
+
 				if ( !( empty || null == t ) ) {
 					switch ( t ) {
 						case RECONCILED:

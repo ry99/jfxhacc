@@ -5,10 +5,10 @@
  */
 package com.ostrichemulators.jfxhacc;
 
-import com.ostrichemulators.jfxhacc.cells.AccountValueFactory;
 import com.ostrichemulators.jfxhacc.cells.CreditDebitValueFactory;
 import com.ostrichemulators.jfxhacc.cells.DateCellFactory;
-import com.ostrichemulators.jfxhacc.cells.MemoValueFactory;
+import com.ostrichemulators.jfxhacc.cells.PayeeAccountMemoCellFactory;
+import com.ostrichemulators.jfxhacc.cells.PayeeAccountMemoValueFactory;
 import com.ostrichemulators.jfxhacc.cells.RecoCellFactory;
 import com.ostrichemulators.jfxhacc.cells.RecoValueFactory;
 import com.ostrichemulators.jfxhacc.engine.DataEngine;
@@ -32,9 +32,8 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
-import javafx.scene.control.TreeItem;
-import javafx.scene.control.TreeTableColumn;
-import javafx.scene.control.TreeTableView;
+import javafx.scene.control.TableView;
+import javafx.scene.control.TableColumn;
 import javafx.scene.layout.AnchorPane;
 import org.apache.log4j.Logger;
 
@@ -48,21 +47,19 @@ public class TransactionViewer extends AnchorPane implements Initializable {
 	private static final Logger log = Logger.getLogger( TransactionViewer.class );
 
 	@FXML
-	private TreeTableView<Transaction> view;
+	private TableView<Transaction> transtable;
 	@FXML
-	private TreeTableColumn<Transaction, Date> date;
+	private TableColumn<Transaction, Date> date;
 	@FXML
-	private TreeTableColumn<Transaction, String> number;
+	private TableColumn<Transaction, String> number;
 	@FXML
-	private TreeTableColumn<Transaction, String> payee;
+	private TableColumn<Transaction, PAMData> payee;
 	@FXML
-	private TreeTableColumn<Transaction, String> memo;
+	private TableColumn<Transaction, Money> credit;
 	@FXML
-	private TreeTableColumn<Transaction, Money> credit;
+	private TableColumn<Transaction, Money> debit;
 	@FXML
-	private TreeTableColumn<Transaction, Money> debit;
-	@FXML
-	private TreeTableColumn<Transaction, ReconcileState> reco;
+	private TableColumn<Transaction, ReconcileState> reco;
 	@FXML
 	private AnchorPane dataentry;
 	@FXML
@@ -75,10 +72,9 @@ public class TransactionViewer extends AnchorPane implements Initializable {
 	private ComboBox payeeCmb;
 
 	private Account account;
-	private final MemoValueFactory memofac = new MemoValueFactory();
+	private final PayeeAccountMemoValueFactory payeefac = new PayeeAccountMemoValueFactory();
 	private final CreditDebitValueFactory creditfac = new CreditDebitValueFactory( true );
 	private final CreditDebitValueFactory debitfac = new CreditDebitValueFactory( false );
-	private final AccountValueFactory accountfac = new AccountValueFactory();
 	private final RecoValueFactory recofac = new RecoValueFactory();
 
 	public TransactionViewer() {
@@ -97,8 +93,7 @@ public class TransactionViewer extends AnchorPane implements Initializable {
 
 	public void setAccount( Account acct ) {
 		account = acct;
-		memofac.setAccount( acct );
-		accountfac.setAccount( acct );
+		payeefac.setAccount( acct );
 		creditfac.setAccount( acct );
 		debitfac.setAccount( acct );
 		recofac.setAccount( acct );
@@ -106,7 +101,7 @@ public class TransactionViewer extends AnchorPane implements Initializable {
 	}
 
 	public void refresh() {
-		view.getRoot().getChildren().clear();
+		transtable.getItems().clear();
 
 		DataEngine engine = MainApp.getEngine();
 		try {
@@ -115,9 +110,9 @@ public class TransactionViewer extends AnchorPane implements Initializable {
 			List<Transaction> trans = engine.getTransactionMapper().getAll( account,
 					journals.get( 0 ) );
 			log.debug( "populating transaction viewer" );
-			for ( Transaction t : trans ) {
-				view.getRoot().getChildren().add( new TreeItem<>( t ) );
-			}
+			transtable.getItems().addAll( trans );
+
+			transtable.sort();
 		}
 		catch ( MapperException me ) {
 			log.error( me, me );
@@ -126,21 +121,17 @@ public class TransactionViewer extends AnchorPane implements Initializable {
 
 	@Override
 	public void initialize( URL url, ResourceBundle rb ) {
-		final TreeItem<Transaction> root = new TreeItem<>();
-		root.setExpanded( true );
-		view.setRoot( root );
+		transtable.setFixedCellSize( 48 ); // FIXME
 
-		date.setCellValueFactory( ( TreeTableColumn.CellDataFeatures<Transaction, Date> p )
-				-> new ReadOnlyObjectWrapper<>( p.getValue().getValue().getDate() ) );
+		date.setCellValueFactory( ( TableColumn.CellDataFeatures<Transaction, Date> p )
+				-> new ReadOnlyObjectWrapper<>( p.getValue().getDate() ) );
 		date.setCellFactory( new DateCellFactory() );
 
-		payee.setCellValueFactory( ( TreeTableColumn.CellDataFeatures<Transaction, String> p )
-				-> new ReadOnlyStringWrapper( p.getValue().getValue().getPayee().getName() ) );
+		payee.setCellValueFactory( payeefac );
+		payee.setCellFactory( new PayeeAccountMemoCellFactory() );
 
-		number.setCellValueFactory( ( TreeTableColumn.CellDataFeatures<Transaction, String> p )
-				-> new ReadOnlyStringWrapper( p.getValue().getValue().getNumber() ) );
-
-		memo.setCellValueFactory( memofac );
+		number.setCellValueFactory( ( TableColumn.CellDataFeatures<Transaction, String> p )
+				-> new ReadOnlyStringWrapper( p.getValue().getNumber() ) );
 
 		reco.setCellValueFactory( recofac );
 		reco.setCellFactory( new RecoCellFactory() );
@@ -148,5 +139,28 @@ public class TransactionViewer extends AnchorPane implements Initializable {
 		credit.setCellValueFactory( creditfac );
 
 		debit.setCellValueFactory( debitfac );
+	}
+
+	public static final class PAMData implements Comparable<PAMData> {
+
+		public final String payee;
+		public final String account;
+		public final String memo;
+
+		public PAMData( String payee, String account, String memo ) {
+			this.payee = payee;
+			this.account = account;
+			this.memo = memo;
+		}
+
+		@Override
+		public int compareTo( PAMData o ) {
+			return toString().compareTo( o.toString() );
+		}
+
+		@Override
+		public String toString() {
+			return payee + account + memo;
+		}
 	}
 }

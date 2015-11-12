@@ -10,6 +10,7 @@ import com.ostrichemulators.jfxhacc.model.Payee;
 import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.Transaction;
 import com.ostrichemulators.jfxhacc.model.vocabulary.JfxHacc;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -66,7 +67,7 @@ public class TransactionImpl extends IDableImpl implements Transaction {
 
 	@Override
 	public Map<Account, Split> getSplits() {
-		return new HashMap<>( splits );
+		return Collections.unmodifiableMap( splits );
 	}
 
 	@Override

@@ -6,10 +6,11 @@
 package com.ostrichemulators.jfxhacc.cells;
 
 import com.ostrichemulators.jfxhacc.model.Transaction;
+import java.awt.Font;
 import java.text.DateFormat;
 import java.util.Date;
-import javafx.scene.control.TreeTableCell;
-import javafx.scene.control.TreeTableColumn;
+import javafx.scene.control.TableCell;
+import javafx.scene.control.TableColumn;
 import javafx.util.Callback;
 import org.apache.log4j.Logger;
 
@@ -17,15 +18,15 @@ import org.apache.log4j.Logger;
  *
  * @author ryan
  */
-public class DateCellFactory implements Callback<TreeTableColumn<Transaction, Date>, TreeTableCell<Transaction, Date>> {
+public class DateCellFactory implements Callback<TableColumn<Transaction, Date>, TableCell<Transaction, Date>> {
 
 	public static final Logger log = Logger.getLogger( DateCellFactory.class );
 
-	private final DateFormat SDF = DateFormat.getDateInstance( DateFormat.SHORT );
+	private final DateFormat SDF = DateFormat.getDateInstance( DateFormat.MEDIUM );
 
 	@Override
-	public TreeTableCell<Transaction, Date> call( TreeTableColumn<Transaction, Date> p ) {
-		return new TreeTableCell<Transaction, Date>() {
+	public TableCell<Transaction, Date> call( TableColumn<Transaction, Date> p ) {
+		return new TableCell<Transaction, Date>() {
 			@Override
 			protected void updateItem( Date t, boolean empty ) {
 				super.updateItem( t, empty );

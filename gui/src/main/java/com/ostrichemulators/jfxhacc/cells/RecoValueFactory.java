@@ -12,7 +12,7 @@ import com.ostrichemulators.jfxhacc.model.Transaction;
 import java.util.Map;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.value.ObservableValue;
-import javafx.scene.control.TreeTableColumn;
+import javafx.scene.control.TableColumn;
 import javafx.util.Callback;
 import org.apache.log4j.Logger;
 
@@ -20,7 +20,7 @@ import org.apache.log4j.Logger;
  *
  * @author ryan
  */
-public class RecoValueFactory implements Callback<TreeTableColumn.CellDataFeatures<Transaction, ReconcileState>, ObservableValue<ReconcileState>> {
+public class RecoValueFactory implements Callback<TableColumn.CellDataFeatures<Transaction, ReconcileState>, ObservableValue<ReconcileState>> {
 
 	public static final Logger log = Logger.getLogger( RecoValueFactory.class );
 	private Account selected;
@@ -30,8 +30,8 @@ public class RecoValueFactory implements Callback<TreeTableColumn.CellDataFeatur
 	}
 
 	@Override
-	public ObservableValue<ReconcileState> call( TreeTableColumn.CellDataFeatures<Transaction, ReconcileState> p ) {
-		Transaction trans = p.getValue().getValue();
+	public ObservableValue<ReconcileState> call( TableColumn.CellDataFeatures<Transaction, ReconcileState> p ) {
+		Transaction trans = p.getValue();
 		Map<Account, Split> splits = trans.getSplits();
 		Split s = splits.get( selected );
 

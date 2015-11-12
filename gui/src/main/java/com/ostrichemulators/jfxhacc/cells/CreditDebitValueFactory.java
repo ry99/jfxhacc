@@ -12,7 +12,7 @@ import com.ostrichemulators.jfxhacc.model.Transaction;
 import java.util.Map;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.value.ObservableValue;
-import javafx.scene.control.TreeTableColumn;
+import javafx.scene.control.TableColumn;
 import javafx.util.Callback;
 import org.apache.log4j.Logger;
 
@@ -20,7 +20,7 @@ import org.apache.log4j.Logger;
  *
  * @author ryan
  */
-public class CreditDebitValueFactory implements Callback<TreeTableColumn.CellDataFeatures<Transaction, Money>, ObservableValue<Money>> {
+public class CreditDebitValueFactory implements Callback<TableColumn.CellDataFeatures<Transaction, Money>, ObservableValue<Money>> {
 
 	public static final Logger log = Logger.getLogger( CreditDebitValueFactory.class );
 	private Account selected;
@@ -35,8 +35,8 @@ public class CreditDebitValueFactory implements Callback<TreeTableColumn.CellDat
 	}
 
 	@Override
-	public ObservableValue<Money> call( TreeTableColumn.CellDataFeatures<Transaction, Money> p ) {
-		Transaction trans = p.getValue().getValue();
+	public ObservableValue<Money> call( TableColumn.CellDataFeatures<Transaction, Money> p ) {
+		Transaction trans = p.getValue();
 		Map<Account, Split> splits = trans.getSplits();
 		Split s = splits.get( selected );
 
