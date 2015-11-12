@@ -20,6 +20,8 @@ import com.ostrichemulators.jfxhacc.model.impl.PayeeImpl;
 import com.ostrichemulators.jfxhacc.utility.DbUtil;
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -27,13 +29,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.prefs.Preferences;
 import javafx.application.Application;
 import static javafx.application.Application.launch;
 import javafx.application.Platform;
+import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 import org.apache.log4j.Logger;
 import org.openrdf.model.URI;
 import org.openrdf.repository.RepositoryConnection;
@@ -43,16 +48,26 @@ public class MainApp extends Application {
 
 	private static final Logger log = Logger.getLogger( MainApp.class );
 	private RepositoryConnection rc;
-	private File datadir;
 
 	private static RdfDataEngine engine;
+	private static StageRememberer stager;
 
 	public static DataEngine getEngine() {
 		return engine;
 	}
 
+	public static StageRememberer getShutdownNotifier() {
+		return stager;
+	}
+
 	@Override
 	public void start( Stage stage ) throws Exception {
+		MainApp.stager = new StageRememberer( stage );
+		
+		URL loc = getClass().getResource( "/fxml/Scene.fxml" );
+		FXMLLoader fxmlloader = new FXMLLoader( loc );
+		fxmlloader.setController( new FXMLController() );
+
 		Parent root = FXMLLoader.load( getClass().getResource( "/fxml/Scene.fxml" ) );
 
 		Scene scene = new Scene( root );
@@ -60,6 +75,10 @@ public class MainApp extends Application {
 
 		stage.setTitle( "Jfx Home Accountant" );
 		stage.setScene( scene );
+
+		MainApp.stager.restore( stage );
+		stage.setOnCloseRequest( MainApp.stager );
+
 		stage.show();
 	}
 
@@ -211,5 +230,51 @@ public class MainApp extends Application {
 		amap.release();
 		pmap.release();
 		tmap.release();
+	}
+
+	public class StageRememberer implements EventHandler<WindowEvent> {
+
+		Preferences userPrefs = Preferences.userNodeForPackage( MainApp.class );
+		private final Stage mystage;
+		private final List<PrefRememberer> listeners = new ArrayList<>();
+
+		public StageRememberer( Stage primaryStage ) {
+			this.mystage = primaryStage;
+		}
+
+		public void addPrefRememberer( PrefRememberer r ) {
+			listeners.add( r );
+		}
+
+		public void removePrefRememberer( PrefRememberer r ) {
+			listeners.remove( r );
+		}
+
+		public void restore( Stage stage ) {
+			double x = userPrefs.getDouble( "stage.x", 100 );
+			double y = userPrefs.getDouble( "stage.y", 100 );
+			double w = userPrefs.getDouble( "stage.width", 800 );
+			double h = userPrefs.getDouble( "stage.height", 600 );
+			mystage.setX( x );
+			mystage.setY( y );
+			mystage.setWidth( w );
+			mystage.setHeight( h );
+
+			for ( PrefRememberer p : listeners ) {
+				p.restore();
+			}
+		}
+
+		@Override
+		public void handle( WindowEvent t ) {
+			userPrefs.putDouble( "stage.x", mystage.getX() );
+			userPrefs.putDouble( "stage.y", mystage.getY() );
+			userPrefs.putDouble( "stage.width", mystage.getWidth() );
+			userPrefs.putDouble( "stage.height", mystage.getHeight() );
+
+			for ( PrefRememberer p : listeners ) {
+				p.shutdown();
+			}
+		}
 	}
 }

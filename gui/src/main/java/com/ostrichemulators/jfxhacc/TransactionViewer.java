@@ -42,7 +42,7 @@ import org.apache.log4j.Logger;
  *
  * @author ryan
  */
-public class TransactionViewer extends AnchorPane implements Initializable {
+public class TransactionViewer extends AnchorPane implements Initializable, PrefRememberer {
 
 	private static final Logger log = Logger.getLogger( TransactionViewer.class );
 
@@ -139,6 +139,16 @@ public class TransactionViewer extends AnchorPane implements Initializable {
 		credit.setCellValueFactory( creditfac );
 
 		debit.setCellValueFactory( debitfac );
+	}
+
+	@Override
+	public void shutdown() {
+		//throw new UnsupportedOperationException( "Not supported yet." ); //To change body of generated methods, choose Tools | Templates.
+	}
+
+	@Override
+	public void restore() {
+		//throw new UnsupportedOperationException( "Not supported yet." ); //To change body of generated methods, choose Tools | Templates.
 	}
 
 	public static final class PAMData implements Comparable<PAMData> {
