@@ -5,20 +5,6 @@
  */
 package com.ostrichemulators.jfxhacc.utility;
 
-import com.ostrichemulators.jfxhacc.mapper.JournalMapper;
-import com.ostrichemulators.jfxhacc.mapper.MapperException;
-import com.ostrichemulators.jfxhacc.mapper.TransactionMapper;
-import com.ostrichemulators.jfxhacc.mapper.impl.AccountMapperImpl;
-import com.ostrichemulators.jfxhacc.mapper.impl.JournalMapperImpl;
-import com.ostrichemulators.jfxhacc.mapper.impl.PayeeMapperImpl;
-import com.ostrichemulators.jfxhacc.mapper.impl.TransactionMapperImpl;
-import com.ostrichemulators.jfxhacc.model.Account;
-import com.ostrichemulators.jfxhacc.model.AccountType;
-import com.ostrichemulators.jfxhacc.model.Journal;
-import com.ostrichemulators.jfxhacc.model.Money;
-import com.ostrichemulators.jfxhacc.model.Payee;
-import com.ostrichemulators.jfxhacc.model.Split;
-import com.ostrichemulators.jfxhacc.model.impl.PayeeImpl;
 import com.ostrichemulators.jfxhacc.model.vocabulary.Accounts;
 import com.ostrichemulators.jfxhacc.model.vocabulary.JfxHacc;
 import com.ostrichemulators.jfxhacc.model.vocabulary.Payees;
@@ -28,12 +14,7 @@ import info.aduna.iteration.Iterations;
 import java.io.File;
 import java.io.IOException;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
 import org.apache.log4j.Logger;
 import org.openrdf.model.Literal;
 import org.openrdf.model.Statement;
@@ -100,6 +81,17 @@ public class DbUtil {
 			rc = repo.getConnection();
 		}
 
+		if ( null == rc ) {
+			//nothing worked so far, so see if we just have a plain old directory
+			File tryfile = new File( db );
+			if ( tryfile.isDirectory() ) {
+				rc = createInMemRepository( tryfile );
+			}
+			else {
+				throw new RepositoryException( "Unable to open database: " + db );
+			}
+		}
+
 		initNamespaces( rc );
 
 		if ( doinit && initDb( rc ) ) {
@@ -132,6 +124,11 @@ public class DbUtil {
 			else {
 				datadir.mkdirs();
 			}
+		}
+
+		if ( datadir.getName().equals( "memorystore.data" ) ) {
+			// OpenRDF automatically adds the "memorystore.data" part
+			datadir = datadir.getParentFile();
 		}
 
 		ForwardChainingRDFSInferencer fci
