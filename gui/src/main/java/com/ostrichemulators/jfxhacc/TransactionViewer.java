@@ -17,20 +17,12 @@ import com.ostrichemulators.jfxhacc.mapper.MapperException;
 import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.Journal;
 import com.ostrichemulators.jfxhacc.model.Money;
-import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
 import com.ostrichemulators.jfxhacc.model.Transaction;
 import java.io.IOException;
-import java.net.URL;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
-import java.util.ResourceBundle;
 import java.util.prefs.Preferences;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringWrapper;
@@ -39,16 +31,9 @@ import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.fxml.Initializable;
-import javafx.scene.control.Button;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.DatePicker;
-import javafx.scene.control.Label;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TableColumn;
-import javafx.scene.control.TextField;
 import javafx.scene.layout.AnchorPane;
 import org.apache.log4j.Logger;
 
@@ -57,7 +42,7 @@ import org.apache.log4j.Logger;
  *
  * @author ryan
  */
-public class TransactionViewer extends AnchorPane implements Initializable, ShutdownListener {
+public class TransactionViewer extends AnchorPane implements ShutdownListener {
 
 	private static final Logger log = Logger.getLogger( TransactionViewer.class );
 	private static final String PREF_SPLITTER = "dataentry-splitter-location";
@@ -79,25 +64,7 @@ public class TransactionViewer extends AnchorPane implements Initializable, Shut
 	@FXML
 	private TableColumn<Transaction, ReconcileState> reco;
 
-	@FXML
-	private Label accountLabel;
-	@FXML
-	private Button splitsBtn;
-	@FXML
-	private ComboBox<Account> accountfield;
-	@FXML
-	private ComboBox<String> payeefield;
-	@FXML
-	private CheckBox recofield;
-	@FXML
-	private DatePicker datefield;
-	@FXML
-	private TextField amountfield;
-	@FXML
-	private TextField memofield;
-
-	@FXML
-	private TextField numberfield;
+	private TransactionEntry dataentry = new TransactionEntry();
 
 	private Account account;
 	private final PayeeAccountMemoValueFactory payeefac = new PayeeAccountMemoValueFactory();
@@ -127,6 +94,7 @@ public class TransactionViewer extends AnchorPane implements Initializable, Shut
 		creditfac.setAccount( acct );
 		debitfac.setAccount( acct );
 		recofac.setAccount( acct );
+		dataentry.setAccount( acct );
 		refresh();
 	}
 
@@ -139,7 +107,7 @@ public class TransactionViewer extends AnchorPane implements Initializable, Shut
 			log.debug( "fetching transactions for " + account );
 			List<Transaction> trans = engine.getTransactionMapper().getAll( account,
 					journals.get( 0 ) );
-			log.debug( "populating transaction viewer" );
+			log.debug( "populating transaction viewer with " + trans.size() + " transactions" );
 			transtable.getItems().addAll( trans );
 
 			transtable.sort();
@@ -162,8 +130,8 @@ public class TransactionViewer extends AnchorPane implements Initializable, Shut
 		}
 	}
 
-	@Override
-	public void initialize( URL url, ResourceBundle rb ) {
+	@FXML
+	public void initialize() {
 		MainApp.getShutdownNotifier().addShutdownListener( this );
 
 		transtable.setFixedCellSize( 48 ); // FIXME
@@ -187,6 +155,12 @@ public class TransactionViewer extends AnchorPane implements Initializable, Shut
 		debit.setCellValueFactory( debitfac );
 		debit.setCellFactory( new MoneyCellFactory() );
 
+		splitter.getItems().add( dataentry );
+		dataentry.addSaveListener( ( event ) -> {
+			splitterpos = splitter.getDividerPositions()[0];
+			splitter.setDividerPositions( 1.0 );
+		} );
+
 		Preferences prefs = Preferences.userNodeForPackage( TransactionViewer.class );
 		splitterpos = prefs.getDouble( PREF_SPLITTER, 0.70 );
 		splitter.setDividerPositions( 1.0 );
@@ -196,7 +170,7 @@ public class TransactionViewer extends AnchorPane implements Initializable, Shut
 			@Override
 			public void changed( ObservableValue<? extends Transaction> ov, Transaction oldval, Transaction newval ) {
 				splitter.setDividerPositions( splitterpos );
-				setTransaction( newval );
+				dataentry.setTransaction( newval );
 			}
 		} );
 	}
@@ -211,45 +185,6 @@ public class TransactionViewer extends AnchorPane implements Initializable, Shut
 		}
 
 		prefs.putDouble( PREF_SPLITTER, splitterpos );
-	}
-
-	protected void setTransaction( Transaction t ) {
-		Map<Account, Split> splits = t.getSplits();
-		Split mysplit = splits.get( account );
-		memofield.setText( mysplit.getMemo() );
-		amountfield.setText( mysplit.getValue().toString() );
-		if ( ReconcileState.CLEARED == mysplit.getReconciled() ) {
-			recofield.setIndeterminate( true );
-		}
-		else {
-			recofield.setSelected( ReconcileState.RECONCILED == mysplit.getReconciled() );
-		}
-
-		payeefield.getItems().clear();
-		payeefield.getItems().add( t.getPayee().getName() );
-
-		accountfield.getItems().clear();
-		if ( splits.size() > 2 ) {
-
-		}
-		else {
-			for ( Account a : splits.keySet() ) {
-				if ( !a.equals( account ) ) {
-					accountfield.getItems().add( a );
-				}
-			}
-		}
-
-		numberfield.setText( t.getNumber() );
-
-		Instant instant = t.getDate().toInstant();
-		LocalDate ld = instant.atZone( ZoneId.systemDefault() ).toLocalDate();
-		datefield.setValue( ld );
-
-//    to get the date back out of the date picker:
-//		LocalDate localDate = datePicker.getValue();
-//		Instant instant = Instant.from( localDate.atStartOfDay( ZoneId.systemDefault() ) );
-//		Date date = Date.from( instant );
 	}
 
 	public static final class PAMData implements Comparable<PAMData> {

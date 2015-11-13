@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import java.lang.*?>
+<?import java.net.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<fx:root minHeight="0.0" type="javafx.scene.layout.AnchorPane" xmlns="http://javafx.com/javafx/8.0.40" xmlns:fx="http://javafx.com/fxml/1">
+	<children>
+      <GridPane hgap="10.0" layoutX="7.0" layoutY="12.0" prefHeight="181.0" prefWidth="635.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+         <columnConstraints>
+            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" percentWidth="15.0" />
+            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" />
+            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" percentWidth="10.0" />
+            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" percentWidth="20.0" />
+         </columnConstraints>
+         <rowConstraints>
+            <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+            <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+            <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+            <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+         </rowConstraints>
+         <children>
+            <Label text="Payee" GridPane.halignment="RIGHT" />
+            <Label text="Memo" GridPane.halignment="RIGHT" GridPane.rowIndex="1" />
+            <DatePicker fx:id="datefield" maxWidth="1.7976931348623157E308" prefHeight="26.0" prefWidth="96.0" GridPane.columnIndex="4" GridPane.hgrow="ALWAYS" />
+            <Label text="Date" GridPane.columnIndex="3" GridPane.halignment="RIGHT" />
+            <Label text="Number" GridPane.columnIndex="3" GridPane.halignment="RIGHT" GridPane.rowIndex="1" />
+            <TextField fx:id="numberfield" GridPane.columnIndex="4" GridPane.rowIndex="1" />
+            <TextField fx:id="memofield" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="1" />
+            <Label text="Amount" GridPane.halignment="RIGHT" GridPane.rowIndex="3" />
+            <TextField fx:id="amountfield" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="3" />
+            <CheckBox fx:id="recofield" mnemonicParsing="false" GridPane.columnIndex="4" GridPane.halignment="CENTER" GridPane.rowIndex="2" />
+            <Label text="Rec" GridPane.columnIndex="3" GridPane.halignment="RIGHT" GridPane.rowIndex="2" />
+            <Button fx:id="saveBtn" defaultButton="true" mnemonicParsing="false" onAction="#save" prefHeight="26.0" prefWidth="211.0" text="Save" GridPane.columnIndex="4" GridPane.rowIndex="3" />
+            <ComboBox fx:id="accountfield" maxWidth="1.7976931348623157E308" prefHeight="26.0" prefWidth="342.0" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+            <Button fx:id="splitBtn" maxWidth="1.7976931348623157E308" mnemonicParsing="false" prefHeight="26.0" prefWidth="85.0" text="Splits" GridPane.columnIndex="2" GridPane.hgrow="SOMETIMES" GridPane.rowIndex="2" />
+            <Button fx:id="tofromBtn" contentDisplay="CENTER" mnemonicParsing="false" onAction="#switchToFrom" text="To Account" textAlignment="CENTER" GridPane.halignment="RIGHT" GridPane.rowIndex="2" />
+            <com.ostrichemulators.jfxhacc.AutoCompleteTextField fx:id="payeefield" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.hgrow="SOMETIMES" />
+         </children>
+      </GridPane>
+   </children>
+   <padding>
+      <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+   </padding>
+</fx:root>
