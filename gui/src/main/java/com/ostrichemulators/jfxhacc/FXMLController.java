@@ -8,6 +8,7 @@ import com.ostrichemulators.jfxhacc.model.Money;
 import java.net.URL;
 import java.util.ResourceBundle;
 import java.util.prefs.Preferences;
+import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.value.ChangeListener;
@@ -59,7 +60,7 @@ public class FXMLController implements Initializable, ShutdownListener {
 		final TreeItem<Account> root = new TreeItem<>();
 
 		accordion.setExpandedPane( accountsPane );
-		TreeItem<Account> toselect = null;
+		TreeItem<Account> toselect1 = null;
 		AccountMapper amap = MainApp.getEngine().getAccountMapper();
 		try {
 			for ( Account acct : amap.getAll() ) {
@@ -67,13 +68,16 @@ public class FXMLController implements Initializable, ShutdownListener {
 				root.getChildren().add( aitem );
 
 				if ( acct.getId().equals( selected ) ) {
-					toselect = aitem;
+					toselect1 = aitem;
 				}
 			}
 		}
 		catch ( MapperException me ) {
 			log.error( me, me );
 		}
+
+		final TreeItem<Account> toselect = toselect1;
+
 		accountName.setCellValueFactory( ( CellDataFeatures<Account, String> p )
 				-> new ReadOnlyStringWrapper( p.getValue().getValue().getName() ) );
 
@@ -81,7 +85,6 @@ public class FXMLController implements Initializable, ShutdownListener {
 				-> new ReadOnlyObjectWrapper<>( amap.getBalance( p.getValue().getValue(),
 								AccountMapper.BalanceType.CURRENT ) ) );
 		accountBalance.setCellFactory( new MoneyTableTreeCellFactory() );
-
 
 		root.setExpanded( true );
 		accounts.setRoot( root );
@@ -97,17 +100,23 @@ public class FXMLController implements Initializable, ShutdownListener {
 			}
 		} );
 
-		double asize = prefs.getDouble( PREF_ASIZE, 0.5 );
-		accountName.setPrefWidth( asize );
-		accountBalance.setPrefWidth( accounts.getWidth() - asize );
+		Platform.runLater( new Runnable() {
 
-		accounts.getSelectionModel().setSelectionMode( SelectionMode.SINGLE );
-		if ( null != toselect ) {
-			accounts.getSelectionModel().select( toselect );
-		}
+			@Override
+			public void run() {
 
-		double splitterpos = prefs.getDouble( PREF_SPLITTER, 100 );
-		splitter.setDividerPosition( 0, splitterpos );
+				double asize = prefs.getDouble( PREF_ASIZE, 0.5 );
+				accountName.setPrefWidth( asize );
+
+				accounts.getSelectionModel().setSelectionMode( SelectionMode.SINGLE );
+				if ( null != toselect ) {
+					accounts.getSelectionModel().select( toselect );
+				}
+
+				double splitterpos = prefs.getDouble( PREF_SPLITTER, 0.25 );
+				splitter.setDividerPositions( splitterpos );
+			}
+		} );
 	}
 
 	@Override

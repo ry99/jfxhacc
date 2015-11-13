@@ -10,7 +10,7 @@
 
 <fx:root type="javafx.scene.layout.AnchorPane" xmlns="http://javafx.com/javafx/8.0.40" xmlns:fx="http://javafx.com/fxml/1">
 	<children>
-		<SplitPane dividerPositions="0.6432160804020101" orientation="VERTICAL" prefHeight="400.0" prefWidth="600.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+		<SplitPane fx:id="splitter" dividerPositions="0.6432160804020101" orientation="VERTICAL" prefHeight="400.0" prefWidth="600.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
 			<items>
 				<AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="100.0" prefWidth="160.0">
                <children>
@@ -43,21 +43,21 @@
 							</rowConstraints>
 							<children>
 								<Label text="Date" GridPane.columnIndex="2" />
-								<DatePicker GridPane.columnIndex="3" />
+								<DatePicker fx:id="datefield" GridPane.columnIndex="3" />
 								<Label text="Number" GridPane.columnIndex="2" GridPane.rowIndex="1" />
-								<TextField prefHeight="26.0" prefWidth="104.0" GridPane.columnIndex="3" GridPane.rowIndex="1" />
-								<CheckBox alignment="CENTER" allowIndeterminate="true" contentDisplay="TEXT_ONLY" mnemonicParsing="false" nodeOrientation="RIGHT_TO_LEFT" prefHeight="26.0" prefWidth="49.0" GridPane.columnIndex="3" GridPane.rowIndex="3" />
+								<TextField fx:id="numberfield" prefHeight="26.0" prefWidth="104.0" GridPane.columnIndex="3" GridPane.rowIndex="1" />
+								<CheckBox fx:id="recofield" alignment="CENTER" allowIndeterminate="true" contentDisplay="TEXT_ONLY" mnemonicParsing="false" nodeOrientation="RIGHT_TO_LEFT" prefHeight="26.0" prefWidth="49.0" GridPane.columnIndex="3" GridPane.rowIndex="3" />
 								<Label prefHeight="16.0" prefWidth="53.0" text="Amount" GridPane.columnIndex="2" GridPane.rowIndex="2" />
-								<TextField prefHeight="26.0" prefWidth="104.0" GridPane.columnIndex="3" GridPane.rowIndex="2" />
+								<TextField fx:id="amountfield" prefHeight="26.0" prefWidth="104.0" GridPane.columnIndex="3" GridPane.rowIndex="2" />
 								<Label text="Rec" GridPane.columnIndex="2" GridPane.rowIndex="3" />
 								<Label text="Payee" />
-								<ComboBox fx:id="payeeCmb" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="26.0" prefWidth="318.0" GridPane.columnIndex="1" />
+								<ComboBox fx:id="payeefield" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="26.0" prefWidth="318.0" GridPane.columnIndex="1" />
 								<Label text="Memo" GridPane.rowIndex="1" />
-								<TextField prefHeight="26.0" prefWidth="368.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+								<TextField fx:id="memofield" prefHeight="26.0" prefWidth="368.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
 								<Label fx:id="accountLabel" text="Account" GridPane.rowIndex="2" />
 								<HBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="26.0" prefWidth="304.0" GridPane.columnIndex="1" GridPane.rowIndex="2">
 									<children>
-										<ComboBox fx:id="accountsCmb" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="26.0" prefWidth="254.0" />
+										<ComboBox fx:id="accountfield" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="26.0" prefWidth="254.0" />
 										<Button fx:id="splitsBtn" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="Splits" />
 									</children>
 								</HBox>
