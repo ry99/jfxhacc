@@ -1,5 +1,6 @@
 package com.ostrichemulators.jfxhacc;
 
+import com.ostrichemulators.jfxhacc.cells.MoneyTableTreeCellFactory;
 import com.ostrichemulators.jfxhacc.mapper.AccountMapper;
 import com.ostrichemulators.jfxhacc.mapper.MapperException;
 import com.ostrichemulators.jfxhacc.model.Account;
@@ -9,9 +10,12 @@ import java.util.ResourceBundle;
 import java.util.prefs.Preferences;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringWrapper;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Accordion;
+import javafx.scene.control.SelectionMode;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TitledPane;
 import javafx.scene.control.TreeItem;
@@ -22,7 +26,7 @@ import org.apache.log4j.Logger;
 import org.openrdf.model.URI;
 import org.openrdf.model.impl.URIImpl;
 
-public class FXMLController implements Initializable, PrefRememberer {
+public class FXMLController implements Initializable, ShutdownListener {
 
 	private static final String PREF_SELECTED = "selected";
 	private static final String PREF_ASIZE = "account-width";
@@ -46,7 +50,7 @@ public class FXMLController implements Initializable, PrefRememberer {
 
 	@Override
 	public void initialize( URL url, ResourceBundle rb ) {
-		MainApp.getShutdownNotifier().addPrefRememberer( this );
+		MainApp.getShutdownNotifier().addShutdownListener( this );
 
 		Preferences prefs = Preferences.userNodeForPackage( getClass() );
 		String selidstr = prefs.get( PREF_SELECTED, "" );
@@ -55,7 +59,7 @@ public class FXMLController implements Initializable, PrefRememberer {
 		final TreeItem<Account> root = new TreeItem<>();
 
 		accordion.setExpandedPane( accountsPane );
-
+		TreeItem<Account> toselect = null;
 		AccountMapper amap = MainApp.getEngine().getAccountMapper();
 		try {
 			for ( Account acct : amap.getAll() ) {
@@ -63,7 +67,7 @@ public class FXMLController implements Initializable, PrefRememberer {
 				root.getChildren().add( aitem );
 
 				if ( acct.getId().equals( selected ) ) {
-					accounts.getSelectionModel().select( aitem );
+					toselect = aitem;
 				}
 			}
 		}
@@ -76,37 +80,45 @@ public class FXMLController implements Initializable, PrefRememberer {
 		accountBalance.setCellValueFactory( ( CellDataFeatures<Account, Money> p )
 				-> new ReadOnlyObjectWrapper<>( amap.getBalance( p.getValue().getValue(),
 								AccountMapper.BalanceType.CURRENT ) ) );
+		accountBalance.setCellFactory( new MoneyTableTreeCellFactory() );
+
 
 		root.setExpanded( true );
 		accounts.setRoot( root );
 
 		transactions = new TransactionViewer();
 		splitter.getItems().add( transactions );
-		splitter.setDividerPositions( 0.25d, 0.75d );
 
-		accounts.setOnMouseClicked( ( event ) -> {
-			Account acct = accounts.getSelectionModel().getSelectedItem().getValue();
-			transactions.setAccount( acct );
+		accounts.getSelectionModel().selectedItemProperty().addListener( new ChangeListener<TreeItem<Account>>() {
+
+			@Override
+			public void changed( ObservableValue<? extends TreeItem<Account>> ov, TreeItem<Account> oldsel, TreeItem<Account> newsel ) {
+				transactions.setAccount( newsel.getValue() );
+			}
 		} );
 
-		splitter.setDividerPosition( 0, prefs.getDouble( PREF_SPLITTER, 0.25 ) );
-		accountName.setPrefWidth( prefs.getDouble( PREF_ASIZE, 0.5 ) );
+		double asize = prefs.getDouble( PREF_ASIZE, 0.5 );
+		accountName.setPrefWidth( asize );
+		accountBalance.setPrefWidth( accounts.getWidth() - asize );
+
+		accounts.getSelectionModel().setSelectionMode( SelectionMode.SINGLE );
+		if ( null != toselect ) {
+			accounts.getSelectionModel().select( toselect );
+		}
+
+		double splitterpos = prefs.getDouble( PREF_SPLITTER, 100 );
+		splitter.setDividerPosition( 0, splitterpos );
 	}
 
 	@Override
 	public void shutdown() {
 		Preferences prefs = Preferences.userNodeForPackage( getClass() );
 		TreeItem<Account> selected = accounts.getSelectionModel().getSelectedItem();
-		if( null != selected ){
+		if ( null != selected ) {
 			prefs.put( PREF_SELECTED, selected.getValue().getId().stringValue() );
 		}
 
 		prefs.putDouble( PREF_ASIZE, accounts.getColumns().get( 0 ).getWidth() );
 		prefs.putDouble( PREF_SPLITTER, splitter.getDividerPositions()[0] );
-	}
-
-	@Override
-	public void restore() {
-		// already handled in the initialize function
 	}
 }

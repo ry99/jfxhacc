@@ -236,17 +236,17 @@ public class MainApp extends Application {
 
 		Preferences userPrefs = Preferences.userNodeForPackage( MainApp.class );
 		private final Stage mystage;
-		private final List<PrefRememberer> listeners = new ArrayList<>();
+		private final List<ShutdownListener> listeners = new ArrayList<>();
 
 		public StageRememberer( Stage primaryStage ) {
 			this.mystage = primaryStage;
 		}
 
-		public void addPrefRememberer( PrefRememberer r ) {
+		public void addShutdownListener( ShutdownListener r ) {
 			listeners.add( r );
 		}
 
-		public void removePrefRememberer( PrefRememberer r ) {
+		public void removeShutdownListener( ShutdownListener r ) {
 			listeners.remove( r );
 		}
 
@@ -259,10 +259,6 @@ public class MainApp extends Application {
 			mystage.setY( y );
 			mystage.setWidth( w );
 			mystage.setHeight( h );
-
-			for ( PrefRememberer p : listeners ) {
-				p.restore();
-			}
 		}
 
 		@Override
@@ -272,7 +268,7 @@ public class MainApp extends Application {
 			userPrefs.putDouble( "stage.width", mystage.getWidth() );
 			userPrefs.putDouble( "stage.height", mystage.getHeight() );
 
-			for ( PrefRememberer p : listeners ) {
+			for ( ShutdownListener p : listeners ) {
 				p.shutdown();
 			}
 		}

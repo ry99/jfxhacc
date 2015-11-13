@@ -9,7 +9,6 @@ package com.ostrichemulators.jfxhacc;
  *
  * @author ryan
  */
-public interface PrefRememberer {
+public interface ShutdownListener {
 	public void shutdown();
-	public void restore();
 }

@@ -7,6 +7,7 @@ package com.ostrichemulators.jfxhacc;
 
 import com.ostrichemulators.jfxhacc.cells.CreditDebitValueFactory;
 import com.ostrichemulators.jfxhacc.cells.DateCellFactory;
+import com.ostrichemulators.jfxhacc.cells.MoneyCellFactory;
 import com.ostrichemulators.jfxhacc.cells.PayeeAccountMemoCellFactory;
 import com.ostrichemulators.jfxhacc.cells.PayeeAccountMemoValueFactory;
 import com.ostrichemulators.jfxhacc.cells.RecoCellFactory;
@@ -24,8 +25,10 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.prefs.Preferences;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringWrapper;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -42,7 +45,7 @@ import org.apache.log4j.Logger;
  *
  * @author ryan
  */
-public class TransactionViewer extends AnchorPane implements Initializable, PrefRememberer {
+public class TransactionViewer extends AnchorPane implements Initializable, ShutdownListener {
 
 	private static final Logger log = Logger.getLogger( TransactionViewer.class );
 
@@ -76,6 +79,7 @@ public class TransactionViewer extends AnchorPane implements Initializable, Pref
 	private final CreditDebitValueFactory creditfac = new CreditDebitValueFactory( true );
 	private final CreditDebitValueFactory debitfac = new CreditDebitValueFactory( false );
 	private final RecoValueFactory recofac = new RecoValueFactory();
+	private boolean firstload = true;
 
 	public TransactionViewer() {
 		FXMLLoader fxmlLoader
@@ -117,10 +121,25 @@ public class TransactionViewer extends AnchorPane implements Initializable, Pref
 		catch ( MapperException me ) {
 			log.error( me, me );
 		}
+
+		if ( firstload ) {
+			firstload = false;
+			Preferences prefs = Preferences.userNodeForPackage( getClass() );
+			ObservableList<TableColumn<Transaction, ?>> cols = transtable.getColumns();
+			int i = 0;
+			for ( TableColumn<Transaction, ?> tc : cols ) {
+				double size = prefs.getDouble( "col" + ( i++ ), -1 );
+				if ( size > 0 ) {
+					tc.setPrefWidth( size );
+				}
+			}
+		}
 	}
 
 	@Override
 	public void initialize( URL url, ResourceBundle rb ) {
+		MainApp.getShutdownNotifier().addShutdownListener( this );
+
 		transtable.setFixedCellSize( 48 ); // FIXME
 
 		date.setCellValueFactory( ( TableColumn.CellDataFeatures<Transaction, Date> p )
@@ -137,18 +156,20 @@ public class TransactionViewer extends AnchorPane implements Initializable, Pref
 		reco.setCellFactory( new RecoCellFactory() );
 
 		credit.setCellValueFactory( creditfac );
+		credit.setCellFactory( new MoneyCellFactory() );
 
 		debit.setCellValueFactory( debitfac );
+		debit.setCellFactory( new MoneyCellFactory() );
 	}
 
 	@Override
 	public void shutdown() {
-		//throw new UnsupportedOperationException( "Not supported yet." ); //To change body of generated methods, choose Tools | Templates.
-	}
-
-	@Override
-	public void restore() {
-		//throw new UnsupportedOperationException( "Not supported yet." ); //To change body of generated methods, choose Tools | Templates.
+		Preferences prefs = Preferences.userNodeForPackage( getClass() );
+		ObservableList<TableColumn<Transaction, ?>> cols = transtable.getColumns();
+		int i = 0;
+		for ( TableColumn<Transaction, ?> tc : cols ) {
+			prefs.putDouble( "col" + ( i++ ), tc.getWidth() );
+		}
 	}
 
 	public static final class PAMData implements Comparable<PAMData> {
