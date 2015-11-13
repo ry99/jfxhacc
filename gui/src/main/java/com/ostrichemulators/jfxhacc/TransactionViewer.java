@@ -34,6 +34,8 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TableColumn;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
 import org.apache.log4j.Logger;
 
@@ -133,6 +135,7 @@ public class TransactionViewer extends AnchorPane implements ShutdownListener {
 	@FXML
 	public void initialize() {
 		MainApp.getShutdownNotifier().addShutdownListener( this );
+		setOnKeyPressed( ( event ) -> keyPressed( event ) );
 
 		transtable.setFixedCellSize( 48 ); // FIXME
 
@@ -168,8 +171,10 @@ public class TransactionViewer extends AnchorPane implements ShutdownListener {
 		transtable.getSelectionModel().selectedItemProperty().addListener( new ChangeListener<Transaction>() {
 
 			@Override
-			public void changed( ObservableValue<? extends Transaction> ov, Transaction oldval, Transaction newval ) {
+			public void changed( ObservableValue<? extends Transaction> ov,
+					Transaction oldval, Transaction newval ) {
 				splitter.setDividerPositions( splitterpos );
+				dataentry.requestFocus();
 				dataentry.setTransaction( newval );
 			}
 		} );
@@ -185,6 +190,14 @@ public class TransactionViewer extends AnchorPane implements ShutdownListener {
 		}
 
 		prefs.putDouble( PREF_SPLITTER, splitterpos );
+	}
+
+	@FXML
+	public void keyPressed( KeyEvent ke ) {
+		if ( ke.getCode() == KeyCode.ESCAPE ) {
+			splitter.setDividerPositions( 1.0 );
+			ke.consume();
+		}
 	}
 
 	public static final class PAMData implements Comparable<PAMData> {

@@ -19,8 +19,10 @@ import com.ostrichemulators.jfxhacc.model.vocabulary.Splits;
 import com.ostrichemulators.jfxhacc.utility.TreeNode;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import org.apache.log4j.Logger;
 import org.openrdf.model.Literal;
@@ -205,5 +207,17 @@ public class AccountMapperImpl extends SimpleEntityRdfMapper<Account> implements
 
 		log.warn( "using opening balance instead of " + type );
 		return a.getOpeningBalance();
+	}
+
+	@Override
+	public List<Account> getParents( Account a ) throws MapperException {
+		List<Account> parents = new ArrayList<>();
+		Account par = getParent( a );
+		if ( null != par ) {
+			parents.addAll( getParents( par ) );
+			parents.add( par );
+		}
+
+		return parents;
 	}
 }
