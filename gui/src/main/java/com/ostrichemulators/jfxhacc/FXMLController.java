@@ -5,7 +5,11 @@ import com.ostrichemulators.jfxhacc.mapper.AccountMapper;
 import com.ostrichemulators.jfxhacc.mapper.MapperException;
 import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.Money;
+import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
 import java.net.URL;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.prefs.Preferences;
 import javafx.application.Platform;
@@ -16,6 +20,7 @@ import javafx.beans.value.ObservableValue;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Accordion;
+import javafx.scene.control.Button;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TitledPane;
@@ -48,6 +53,8 @@ public class FXMLController implements Initializable, ShutdownListener {
 	private SplitPane splitter;
 	@FXML
 	private TransactionViewer transactions;
+	@FXML
+	private Button newtransBtn;
 
 	@Override
 	public void initialize( URL url, ResourceBundle rb ) {
@@ -62,10 +69,13 @@ public class FXMLController implements Initializable, ShutdownListener {
 		accordion.setExpandedPane( accountsPane );
 		TreeItem<Account> toselect1 = null;
 		AccountMapper amap = MainApp.getEngine().getAccountMapper();
+		Map<Account, TreeItem<Account>> items = new HashMap<>();
+		Map<Account, Account> childparentlkp = new HashMap<>();
 		try {
-			for ( Account acct : amap.getAll() ) {
+			childparentlkp.putAll( amap.getParentMap() );
+			for ( Account acct : childparentlkp.keySet() ) {
 				TreeItem<Account> aitem = new TreeItem<>( acct );
-				root.getChildren().add( aitem );
+				items.put( acct, aitem );
 
 				if ( acct.getId().equals( selected ) ) {
 					toselect1 = aitem;
@@ -74,6 +84,15 @@ public class FXMLController implements Initializable, ShutdownListener {
 		}
 		catch ( MapperException me ) {
 			log.error( me, me );
+		}
+
+		for ( Map.Entry<Account, Account> en : childparentlkp.entrySet() ) {
+			Account child = en.getKey();
+			Account parent = en.getValue();
+			TreeItem<Account> childitem = items.get( child );
+			TreeItem<Account> parentitem
+					= ( null == parent ? root : items.get( parent ) );
+			parentitem.getChildren().add( childitem );
 		}
 
 		final TreeItem<Account> toselect = toselect1;
@@ -95,13 +114,13 @@ public class FXMLController implements Initializable, ShutdownListener {
 		accounts.getSelectionModel().selectedItemProperty().addListener( new ChangeListener<TreeItem<Account>>() {
 
 			@Override
-			public void changed( ObservableValue<? extends TreeItem<Account>> ov, TreeItem<Account> oldsel, TreeItem<Account> newsel ) {
+			public void changed( ObservableValue<? extends TreeItem<Account>> ov,
+					TreeItem<Account> oldsel, TreeItem<Account> newsel ) {
 				transactions.setAccount( newsel.getValue() );
 			}
 		} );
 
 		Platform.runLater( new Runnable() {
-
 			@Override
 			public void run() {
 
@@ -129,5 +148,10 @@ public class FXMLController implements Initializable, ShutdownListener {
 
 		prefs.putDouble( PREF_ASIZE, accounts.getColumns().get( 0 ).getWidth() );
 		prefs.putDouble( PREF_SPLITTER, splitter.getDividerPositions()[0] );
+	}
+
+	@FXML
+	public void newtrans() {
+		transactions.newTrans( new Date(), ReconcileState.NOT_RECONCILED );
 	}
 }

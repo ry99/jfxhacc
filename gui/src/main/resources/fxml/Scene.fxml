@@ -13,7 +13,7 @@
 			<top>
 				<ToolBar prefHeight="40.0" prefWidth="200.0" BorderPane.alignment="CENTER">
 					<items>
-						<Button mnemonicParsing="false" text="New Transaction" />
+						<Button fx:id="newtransBtn" mnemonicParsing="false" onAction="#newtrans" text="New Transaction" />
 					</items>
 				</ToolBar>
 			</top>
@@ -46,7 +46,7 @@
 												<AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
 											</content>
 										</TitledPane>
-										<TitledPane animated="false" text="untitled 3">
+										<TitledPane animated="false" text="Popular">
 											<content>
 												<AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
 											</content>

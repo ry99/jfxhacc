@@ -106,7 +106,13 @@ public class TransactionEntry extends AnchorPane {
 	}
 
 	public void save() {
+		if ( newtrans ) {
+			log.debug( "saving new transaction" );
 
+		}
+		else {
+			log.debug( "updating old transaction" );
+		}
 	}
 
 	/**
@@ -143,23 +149,14 @@ public class TransactionEntry extends AnchorPane {
 
 		payeefield.getEntries().addAll( payeemap.keySet() );
 
+		accountfield.setButtonCell( makeAccountCell() );
 		accountfield.setCellFactory( new Callback<ListView<Account>, ListCell<Account>>() {
 
 			@Override
 			public ListCell<Account> call( ListView<Account> p ) {
-				return new ListCell<Account>() {
-
-					@Override
-					protected void updateItem( Account t, boolean empty ) {
-						super.updateItem( t, empty );
-						if ( !( null == t || empty ) ) {
-							setText( getFullName( t ) );
-						}
-					}
-				};
+				return makeAccountCell();
 			}
 		} );
-
 	}
 
 	public void newTransaction( Date d, ReconcileState rs, boolean to ) {
@@ -197,7 +194,7 @@ public class TransactionEntry extends AnchorPane {
 			for ( Account a : splits.keySet() ) {
 				if ( !a.equals( account ) ) {
 					accountfield.getSelectionModel().select( a );
-					accountfield.getEditor().setText( a.getName() );
+					accountfield.setValue( a );
 				}
 			}
 		}
@@ -263,7 +260,7 @@ public class TransactionEntry extends AnchorPane {
 			for ( Account parent : parents ) {
 				sb.append( parent.getName() ).append( "::" );
 			}
-
+			sb.append( a.getName() );
 			return sb.toString();
 		}
 		catch ( MapperException me ) {
@@ -271,5 +268,17 @@ public class TransactionEntry extends AnchorPane {
 		}
 
 		return a.getName();
+	}
+
+	private ListCell<Account> makeAccountCell() {
+		return new ListCell<Account>() {
+			@Override
+			protected void updateItem( Account t, boolean empty ) {
+				super.updateItem( t, empty );
+				if ( !( null == t || empty ) ) {
+					setText( getFullName( t ) );
+				}
+			}
+		};
 	}
 }

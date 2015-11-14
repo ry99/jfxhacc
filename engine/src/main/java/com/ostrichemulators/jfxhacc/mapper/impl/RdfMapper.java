@@ -150,8 +150,9 @@ public abstract class RdfMapper<T extends IDable> implements DataMapper<T> {
 
 	protected Value oneval( URI id, URI predicate ) throws MapperException {
 		try {
-			return Iterations.asList( rc.getStatements( id, predicate, null,
-					false ) ).get( 0 ).getObject();
+			List<Statement> stmts 
+					= Iterations.asList( rc.getStatements( id, predicate, null, false ) );
+			return ( stmts.isEmpty() ? null : stmts.get( 0 ).getObject() );
 		}
 		catch ( RepositoryException x ) {
 			throw new MapperException( x );

@@ -110,7 +110,7 @@ public class AccountMapperImpl extends SimpleEntityRdfMapper<Account> implements
 	@Override
 	public Account getParent( Account a ) throws MapperException {
 		Value pid = oneval( a.getId(), Accounts.PARENT_PRED );
-		return get( URI.class.cast( pid ) );
+		return ( null == pid ? null : get( URI.class.cast( pid ) ) );
 	}
 
 	@Override
@@ -219,5 +219,16 @@ public class AccountMapperImpl extends SimpleEntityRdfMapper<Account> implements
 		}
 
 		return parents;
+	}
+
+	@Override
+	public Map<Account, Account> getParentMap() throws MapperException {
+		Map<Account, Account> accts = new HashMap<>();
+
+		for ( Account a : getAll() ) {
+			accts.put( a, getParent( a ) );
+		}
+
+		return accts;
 	}
 }

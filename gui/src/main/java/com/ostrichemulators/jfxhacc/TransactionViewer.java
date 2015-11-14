@@ -173,11 +173,25 @@ public class TransactionViewer extends AnchorPane implements ShutdownListener {
 			@Override
 			public void changed( ObservableValue<? extends Transaction> ov,
 					Transaction oldval, Transaction newval ) {
-				splitter.setDividerPositions( splitterpos );
-				dataentry.requestFocus();
-				dataentry.setTransaction( newval );
+				if ( null != newval ) {
+					editTrans( newval );
+				}
 			}
 		} );
+	}
+
+	public void editTrans( Transaction t ) {
+		splitter.setDividerPositions( splitterpos );
+		dataentry.requestFocus();
+		dataentry.setTransaction( t );
+	}
+
+	public void newTrans( Date d, ReconcileState rs ) {
+		splitter.setDividerPositions( splitterpos );
+		dataentry.requestFocus();
+
+		boolean to = true;
+		dataentry.newTransaction( d, rs, to );
 	}
 
 	@Override
@@ -194,9 +208,23 @@ public class TransactionViewer extends AnchorPane implements ShutdownListener {
 
 	@FXML
 	public void keyPressed( KeyEvent ke ) {
-		if ( ke.getCode() == KeyCode.ESCAPE ) {
+		KeyCode code = ke.getCode();
+		if ( KeyCode.ESCAPE == code ) {
 			splitter.setDividerPositions( 1.0 );
 			ke.consume();
+		}
+		else if ( KeyCode.I == code ) {
+			Transaction t = transtable.getSelectionModel().getSelectedItem();
+			Date tdate = ( null == t ? new Date() : t.getDate() );
+			ReconcileState rs = ReconcileState.NOT_RECONCILED;
+			boolean to = true;
+			newTrans( tdate, rs );
+		}
+		else if ( KeyCode.R == code ) {
+
+		}
+		else if ( KeyCode.E == code ) {
+			editTrans( transtable.getSelectionModel().getSelectedItem() );
 		}
 	}
 

@@ -10,6 +10,7 @@ import com.ostrichemulators.jfxhacc.model.AccountType;
 import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.utility.TreeNode;
 import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -32,4 +33,11 @@ public interface AccountMapper extends DataMapper<Account> {
 	public TreeNode<Account> getAccounts( AccountType type ) throws MapperException;
 
 	public List<Account> getParents( Account a ) throws MapperException;
+
+	/**
+	 * Gets a mapping of account-to-parent
+	 * @return a mapping of accounts to their parents
+	 * @throws MapperException
+	 */
+	public Map<Account, Account> getParentMap() throws MapperException;
 }
