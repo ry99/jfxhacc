@@ -36,6 +36,7 @@ import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.ValueFactory;
+import org.openrdf.model.impl.LiteralImpl;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.query.BindingSet;
 import org.openrdf.repository.RepositoryConnection;
@@ -127,8 +128,9 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 			}
 			rc.commit();
 
-			TransactionImpl trans = new TransactionImpl( id, d, p );
+			TransactionImpl trans = new TransactionImpl( id, d, number, p );
 			trans.setSplits( realsplits );
+			notifyAdded( trans );
 			return trans;
 		}
 		catch ( RepositoryException re ) {
@@ -149,6 +151,7 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 			}
 
 			rc.commit();
+			notifyRemoved( id );
 		}
 		catch ( RepositoryException re ) {
 			rollback( rc );
@@ -190,6 +193,7 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 
 	@Override
 	public void update( Transaction t ) throws MapperException {
+		notifyUpdated( t );
 	}
 
 	@Override
@@ -248,6 +252,23 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 						return lkp;
 					}
 				} );
+	}
+
+	@Override
+	public Split reconcile( Split s, ReconcileState rs ) throws MapperException {
+		RepositoryConnection rc = getConnection();
+		try {
+			rc.begin();
+			rc.remove( s.getId(), Splits.RECO_PRED, null );
+			rc.add( s.getId(), Splits.RECO_PRED, new LiteralImpl( rs.toString() ) );
+			s.setReconciled( rs );
+			rc.commit();
+			return s;
+		}
+		catch ( RepositoryException re ) {
+			rollback( rc );
+			throw new MapperException( re );
+		}
 	}
 
 	@Override

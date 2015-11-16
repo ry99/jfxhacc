@@ -64,7 +64,9 @@ public class AccountMapperImpl extends SimpleEntityRdfMapper<Account> implements
 			}
 			rc.commit();
 
-			return new AccountImpl( id, name, type, obal );
+			AccountImpl ai = new AccountImpl( id, name, type, obal );
+			notifyAdded( ai );
+			return ai;
 		}
 		catch ( RepositoryException re ) {
 			rollback( rc );
@@ -105,6 +107,8 @@ public class AccountMapperImpl extends SimpleEntityRdfMapper<Account> implements
 
 	@Override
 	public void update( Account t ) throws MapperException {
+
+		notifyUpdated( t );
 	}
 
 	@Override

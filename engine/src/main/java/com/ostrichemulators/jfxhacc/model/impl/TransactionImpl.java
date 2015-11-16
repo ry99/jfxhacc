@@ -36,13 +36,14 @@ public class TransactionImpl extends IDableImpl implements Transaction {
 	}
 
 	public TransactionImpl( URI id, Payee payee ) {
-		this( id, new Date(), payee );
+		this( id, new Date(), null, payee );
 	}
 
-	public TransactionImpl( URI id, Date date, Payee payee ) {
+	public TransactionImpl( URI id, Date date, String num, Payee payee ) {
 		super( JfxHacc.TRANSACTION_TYPE, id );
 		this.payee = payee;
 		this.date = date;
+		this.number = num;
 	}
 
 	@Override

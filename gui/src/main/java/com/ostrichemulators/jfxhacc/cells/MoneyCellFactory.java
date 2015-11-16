@@ -30,6 +30,9 @@ public class MoneyCellFactory implements Callback<TableColumn<Transaction, Money
 				if( !( null == t || empty ) ){
 					setText( t.toString() );
 				}
+				else {
+					setText( null );
+				}
 
 				setAlignment( Pos.TOP_RIGHT );
 			}

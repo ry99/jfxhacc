@@ -9,7 +9,10 @@ import com.ostrichemulators.jfxhacc.engine.DataEngine;
 import com.ostrichemulators.jfxhacc.mapper.AccountMapper;
 import com.ostrichemulators.jfxhacc.mapper.MapperException;
 import com.ostrichemulators.jfxhacc.mapper.PayeeMapper;
+import com.ostrichemulators.jfxhacc.mapper.TransactionMapper;
 import com.ostrichemulators.jfxhacc.model.Account;
+import com.ostrichemulators.jfxhacc.model.Journal;
+import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.Payee;
 import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
@@ -19,6 +22,7 @@ import java.text.Collator;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
@@ -27,8 +31,6 @@ import java.util.Map;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.SortedList;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Button;
@@ -39,6 +41,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.util.Callback;
@@ -77,9 +80,12 @@ public class TransactionEntry extends AnchorPane {
 
 	private Transaction trans;
 	private Account account;
+	private Journal journal;
 	private boolean newtrans;
 	private AccountMapper amap;
 	private PayeeMapper pmap;
+	private TransactionMapper tmap;
+	private List<CloseListener> listenees = new ArrayList<>();
 
 	private Map<String, Payee> payeemap = new HashMap<>();
 
@@ -97,21 +103,96 @@ public class TransactionEntry extends AnchorPane {
 		}
 	}
 
-	public void setAccount( Account a ) {
-		account = a;
+	public void addCloseListener( CloseListener cc ) {
+		listenees.add( cc );
 	}
 
-	public void addSaveListener( EventHandler<ActionEvent> cl ) {
-		saveBtn.addEventHandler( ActionEvent.ACTION, cl );
+	public void removeCloseListener( CloseListener cc ) {
+		listenees.remove( cc );
+	}
+
+	public void setAccount( Account a ) {
+		account = a;
+
+		try {
+			ObservableList<Account> accounts
+					= FXCollections.observableArrayList( amap.getAll() );
+			accounts.remove( a );
+			SortedList<Account> sorted = new SortedList<>( accounts );
+			sorted.setComparator( new Comparator<Account>() {
+
+				@Override
+				public int compare( Account o1, Account o2 ) {
+					return Collator.getInstance().compare( getFullName( o1 ), getFullName( o2 ) );
+				}
+			} );
+			accountfield.setItems( sorted );
+		}
+		catch ( MapperException me ) {
+			log.error( me, me );
+			// FIXME: tell the user
+		}
+	}
+
+	public void setJournal( Journal j ) {
+		journal = j;
 	}
 
 	public void save() {
-		if ( newtrans ) {
-			log.debug( "saving new transaction" );
+		try {
+			Payee payee = pmap.createOrGet( payeefield.getText() );
+			Date tdate = getDate();
+			String num = numberfield.getText();
+			String mymemo = memofield.getText();
+			Money money = getSplitAmount();
 
+			Split mysplit = tmap.create( money, mymemo, getReco() );
+
+			if ( newtrans ) {
+				Split yoursplit = tmap.create( money.opposite(), mymemo, ReconcileState.NOT_RECONCILED );
+				Map<Account, Split> splits = new HashMap<>();
+				splits.put( account, mysplit );
+				splits.put( accountfield.getValue(), yoursplit );
+
+				trans = tmap.create( tdate, payee, num, splits, journal );
+
+				for ( CloseListener c : listenees ) {
+					c.added( trans );
+				}
+			}
+			else {
+				for ( CloseListener c : listenees ) {
+					c.updated( trans );
+				}
+				log.debug( "updating old transaction" );
+			}
+		}
+		catch ( MapperException me ) {
+			log.error( me, me );
+			// FIXME: alert the user!
+		}
+	}
+
+	private Money getSplitAmount() {
+		boolean to = ( "To".equals( tofromBtn.getText() ) );
+		Money money = Money.valueOf( amountfield.getText() );
+		boolean posmoney = money.isPositive();
+
+		if ( account.getAccountType().isRightPlus() ) {
+			if ( to ) {
+				return ( posmoney ? money.opposite() : money );
+			}
+			else {
+				return ( posmoney ? money : money.opposite() );
+			}
 		}
 		else {
-			log.debug( "updating old transaction" );
+			if ( to ) {
+				return ( posmoney ? money : money.opposite() );
+			}
+			else {
+				return ( posmoney ? money.opposite() : money );
+			}
 		}
 	}
 
@@ -122,26 +203,17 @@ public class TransactionEntry extends AnchorPane {
 	public void initialize() {
 		payeefield.setEditable( true );
 		accountfield.setEditable( false );
+		recofield.setAllowIndeterminate( true );
 
 		try {
 			DataEngine eng = MainApp.getEngine();
 			pmap = eng.getPayeeMapper();
 			amap = eng.getAccountMapper();
+			tmap = eng.getTransactionMapper();
+
 			for ( Payee p : pmap.getAll() ) {
 				payeemap.put( p.getName(), p );
 			}
-
-			ObservableList<Account> accounts
-					= FXCollections.observableArrayList( amap.getAll() );
-			SortedList<Account> sorted = new SortedList<>( accounts );
-			sorted.setComparator( new Comparator<Account>() {
-
-				@Override
-				public int compare( Account o1, Account o2 ) {
-					return Collator.getInstance().compare( getFullName( o1 ), getFullName( o2 ) );
-				}
-			} );
-			accountfield.setItems( sorted );
 		}
 		catch ( Exception x ) {
 			log.warn( x, x );
@@ -157,9 +229,15 @@ public class TransactionEntry extends AnchorPane {
 				return makeAccountCell();
 			}
 		} );
+
+//		datefield.setOnAction( event -> {
+//			LocalDate date = datefield.getValue();
+//			System.out.println( "Selected date: " + date );
+//		} );
 	}
 
-	public void newTransaction( Date d, ReconcileState rs, boolean to ) {
+	public void setTransaction( Date d, ReconcileState rs, boolean to ) {
+		clear();
 		trans = null;
 		newtrans = true;
 
@@ -175,6 +253,7 @@ public class TransactionEntry extends AnchorPane {
 	}
 
 	public void setTransaction( Transaction t ) {
+		clear();
 		trans = t;
 		newtrans = false;
 
@@ -205,6 +284,15 @@ public class TransactionEntry extends AnchorPane {
 
 		tofromBtn.setText( mysplit.isDebit() ? "To" : "From" );
 		payeefield.requestFocus();
+	}
+
+	protected void clear() {
+		memofield.clear();
+		payeefield.clear();
+		amountfield.clear();
+		numberfield.clear();
+		recofield.setSelected( false );
+		datefield.setValue( LocalDate.now() );
 	}
 
 	protected final void setDate( Date t ) {
@@ -250,7 +338,13 @@ public class TransactionEntry extends AnchorPane {
 
 	@FXML
 	protected void keypress( KeyEvent ke ) {
-		log.debug( "key typed!" );
+		log.debug( "key pressed!" );
+		KeyCode code = ke.getCode();
+		if ( KeyCode.ESCAPE == code ) {
+			for ( CloseListener cl : listenees ) {
+				cl.closed();
+			}
+		}
 	}
 
 	private String getFullName( Account a ) {
@@ -280,5 +374,14 @@ public class TransactionEntry extends AnchorPane {
 				}
 			}
 		};
+	}
+
+	public static interface CloseListener {
+
+		public void closed();
+
+		public void added( Transaction t );
+
+		public void updated( Transaction t );
 	}
 }

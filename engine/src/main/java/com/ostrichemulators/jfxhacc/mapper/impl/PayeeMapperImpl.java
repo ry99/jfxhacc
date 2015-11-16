@@ -61,6 +61,16 @@ public class PayeeMapperImpl extends SimpleEntityRdfMapper<Payee> implements Pay
 	}
 
 	@Override
+	public Payee createOrGet( String name ) throws MapperException {
+		Map<String, Value> binds = bindmap( "label", name );
+		binds.put( "payee", JfxHacc.PAYEE_TYPE );
+
+		Value id = oneval( "SELECT ?id WHERE { ?id a ?payee . ?id rdfs:label ?label }",
+				binds );
+		return ( null == id ? create( name ) : get( URI.class.cast( id ) ) );
+	}
+
+	@Override
 	public Map<URI, String> getPayees() throws MapperException {
 		return query( "SELECT ?id ?label WHERE { ?id a ?payee . ?id rdfs:label ?label }",
 				super.bindmap( "payee", JfxHacc.PAYEE_TYPE ),

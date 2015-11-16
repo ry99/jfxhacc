@@ -37,7 +37,9 @@ public class JournalMapperImpl extends SimpleEntityRdfMapper<Journal> implements
 			URI id = createBaseEntity();
 			rc.add( id, RDFS.LABEL, vf.createLiteral( name ) );
 			rc.commit();
-			return new JournalImpl( id, name );
+			Journal j = new JournalImpl( id, name );
+			notifyAdded( j );
+			return j;
 		}
 		catch ( RepositoryException re ) {
 			rollback( rc );
@@ -53,6 +55,6 @@ public class JournalMapperImpl extends SimpleEntityRdfMapper<Journal> implements
 
 	@Override
 	public void update( Journal t ) throws MapperException {
-
+		notifyUpdated( t );
 	}
 }

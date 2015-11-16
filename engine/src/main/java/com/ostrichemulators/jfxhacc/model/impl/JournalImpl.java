@@ -39,4 +39,9 @@ public class JournalImpl extends IDableImpl implements Journal {
 	public void setName( String name ) {
 		this.name = name;
 	}
+
+	@Override
+	public String toString() {
+		return getName();
+	}
 }

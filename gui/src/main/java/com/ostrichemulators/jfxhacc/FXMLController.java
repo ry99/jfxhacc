@@ -34,9 +34,9 @@ import org.openrdf.model.impl.URIImpl;
 
 public class FXMLController implements Initializable, ShutdownListener {
 
-	private static final String PREF_SELECTED = "selected";
-	private static final String PREF_ASIZE = "account-width";
-	private static final String PREF_SPLITTER = "splitter-location";
+	private static final String PREF_SELECTED = "accountviewer.selected";
+	private static final String PREF_ASIZE = "accountviewer.account-width";
+	private static final String PREF_SPLITTER = "stage.splitter-location";
 
 	private static final Logger log = Logger.getLogger( FXMLController.class );
 	@FXML
@@ -152,6 +152,6 @@ public class FXMLController implements Initializable, ShutdownListener {
 
 	@FXML
 	public void newtrans() {
-		transactions.newTrans( new Date(), ReconcileState.NOT_RECONCILED );
+		transactions.openEditor( new Date(), ReconcileState.NOT_RECONCILED );
 	}
 }

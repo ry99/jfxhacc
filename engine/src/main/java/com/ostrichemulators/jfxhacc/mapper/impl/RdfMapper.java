@@ -7,6 +7,7 @@ package com.ostrichemulators.jfxhacc.mapper.impl;
 
 import com.ostrichemulators.jfxhacc.mapper.DataMapper;
 import com.ostrichemulators.jfxhacc.mapper.MapperException;
+import com.ostrichemulators.jfxhacc.mapper.MapperListener;
 import com.ostrichemulators.jfxhacc.mapper.QueryHandler;
 import com.ostrichemulators.jfxhacc.model.IDable;
 import com.ostrichemulators.jfxhacc.utility.UriUtil;
@@ -42,6 +43,7 @@ import org.openrdf.repository.RepositoryException;
 public abstract class RdfMapper<T extends IDable> implements DataMapper<T> {
 
 	private static final Logger log = Logger.getLogger( RdfMapper.class );
+	private final List<MapperListener<T>> listenees = new ArrayList<>();
 	private final RepositoryConnection rc;
 	private final URI type;
 
@@ -87,12 +89,7 @@ public abstract class RdfMapper<T extends IDable> implements DataMapper<T> {
 
 	@Override
 	public void remove( T obj ) throws MapperException {
-		try {
-			rc.remove( obj.getId(), type, type );
-		}
-		catch ( RepositoryException re ) {
-			throw new MapperException( re );
-		}
+		remove( obj.getId() );
 	}
 
 	@Override
@@ -150,7 +147,7 @@ public abstract class RdfMapper<T extends IDable> implements DataMapper<T> {
 
 	protected Value oneval( URI id, URI predicate ) throws MapperException {
 		try {
-			List<Statement> stmts 
+			List<Statement> stmts
 					= Iterations.asList( rc.getStatements( id, predicate, null, false ) );
 			return ( stmts.isEmpty() ? null : stmts.get( 0 ).getObject() );
 		}
@@ -202,6 +199,34 @@ public abstract class RdfMapper<T extends IDable> implements DataMapper<T> {
 		}
 		catch ( RepositoryException re ) {
 			log.warn( re, re );
+		}
+	}
+
+	@Override
+	public void addMapperListener( MapperListener<T> l ) {
+		listenees.add( l );
+	}
+
+	@Override
+	public void removeMapperListener( MapperListener<T> l ) {
+		listenees.remove( l );
+	}
+
+	protected void notifyRemoved( URI u ) {
+		for ( MapperListener ml : listenees ) {
+			ml.removed( u );
+		}
+	}
+
+	protected void notifyAdded( T t ) {
+		for ( MapperListener<T> ml : listenees ) {
+			ml.added( t );
+		}
+	}
+
+	protected void notifyUpdated( T t ) {
+		for ( MapperListener<T> ml : listenees ) {
+			ml.updated( t );
 		}
 	}
 }

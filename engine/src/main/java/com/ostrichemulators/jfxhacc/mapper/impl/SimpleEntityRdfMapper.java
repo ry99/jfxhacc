@@ -29,6 +29,7 @@ public abstract class SimpleEntityRdfMapper<T extends IDable> extends RdfMapper<
 	public void remove( URI id ) throws MapperException {
 		try {
 			getConnection().remove( id, null, null );
+			notifyRemoved( id );
 		}
 		catch ( Exception e ) {
 			throw new MapperException( e );

@@ -16,6 +16,8 @@ import org.openrdf.model.URI;
 public interface PayeeMapper extends DataMapper<Payee> {
 
 	public Payee create( String name ) throws MapperException;
+	
+	public Payee createOrGet( String name ) throws MapperException;
 
 	public Map<URI, String> getPayees() throws MapperException;
 }

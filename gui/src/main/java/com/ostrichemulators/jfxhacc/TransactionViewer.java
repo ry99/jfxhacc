@@ -5,6 +5,7 @@
  */
 package com.ostrichemulators.jfxhacc;
 
+import com.ostrichemulators.jfxhacc.TransactionEntry.CloseListener;
 import com.ostrichemulators.jfxhacc.cells.CreditDebitValueFactory;
 import com.ostrichemulators.jfxhacc.cells.DateCellFactory;
 import com.ostrichemulators.jfxhacc.cells.MoneyCellFactory;
@@ -14,40 +15,49 @@ import com.ostrichemulators.jfxhacc.cells.RecoCellFactory;
 import com.ostrichemulators.jfxhacc.cells.RecoValueFactory;
 import com.ostrichemulators.jfxhacc.engine.DataEngine;
 import com.ostrichemulators.jfxhacc.mapper.MapperException;
+import com.ostrichemulators.jfxhacc.mapper.MapperListener;
+import com.ostrichemulators.jfxhacc.mapper.TransactionMapper;
 import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.Journal;
 import com.ostrichemulators.jfxhacc.model.Money;
+import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
 import com.ostrichemulators.jfxhacc.model.Transaction;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.prefs.Preferences;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableColumn.SortType;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
 import org.apache.log4j.Logger;
+import org.openrdf.model.URI;
 
 /**
  * FXML Controller class
  *
  * @author ryan
  */
-public class TransactionViewer extends AnchorPane implements ShutdownListener {
+public class TransactionViewer extends AnchorPane implements ShutdownListener, MapperListener<Transaction> {
 
 	private static final Logger log = Logger.getLogger( TransactionViewer.class );
-	private static final String PREF_SPLITTER = "dataentry-splitter-location";
+	private static final String PREF_SPLITTER = "transviewer.splitter.location";
+	private static final String PREF_SORTCOL = "transviewer.sort.col";
+	private static final String PREF_SORTASC = "transviewer.sort.asc";
 
 	@FXML
 	private SplitPane splitter;
@@ -75,6 +85,9 @@ public class TransactionViewer extends AnchorPane implements ShutdownListener {
 	private final RecoValueFactory recofac = new RecoValueFactory();
 	private boolean firstload = true;
 	private double splitterpos;
+	private TransactionMapper tmap;
+	private final ObservableList<Transaction> transactions
+			= FXCollections.observableArrayList();
 
 	public TransactionViewer() {
 		FXMLLoader fxmlLoader
@@ -101,18 +114,21 @@ public class TransactionViewer extends AnchorPane implements ShutdownListener {
 	}
 
 	public void refresh() {
-		transtable.getItems().clear();
+		List<TableColumn<Transaction, ?>> sortcols = new ArrayList<>();
+		sortcols.addAll( transtable.getSortOrder() );
+
+		transactions.clear();
 
 		DataEngine engine = MainApp.getEngine();
 		try {
 			List<Journal> journals = new ArrayList<>( engine.getJournalMapper().getAll() );
-			log.debug( "fetching transactions for " + account );
-			List<Transaction> trans = engine.getTransactionMapper().getAll( account,
-					journals.get( 0 ) );
-			log.debug( "populating transaction viewer with " + trans.size() + " transactions" );
-			transtable.getItems().addAll( trans );
-
-			transtable.sort();
+			Journal jnl = journals.get( 0 );
+			dataentry.setJournal( jnl );
+			log.debug( "fetching transactions for " + account + " in journal " + jnl );
+			transactions.addAll( tmap.getAll( account, jnl ) );
+			log.debug( "populated transaction viewer with " + transactions.size()
+					+ " transactions" );
+			transtable.setItems( transactions );
 		}
 		catch ( MapperException me ) {
 			log.error( me, me );
@@ -122,20 +138,35 @@ public class TransactionViewer extends AnchorPane implements ShutdownListener {
 			firstload = false;
 			Preferences prefs = Preferences.userNodeForPackage( getClass() );
 			ObservableList<TableColumn<Transaction, ?>> cols = transtable.getColumns();
+			int sortcol = prefs.getInt( PREF_SORTCOL, 0 );
+			boolean sortasc = prefs.getBoolean( PREF_SORTASC, true );
+
 			int i = 0;
 			for ( TableColumn<Transaction, ?> tc : cols ) {
-				double size = prefs.getDouble( "col" + ( i++ ), -1 );
+				double size = prefs.getDouble( "transviewer.col" + ( i++ ), -1 );
 				if ( size > 0 ) {
 					tc.setPrefWidth( size );
 				}
+
+				if ( sortcol == i ) {
+					tc.setSortType( sortasc ? SortType.ASCENDING : SortType.DESCENDING );
+
+					sortcols.clear();
+					sortcols.add( tc );
+				}
 			}
 		}
+
+		transtable.getSortOrder().addAll( sortcols );
+		transtable.sort();
 	}
 
 	@FXML
 	public void initialize() {
 		MainApp.getShutdownNotifier().addShutdownListener( this );
 		setOnKeyPressed( ( event ) -> keyPressed( event ) );
+
+		transtable.setItems( transactions );
 
 		transtable.setFixedCellSize( 48 ); // FIXME
 
@@ -159,10 +190,6 @@ public class TransactionViewer extends AnchorPane implements ShutdownListener {
 		debit.setCellFactory( new MoneyCellFactory() );
 
 		splitter.getItems().add( dataentry );
-		dataentry.addSaveListener( ( event ) -> {
-			splitterpos = splitter.getDividerPositions()[0];
-			splitter.setDividerPositions( 1.0 );
-		} );
 
 		Preferences prefs = Preferences.userNodeForPackage( TransactionViewer.class );
 		splitterpos = prefs.getDouble( PREF_SPLITTER, 0.70 );
@@ -174,24 +201,46 @@ public class TransactionViewer extends AnchorPane implements ShutdownListener {
 			public void changed( ObservableValue<? extends Transaction> ov,
 					Transaction oldval, Transaction newval ) {
 				if ( null != newval ) {
-					editTrans( newval );
+					TransactionViewer.this.openEditor( newval );
 				}
+			}
+		} );
+
+		tmap = MainApp.getEngine().getTransactionMapper();
+		tmap.addMapperListener( this );
+
+		dataentry.addCloseListener( new CloseListener() {
+
+			@Override
+			public void closed() {
+				splitterpos = splitter.getDividerPositions()[0];
+				splitter.setDividerPositions( 1.0 );
+			}
+
+			@Override
+			public void added( Transaction t ) {
+				closed();
+			}
+
+			@Override
+			public void updated( Transaction t ) {
+				closed();
 			}
 		} );
 	}
 
-	public void editTrans( Transaction t ) {
+	public void openEditor( Transaction t ) {
 		splitter.setDividerPositions( splitterpos );
 		dataentry.requestFocus();
 		dataentry.setTransaction( t );
 	}
 
-	public void newTrans( Date d, ReconcileState rs ) {
+	public void openEditor( Date d, ReconcileState rs ) {
 		splitter.setDividerPositions( splitterpos );
 		dataentry.requestFocus();
 
 		boolean to = true;
-		dataentry.newTransaction( d, rs, to );
+		dataentry.setTransaction( d, rs, to );
 	}
 
 	@Override
@@ -199,8 +248,23 @@ public class TransactionViewer extends AnchorPane implements ShutdownListener {
 		Preferences prefs = Preferences.userNodeForPackage( getClass() );
 		ObservableList<TableColumn<Transaction, ?>> cols = transtable.getColumns();
 		int i = 0;
+
+		TableColumn<Transaction, ?> sortcol = null;
+		ObservableList<TableColumn<Transaction, ?>> sorts = transtable.getSortOrder();
+		if ( !sorts.isEmpty() ) {
+			sortcol = sorts.get( 0 );
+		}
+
 		for ( TableColumn<Transaction, ?> tc : cols ) {
-			prefs.putDouble( "col" + ( i++ ), tc.getWidth() );
+			prefs.putDouble( "transviewer.col" + ( i++ ), tc.getWidth() );
+
+			if ( tc.equals( sortcol ) ) {
+				prefs.putInt( PREF_SORTCOL, i );
+
+				SortType stype = tc.getSortType();
+				prefs.putBoolean( PREF_SORTASC,
+						( null == stype ? true : stype == SortType.ASCENDING ) );
+			}
 		}
 
 		prefs.putDouble( PREF_SPLITTER, splitterpos );
@@ -208,23 +272,69 @@ public class TransactionViewer extends AnchorPane implements ShutdownListener {
 
 	@FXML
 	public void keyPressed( KeyEvent ke ) {
-		KeyCode code = ke.getCode();
-		if ( KeyCode.ESCAPE == code ) {
-			splitter.setDividerPositions( 1.0 );
-			ke.consume();
+		if ( !this.focusedProperty().getValue() ) {
+			return;
 		}
-		else if ( KeyCode.I == code ) {
-			Transaction t = transtable.getSelectionModel().getSelectedItem();
+
+		log.debug( "key pressed!" );
+		KeyCode code = ke.getCode();
+		Transaction t = transtable.getSelectionModel().getSelectedItem();
+		if ( KeyCode.I == code ) {
 			Date tdate = ( null == t ? new Date() : t.getDate() );
 			ReconcileState rs = ReconcileState.NOT_RECONCILED;
-			boolean to = true;
-			newTrans( tdate, rs );
+			openEditor( tdate, rs );
 		}
 		else if ( KeyCode.R == code ) {
+			Split s = t.getSplits().get( account );
+			// cycle through the reconcile states
+			ReconcileState rs = s.getReconciled();
+			ReconcileState states[] = ReconcileState.values();
+			try {
+				tmap.reconcile( s, states[( rs.ordinal() + 1 ) % states.length] );
+			}
+			catch ( MapperException me ) {
+				log.error( me, me );
+				// FIXME: tell the user
+			}
 
 		}
 		else if ( KeyCode.E == code ) {
-			editTrans( transtable.getSelectionModel().getSelectedItem() );
+			openEditor( transtable.getSelectionModel().getSelectedItem() );
+		}
+	}
+
+	@Override
+	public void added( Transaction t ) {
+		if ( t.getSplits().containsKey( account ) ) {
+			transactions.add( t );
+			transtable.sort();
+		}
+	}
+
+	@Override
+	public void updated( Transaction t ) {
+		if ( t.getSplits().containsKey( account ) ) {
+			ListIterator<Transaction> transit = transactions.listIterator();
+			while ( transit.hasNext() ) {
+				Transaction listt = transit.next();
+				if ( listt.equals( t ) ) {
+					transit.set( t );
+					transtable.sort();
+					break;
+				}
+			}
+		}
+	}
+
+	@Override
+	public void removed( URI uri ) {
+		ListIterator<Transaction> transit = transactions.listIterator();
+		while ( transit.hasNext() ) {
+			Transaction listt = transit.next();
+			if ( listt.getId().equals( uri ) ) {
+				transit.remove();
+				break;
+			}
 		}
 	}
 

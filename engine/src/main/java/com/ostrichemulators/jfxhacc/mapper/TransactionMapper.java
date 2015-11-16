@@ -75,7 +75,7 @@ public interface TransactionMapper extends DataMapper<Transaction> {
 	public List<Transaction> getAll( Account acct, Journal jnl ) throws MapperException;
 
 	public Transaction create( Date d, Payee p, String number, Map<Account, Split> splits,
-			Journal journal )	throws MapperException;
+			Journal journal ) throws MapperException;
 
 	/**
 	 * Creates a split with the given data <strong>but does not add it to the data
@@ -89,4 +89,16 @@ public interface TransactionMapper extends DataMapper<Transaction> {
 	 * @return
 	 */
 	public Split create( Money m, String memo, ReconcileState rs );
+
+	/**
+	 * Sets the persisted state of the given split to the given reconcile state,
+	 * and (for convenience) calls
+	 * {@link Split#setReconciled(com.ostrichemulators.jfxhacc.model.Split.ReconcileState) }
+	 *
+	 * @param s
+	 * @param rs
+	 * @return
+	 * @throws MapperException
+	 */
+	public Split reconcile( Split s, ReconcileState rs ) throws MapperException;
 }

@@ -26,4 +26,8 @@ public interface DataMapper<T extends IDable> {
 	public void update( T t ) throws MapperException;
 
 	public void release();
+
+	public void addMapperListener( MapperListener<T> l );
+
+	public void removeMapperListener( MapperListener<T> l );
 }
