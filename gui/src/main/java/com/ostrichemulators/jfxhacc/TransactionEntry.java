@@ -144,12 +144,13 @@ public class TransactionEntry extends AnchorPane {
 			Date tdate = getDate();
 			String num = numberfield.getText();
 			String mymemo = memofield.getText();
-			Money money = getSplitAmount();
-
-			Split mysplit = tmap.create( money, mymemo, getReco() );
+			ReconcileState myreco = getReco();
+			Money mymoney = getSplitAmount();
 
 			if ( newtrans ) {
-				Split yoursplit = tmap.create( money.opposite(), mymemo, ReconcileState.NOT_RECONCILED );
+				Split mysplit = tmap.create( mymoney, mymemo, myreco );
+				Split yoursplit = tmap.create( mymoney.opposite(), mymemo, ReconcileState.NOT_RECONCILED );
+
 				Map<Account, Split> splits = new HashMap<>();
 				splits.put( account, mysplit );
 				splits.put( accountfield.getValue(), yoursplit );
@@ -161,6 +162,25 @@ public class TransactionEntry extends AnchorPane {
 				}
 			}
 			else {
+				for ( Map.Entry<Account, Split> en : trans.getSplits().entrySet() ) {
+					Account acct = en.getKey();
+					Split s = en.getValue();
+					if ( acct.equals( account ) ) {
+						s.setMemo( mymemo );
+						s.setReconciled( myreco );
+						s.setValue( mymoney );
+					}
+					else {
+						en.getValue().setValue( mymoney.opposite() );
+					}
+				}
+
+				trans.setDate( tdate );
+				trans.setNumber( num );
+				trans.setPayee( payee );
+				// trans.setSplits( splits );
+				tmap.update( trans );
+
 				for ( CloseListener c : listenees ) {
 					c.updated( trans );
 				}
@@ -282,7 +302,9 @@ public class TransactionEntry extends AnchorPane {
 
 		setDate( t.getDate() );
 
-		tofromBtn.setText( mysplit.isDebit() ? "To" : "From" );
+		boolean debit = mysplit.isDebit();
+		// FIXME: need to look at isRightPlus to see what to do here
+		tofromBtn.setText( debit ? "To" : "From" );
 		payeefield.requestFocus();
 	}
 

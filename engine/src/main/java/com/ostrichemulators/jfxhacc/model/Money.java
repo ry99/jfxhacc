@@ -6,8 +6,10 @@
 package com.ostrichemulators.jfxhacc.model;
 
 import java.text.NumberFormat;
+import java.text.ParseException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.apache.log4j.Logger;
 
 /**
  * An immutable class for a single amount of money. We use the convention that a
@@ -17,6 +19,7 @@ import java.util.regex.Pattern;
  */
 public final class Money implements Comparable<Money> {
 
+	private static final Logger log = Logger.getLogger( Money.class );
 	private static final Pattern PATTERN
 			= Pattern.compile( "^(-)?([0-9]+)?(\\W)?([0-9]+)?$" );
 	private static final int DECIMALS = 2;
@@ -36,6 +39,14 @@ public final class Money implements Comparable<Money> {
 	}
 
 	public static Money valueOf( String val ) {
+		try {
+			Number num = NumberFormat.getCurrencyInstance().parse( val );
+			val = num.toString();
+		}
+		catch ( ParseException pe ) {
+			// don't care...just fall through
+		}
+
 		Money money;
 		Matcher m = PATTERN.matcher( val );
 		if ( m.matches() ) {
@@ -48,6 +59,7 @@ public final class Money implements Comparable<Money> {
 		}
 		else {
 			money = new Money( 0 );
+			log.warn( "unparseable money string: " + val );
 		}
 
 		return money;

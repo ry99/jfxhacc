@@ -68,7 +68,7 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 		return s;
 	}
 
-	private Split create( Account a, Split s, boolean dotrans ) throws RepositoryException {
+	private Split create( Account a, Split s, URI id, boolean dotrans ) throws RepositoryException {
 		RepositoryConnection rc = getConnection();
 		ValueFactory vf = rc.getValueFactory();
 
@@ -76,7 +76,9 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 			rc.begin();
 		}
 
-		URI id = UriUtil.randomUri( JfxHacc.SPLIT_TYPE );
+		if ( null == id ) {
+			id = UriUtil.randomUri( JfxHacc.SPLIT_TYPE );
+		}
 		s.setId( id );
 		rc.add( id, RDF.TYPE, JfxHacc.SPLIT_TYPE );
 		rc.add( id, Splits.ACCOUNT_PRED, a.getId() );
@@ -109,7 +111,7 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 			List<URI> splitids = new ArrayList<>();
 			for ( Map.Entry<Account, Split> en : splits.entrySet() ) {
 				Account a = en.getKey();
-				Split s = create( a, en.getValue(), false );
+				Split s = create( a, en.getValue(), null, false );
 				splitids.add( s.getId() );
 				realsplits.put( a, s );
 			}
@@ -193,7 +195,39 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 
 	@Override
 	public void update( Transaction t ) throws MapperException {
-		notifyUpdated( t );
+		RepositoryConnection rc = getConnection();
+		ValueFactory vf = rc.getValueFactory();
+
+		try {
+			rc.begin();
+
+			Map<Account, Split> realsplits = updateSplits( getSplitMap( t.getId() ),
+					new HashMap<>( t.getSplits() ), rc );
+
+			URI id = t.getId();
+			rc.remove( id, Transactions.PAYEE_PRED, null );
+			rc.remove( id, Transactions.DATE_PRED, null );
+			rc.remove( id, Transactions.NUMBER_PRED, null );
+
+			rc.add( id, Transactions.PAYEE_PRED, t.getPayee().getId() );
+			rc.add( id, Transactions.DATE_PRED, vf.createLiteral( t.getDate() ) );
+			if ( null != t.getNumber() ) {
+				rc.add( id, Transactions.NUMBER_PRED, vf.createLiteral( t.getNumber() ) );
+			}
+
+			rc.remove( id, Transactions.SPLIT_PRED, null );
+			for ( Split split : realsplits.values() ) {
+				rc.add( id, Transactions.SPLIT_PRED, split.getId() );
+			}
+			rc.commit();
+
+			t.setSplits( realsplits );
+			notifyUpdated( t );
+		}
+		catch ( RepositoryException re ) {
+			rollback( rc );
+			throw new MapperException( re );
+		}
 	}
 
 	@Override
@@ -213,8 +247,7 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 		}
 	}
 
-	private Map<Split, URI> getSplits( URI transid, RepositoryConnection rc, ValueFactory vf )
-			throws MapperException {
+	private Map<Split, URI> getSplits( URI transid ) throws MapperException {
 		return query( "SELECT ?s ?memo ?reco ?val ?aid WHERE {"
 				+ "  ?t trans:entry ?s."
 				+ "  ?s splits:account ?aid ."
@@ -252,6 +285,22 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 						return lkp;
 					}
 				} );
+	}
+
+	protected Map<Account, Split> getSplitMap( URI transid ) throws MapperException {
+		Map<URI, Account> accounts = new HashMap<>();
+		Map<Split, URI> splitos = getSplits( transid );
+		Map<Account, Split> splits = new HashMap<>();
+
+		for ( Map.Entry<Split, URI> en : splitos.entrySet() ) {
+			URI acctid = en.getValue();
+			if ( !accounts.containsKey( acctid ) ) {
+				accounts.put( acctid, amap.get( acctid ) );
+			}
+			splits.put( accounts.get( acctid ), en.getKey() );
+		}
+
+		return splits;
 	}
 
 	@Override
@@ -317,8 +366,7 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 
 		Map<URI, Account> accounts = new HashMap<>();
 		for ( Transaction t : transactions ) {
-			Map<Split, URI> splitos = getSplits( t.getId(), getConnection(),
-					getConnection().getValueFactory() );
+			Map<Split, URI> splitos = getSplits( t.getId() );
 
 			for ( Map.Entry<Split, URI> en : splitos.entrySet() ) {
 				URI acctid = en.getValue();
@@ -340,5 +388,37 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 		catch ( MapperException me ) {
 			log.error( me, me );
 		}
+	}
+
+	private Map<Account, Split> updateSplits( Map<Account, Split> oldsplits,
+			Map<Account, Split> newsplits, RepositoryConnection rc ) throws RepositoryException {
+		// if a split is in both maps, update it
+		// if it's in the old but not the new, remove it
+		// if it's in the new but not the old, add it
+
+		Map<Account, Split> realsplits = new HashMap<>();
+
+		for ( Map.Entry<Account, Split> en : oldsplits.entrySet() ) {
+			Split oldsplit = en.getValue();
+			Account oldacct = en.getKey();
+			if ( newsplits.containsKey( oldacct ) ) {
+				Split newsplit = newsplits.get( oldacct );
+				newsplit = create( oldacct, newsplit, newsplit.getId(), false );
+				realsplits.put( oldacct, newsplit );
+				newsplits.remove( oldacct );
+			}
+			else {
+				rc.remove( oldsplit.getId(), null, null );
+			}
+		}
+
+		// anything left in this map is a new transaction to add
+		for ( Map.Entry<Account, Split> en : newsplits.entrySet() ) {
+			Account acct = en.getKey();
+			Split newsplit = create( acct, en.getValue(), null, false );
+			realsplits.put( acct, newsplit );
+		}
+
+		return realsplits;
 	}
 }

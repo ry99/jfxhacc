@@ -8,6 +8,7 @@ package com.ostrichemulators.jfxhacc.model.impl;
 import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.vocabulary.JfxHacc;
+import java.util.Objects;
 import org.openrdf.model.URI;
 
 /**
@@ -86,4 +87,40 @@ public class SplitImpl extends IDableImpl implements Split {
 	public String toString() {
 		return ( isDebit() ? "debit" : "credit" ) + ": " + value;
 	}
+
+	@Override
+	public int hashCode() {
+		int hash = 7;
+		hash = 13 * hash + Objects.hashCode( this.memo );
+		hash = 13 * hash + Objects.hashCode( this.value );
+		hash = 13 * hash + ( this.isdebit ? 1 : 0 );
+		hash = 13 * hash + Objects.hashCode( this.reco );
+		return hash;
+	}
+
+	@Override
+	public boolean equals( Object obj ) {
+		if ( obj == null ) {
+			return false;
+		}
+		if ( getClass() != obj.getClass() ) {
+			return false;
+		}
+		final SplitImpl other = (SplitImpl) obj;
+		if ( !Objects.equals( this.memo, other.memo ) ) {
+			return false;
+		}
+		if ( !Objects.equals( this.value, other.value ) ) {
+			return false;
+		}
+		if ( this.isdebit != other.isdebit ) {
+			return false;
+		}
+		if ( this.reco != other.reco ) {
+			return false;
+		}
+
+		return getId().equals( other.getId() );
+	}
+
 }
