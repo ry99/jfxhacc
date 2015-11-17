@@ -30,7 +30,10 @@ public class DateCellFactory implements Callback<TableColumn<Transaction, Date>,
 			@Override
 			protected void updateItem( Date t, boolean empty ) {
 				super.updateItem( t, empty );
-				if ( !( empty || null == t ) ) {
+				if ( ( empty || null == t ) ) {
+					setText( null );
+				}
+				else {
 					setText( SDF.format( t ) );
 				}
 			}

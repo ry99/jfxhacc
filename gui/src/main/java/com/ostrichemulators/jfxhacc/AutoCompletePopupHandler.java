@@ -105,6 +105,7 @@ public class AutoCompletePopupHandler {
 				@Override
 				public void handle( ActionEvent actionEvent ) {
 					text.setText( result );
+					text.positionCaret( result.length() );
 					entriesPopup.hide();
 				}
 			} );

@@ -33,7 +33,10 @@ public class PayeeAccountMemoCellFactory implements Callback<TableColumn<Transac
 				super.updateItem( t, empty );
 
 				Pane pane = null;
-				if ( !empty ) {
+				if ( empty || null == t ) {
+					setText( null );
+				}
+				else {
 					pane = new Pane();
 					final double height = p.getTableView().getFixedCellSize() / 2;
 					final double halfwidth = p.getWidth() / 2;

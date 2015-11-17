@@ -27,7 +27,10 @@ public class MoneyTableTreeCellFactory implements Callback<TreeTableColumn<Accou
 			@Override
 			protected void updateItem( Money t, boolean empty ) {
 				super.updateItem( t, empty );
-				if ( !( null == t || empty ) ) {
+				if ( ( null == t || empty ) ) {
+					setText( null );
+				}
+				else {
 					setText( t.toString() );
 				}
 

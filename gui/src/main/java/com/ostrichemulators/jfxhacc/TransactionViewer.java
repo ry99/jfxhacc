@@ -37,10 +37,10 @@ import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.SplitPane;
+import javafx.scene.control.TableCell;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableColumn.SortType;
-import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
@@ -150,14 +150,13 @@ public class TransactionViewer extends AnchorPane implements ShutdownListener, M
 
 				if ( sortcol == i ) {
 					tc.setSortType( sortasc ? SortType.ASCENDING : SortType.DESCENDING );
-
 					sortcols.clear();
 					sortcols.add( tc );
 				}
 			}
 		}
 
-		transtable.getSortOrder().addAll( sortcols );
+		transtable.getSortOrder().setAll( sortcols );
 		transtable.sort();
 	}
 
@@ -199,7 +198,17 @@ public class TransactionViewer extends AnchorPane implements ShutdownListener, M
 
 			@Override
 			public void handle( MouseEvent t ) {
-				openEditor( transtable.getSelectionModel().getSelectedItem() );
+				double y = t.getY();
+				double maxy = transtable.getItems().size() * transtable.getFixedCellSize();
+
+				// see if our mouse click is actually past our row position
+				// (user clicked in empty space below all items)
+				if ( y > maxy ) {
+					openEditor( new Date(), ReconcileState.NOT_RECONCILED );
+				}
+				else {
+					openEditor( transtable.getSelectionModel().getSelectedItem() );
+				}
 			}
 		} );
 
@@ -228,8 +237,13 @@ public class TransactionViewer extends AnchorPane implements ShutdownListener, M
 	}
 
 	public void openEditor( Transaction t ) {
-		splitter.setDividerPositions( splitterpos );
-		dataentry.setTransaction( t );
+		if ( null == t ) {
+			openEditor( new Date(), ReconcileState.NOT_RECONCILED );
+		}
+		else {
+			splitter.setDividerPositions( splitterpos );
+			dataentry.setTransaction( t );
+		}
 	}
 
 	public void openEditor( Date d, ReconcileState rs ) {

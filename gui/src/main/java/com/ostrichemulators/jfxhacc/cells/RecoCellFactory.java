@@ -27,7 +27,10 @@ public class RecoCellFactory implements Callback<TableColumn<Transaction, Reconc
 			protected void updateItem( ReconcileState t, boolean empty ) {
 				super.updateItem( t, empty );
 
-				if ( !( empty || null == t ) ) {
+				if ( empty || null == t ) {
+					setText( null );
+				}
+				else {
 					switch ( t ) {
 						case RECONCILED:
 							setText( "R" );

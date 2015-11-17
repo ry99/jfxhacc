@@ -27,11 +27,11 @@ public class MoneyCellFactory implements Callback<TableColumn<Transaction, Money
 			@Override
 			protected void updateItem( Money t, boolean empty ) {
 				super.updateItem( t, empty );
-				if( !( null == t || empty ) ){
-					setText( t.toString() );
+				if ( ( null == t || empty ) ) {
+					setText( null );
 				}
 				else {
-					setText( null );
+					setText( t.toString() );
 				}
 
 				setAlignment( Pos.TOP_RIGHT );
