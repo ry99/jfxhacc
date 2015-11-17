@@ -29,14 +29,14 @@
             <Label text="Memo" GridPane.halignment="RIGHT" GridPane.rowIndex="1" />
             <Label text="Date" GridPane.columnIndex="3" GridPane.halignment="RIGHT" />
             <Label text="Number" GridPane.columnIndex="3" GridPane.halignment="RIGHT" GridPane.rowIndex="1" />
-            <Label text="Amount" GridPane.halignment="RIGHT" GridPane.rowIndex="3" />
+            <Label text="Amount" GridPane.halignment="RIGHT" GridPane.rowIndex="2" />
             <Label text="Rec" GridPane.columnIndex="3" GridPane.halignment="RIGHT" GridPane.rowIndex="2" />
-            <com.ostrichemulators.jfxhacc.AutoCompleteTextField fx:id="payeefield" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.hgrow="SOMETIMES" />
+            <TextField fx:id="payeefield" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.hgrow="SOMETIMES" />
             <TextField fx:id="memofield" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="1" />
-            <ComboBox fx:id="accountfield" maxWidth="1.7976931348623157E308" prefHeight="26.0" prefWidth="342.0" GridPane.columnIndex="1" GridPane.rowIndex="2" />
-            <Button fx:id="splitBtn" maxWidth="1.7976931348623157E308" mnemonicParsing="false" prefHeight="26.0" prefWidth="85.0" text="Splits" GridPane.columnIndex="2" GridPane.hgrow="SOMETIMES" GridPane.rowIndex="2" />
-            <Button fx:id="tofromBtn" contentDisplay="CENTER" mnemonicParsing="false" onAction="#switchToFrom" text="To" textAlignment="CENTER" GridPane.halignment="RIGHT" GridPane.rowIndex="2" />
-            <TextField fx:id="amountfield" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="3" />
+            <ComboBox fx:id="accountfield" maxWidth="1.7976931348623157E308" prefHeight="26.0" prefWidth="342.0" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+            <Button fx:id="splitBtn" maxWidth="1.7976931348623157E308" mnemonicParsing="false" prefHeight="26.0" prefWidth="85.0" text="Splits" GridPane.columnIndex="2" GridPane.hgrow="SOMETIMES" GridPane.rowIndex="3" />
+            <Button fx:id="tofromBtn" contentDisplay="CENTER" mnemonicParsing="false" onAction="#switchToFrom" text="To" textAlignment="CENTER" GridPane.halignment="RIGHT" GridPane.rowIndex="3" />
+            <TextField fx:id="amountfield" prefHeight="26.0" prefWidth="274.0" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="2" />
             <DatePicker fx:id="datefield" maxWidth="1.7976931348623157E308" prefHeight="26.0" prefWidth="96.0" GridPane.columnIndex="4" GridPane.hgrow="ALWAYS" />
             <TextField fx:id="numberfield" GridPane.columnIndex="4" GridPane.rowIndex="1" />
             <CheckBox fx:id="recofield" mnemonicParsing="false" GridPane.columnIndex="4" GridPane.halignment="CENTER" GridPane.rowIndex="2" />

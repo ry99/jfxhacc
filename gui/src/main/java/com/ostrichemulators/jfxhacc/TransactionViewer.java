@@ -31,10 +31,9 @@ import java.util.ListIterator;
 import java.util.prefs.Preferences;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringWrapper;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.SplitPane;
@@ -43,6 +42,7 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableColumn.SortType;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import org.apache.log4j.Logger;
 import org.openrdf.model.URI;
@@ -164,7 +164,7 @@ public class TransactionViewer extends AnchorPane implements ShutdownListener, M
 	@FXML
 	public void initialize() {
 		MainApp.getShutdownNotifier().addShutdownListener( this );
-		setOnKeyPressed( ( event ) -> keyPressed( event ) );
+		transtable.setOnKeyTyped( event -> keyTyped( event ) );
 
 		transtable.setItems( transactions );
 
@@ -195,14 +195,11 @@ public class TransactionViewer extends AnchorPane implements ShutdownListener, M
 		splitterpos = prefs.getDouble( PREF_SPLITTER, 0.70 );
 		splitter.setDividerPositions( 1.0 );
 
-		transtable.getSelectionModel().selectedItemProperty().addListener( new ChangeListener<Transaction>() {
+		transtable.setOnMouseClicked( new EventHandler<MouseEvent>() {
 
 			@Override
-			public void changed( ObservableValue<? extends Transaction> ov,
-					Transaction oldval, Transaction newval ) {
-				if ( null != newval ) {
-					TransactionViewer.this.openEditor( newval );
-				}
+			public void handle( MouseEvent t ) {
+				openEditor( transtable.getSelectionModel().getSelectedItem() );
 			}
 		} );
 
@@ -215,6 +212,7 @@ public class TransactionViewer extends AnchorPane implements ShutdownListener, M
 			public void closed() {
 				splitterpos = splitter.getDividerPositions()[0];
 				splitter.setDividerPositions( 1.0 );
+				transtable.requestFocus();
 			}
 
 			@Override
@@ -231,13 +229,11 @@ public class TransactionViewer extends AnchorPane implements ShutdownListener, M
 
 	public void openEditor( Transaction t ) {
 		splitter.setDividerPositions( splitterpos );
-		dataentry.requestFocus();
 		dataentry.setTransaction( t );
 	}
 
 	public void openEditor( Date d, ReconcileState rs ) {
 		splitter.setDividerPositions( splitterpos );
-		dataentry.requestFocus();
 
 		boolean to = true;
 		dataentry.setTransaction( d, rs, to );
@@ -271,26 +267,24 @@ public class TransactionViewer extends AnchorPane implements ShutdownListener, M
 	}
 
 	@FXML
-	public void keyPressed( KeyEvent ke ) {
-		if ( !this.focusedProperty().getValue() ) {
-			return;
-		}
-
-		log.debug( "key pressed!" );
-		KeyCode code = ke.getCode();
+	public void keyTyped( KeyEvent ke ) {
+		String code = ke.getCharacter();
 		Transaction t = transtable.getSelectionModel().getSelectedItem();
-		if ( KeyCode.I == code ) {
+		if ( "I".equalsIgnoreCase( code ) ) {
+			ke.consume();
 			Date tdate = ( null == t ? new Date() : t.getDate() );
 			ReconcileState rs = ReconcileState.NOT_RECONCILED;
 			openEditor( tdate, rs );
 		}
-		else if ( KeyCode.R == code ) {
+		else if ( "R".equalsIgnoreCase( code ) ) {
+			ke.consume();
 			Split s = t.getSplits().get( account );
 			// cycle through the reconcile states
 			ReconcileState rs = s.getReconciled();
 			ReconcileState states[] = ReconcileState.values();
 			try {
 				tmap.reconcile( s, states[( rs.ordinal() + 1 ) % states.length] );
+				updated( t );
 			}
 			catch ( MapperException me ) {
 				log.error( me, me );
@@ -298,7 +292,8 @@ public class TransactionViewer extends AnchorPane implements ShutdownListener, M
 			}
 
 		}
-		else if ( KeyCode.E == code ) {
+		else if ( "E".equalsIgnoreCase( code ) ) {
+			ke.consume();
 			openEditor( transtable.getSelectionModel().getSelectedItem() );
 		}
 	}

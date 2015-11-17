@@ -13,7 +13,7 @@ public interface Split extends IDable {
 
 	public static enum ReconcileState {
 
-		RECONCILED, CLEARED, NOT_RECONCILED
+		NOT_RECONCILED, CLEARED, RECONCILED,
 	};
 
 	public String getMemo();

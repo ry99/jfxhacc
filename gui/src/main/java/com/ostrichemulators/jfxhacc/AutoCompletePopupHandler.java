@@ -29,7 +29,7 @@ import java.util.TreeSet;
  *
  * @author ryan
  */
-public class AutoCompleteTextField extends TextField {
+public class AutoCompletePopupHandler {
 
 	/**
 	 * The existing autocomplete entries.
@@ -39,27 +39,30 @@ public class AutoCompleteTextField extends TextField {
 	 * The popup used to select an entry.
 	 */
 	private ContextMenu entriesPopup;
+	private final TextField text;
 
 	/**
 	 * Construct a new AutoCompleteTextField.
 	 */
-	public AutoCompleteTextField() {
+	public AutoCompletePopupHandler( TextField text ) {
 		super();
+		this.text = text;
 		entries = new TreeSet<>( String.CASE_INSENSITIVE_ORDER );
 		entriesPopup = new ContextMenu();
-		textProperty().addListener( new ChangeListener<String>() {
+		text.textProperty().addListener( new ChangeListener<String>() {
 			@Override
 			public void changed( ObservableValue<? extends String> observableValue, String s, String s2 ) {
-				if ( getText().isEmpty() ) {
+				if ( text.getText().isEmpty() ) {
 					entriesPopup.hide();
 				}
 				else {
 					List<String> searchResult = new ArrayList<>();
-					searchResult.addAll( entries.subSet( getText(), getText() + Character.MAX_VALUE ) );
+					searchResult.addAll( entries.subSet( text.getText(),
+							text.getText() + Character.MAX_VALUE ) );
 					if ( entries.size() > 0 ) {
 						populatePopup( searchResult );
 						if ( !entriesPopup.isShowing() ) {
-							entriesPopup.show( AutoCompleteTextField.this, Side.BOTTOM, 0, 0 );
+							entriesPopup.show( text, Side.BOTTOM, 0, 0 );
 						}
 					}
 					else {
@@ -69,13 +72,9 @@ public class AutoCompleteTextField extends TextField {
 			}
 		} );
 
-		focusedProperty().addListener( new ChangeListener<Boolean>() {
-			@Override
-			public void changed( ObservableValue<? extends Boolean> observableValue, Boolean aBoolean, Boolean aBoolean2 ) {
-				entriesPopup.hide();
-			}
+		text.focusedProperty().addListener( event -> {
+			entriesPopup.hide();
 		} );
-
 	}
 
 	/**
@@ -105,7 +104,7 @@ public class AutoCompleteTextField extends TextField {
 			item.setOnAction( new EventHandler<ActionEvent>() {
 				@Override
 				public void handle( ActionEvent actionEvent ) {
-					setText( result );
+					text.setText( result );
 					entriesPopup.hide();
 				}
 			} );

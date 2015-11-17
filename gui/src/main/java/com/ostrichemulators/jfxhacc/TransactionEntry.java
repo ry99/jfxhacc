@@ -56,17 +56,11 @@ public class TransactionEntry extends AnchorPane {
 
 	private static final Logger log = Logger.getLogger( TransactionEntry.class );
 	@FXML
-	private Label accountLabel;
-	@FXML
 	private Button splitBtn;
-	@FXML
-	private Button saveBtn;
 	@FXML
 	private Button tofromBtn;
 	@FXML
 	private ComboBox<Account> accountfield;
-	@FXML
-	private AutoCompleteTextField payeefield;
 	@FXML
 	private CheckBox recofield;
 	@FXML
@@ -77,6 +71,8 @@ public class TransactionEntry extends AnchorPane {
 	private TextField memofield;
 	@FXML
 	private TextField numberfield;
+	@FXML
+	private TextField payeefield;
 
 	private Transaction trans;
 	private Account account;
@@ -86,6 +82,7 @@ public class TransactionEntry extends AnchorPane {
 	private PayeeMapper pmap;
 	private TransactionMapper tmap;
 	private List<CloseListener> listenees = new ArrayList<>();
+	private AutoCompletePopupHandler autocomplete;
 
 	private Map<String, Payee> payeemap = new HashMap<>();
 
@@ -101,6 +98,7 @@ public class TransactionEntry extends AnchorPane {
 		catch ( IOException exception ) {
 			throw new RuntimeException( exception );
 		}
+
 	}
 
 	public void addCloseListener( CloseListener cc ) {
@@ -208,10 +206,10 @@ public class TransactionEntry extends AnchorPane {
 		}
 		else {
 			if ( to ) {
-				return ( posmoney ? money : money.opposite() );
+				return ( posmoney ? money.opposite() : money );
 			}
 			else {
-				return ( posmoney ? money.opposite() : money );
+				return ( posmoney ? money : money.opposite() );
 			}
 		}
 	}
@@ -222,6 +220,8 @@ public class TransactionEntry extends AnchorPane {
 	@FXML
 	public void initialize() {
 		payeefield.setEditable( true );
+		autocomplete = new AutoCompletePopupHandler( payeefield );
+
 		accountfield.setEditable( false );
 		recofield.setAllowIndeterminate( true );
 
@@ -239,7 +239,7 @@ public class TransactionEntry extends AnchorPane {
 			log.warn( x, x );
 		}
 
-		payeefield.getEntries().addAll( payeemap.keySet() );
+		autocomplete.getEntries().addAll( payeemap.keySet() );
 
 		accountfield.setButtonCell( makeAccountCell() );
 		accountfield.setCellFactory( new Callback<ListView<Account>, ListCell<Account>>() {
@@ -303,8 +303,8 @@ public class TransactionEntry extends AnchorPane {
 		setDate( t.getDate() );
 
 		boolean debit = mysplit.isDebit();
-		// FIXME: need to look at isRightPlus to see what to do here
 		tofromBtn.setText( debit ? "To" : "From" );
+
 		payeefield.requestFocus();
 	}
 
