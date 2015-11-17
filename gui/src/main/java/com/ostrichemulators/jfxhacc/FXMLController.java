@@ -2,10 +2,12 @@ package com.ostrichemulators.jfxhacc;
 
 import com.ostrichemulators.jfxhacc.cells.MoneyTableTreeCellFactory;
 import com.ostrichemulators.jfxhacc.mapper.AccountMapper;
+import com.ostrichemulators.jfxhacc.mapper.AccountMapper.BalanceType;
 import com.ostrichemulators.jfxhacc.mapper.MapperException;
 import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
+import com.ostrichemulators.jfxhacc.utility.GuiUtils;
 import java.net.URL;
 import java.util.Date;
 import java.util.HashMap;
@@ -20,7 +22,7 @@ import javafx.beans.value.ObservableValue;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Accordion;
-import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TitledPane;
@@ -54,7 +56,10 @@ public class FXMLController implements Initializable, ShutdownListener {
 	@FXML
 	private TransactionViewer transactions;
 	@FXML
-	private Button newtransBtn;
+	private Label balrec;
+
+	@FXML
+	private Label acctname;
 
 	@Override
 	public void initialize( URL url, ResourceBundle rb ) {
@@ -116,7 +121,15 @@ public class FXMLController implements Initializable, ShutdownListener {
 			@Override
 			public void changed( ObservableValue<? extends TreeItem<Account>> ov,
 					TreeItem<Account> oldsel, TreeItem<Account> newsel ) {
-				transactions.setAccount( newsel.getValue() );
+				Account acct = newsel.getValue();
+				transactions.setAccount( acct );
+				String fname = GuiUtils.getFullName( acct, amap );
+				acctname.setText( fname );
+				MainApp.getShutdownNotifier().getStage().setTitle( fname );
+
+				Money curr = amap.getBalance( acct, BalanceType.CURRENT );
+				Money rec = amap.getBalance( acct, BalanceType.RECONCILED );
+				balrec.setText( curr.toString() + "/" + rec.toString() + " R" );
 			}
 		} );
 

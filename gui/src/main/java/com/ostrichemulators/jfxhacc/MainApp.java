@@ -63,7 +63,7 @@ public class MainApp extends Application {
 	@Override
 	public void start( Stage stage ) throws Exception {
 		MainApp.stager = new StageRememberer( stage );
-		
+
 		URL loc = getClass().getResource( "/fxml/Scene.fxml" );
 		FXMLLoader fxmlloader = new FXMLLoader( loc );
 		fxmlloader.setController( new FXMLController() );
@@ -248,6 +248,10 @@ public class MainApp extends Application {
 
 		public void removeShutdownListener( ShutdownListener r ) {
 			listeners.remove( r );
+		}
+
+		public Stage getStage() {
+			return mystage;
 		}
 
 		public void restore( Stage stage ) {

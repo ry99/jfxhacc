@@ -17,6 +17,7 @@ import com.ostrichemulators.jfxhacc.model.Payee;
 import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
 import com.ostrichemulators.jfxhacc.model.Transaction;
+import com.ostrichemulators.jfxhacc.utility.GuiUtils;
 import java.io.IOException;
 import java.text.Collator;
 import java.time.Instant;
@@ -27,11 +28,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
-import javafx.application.Platform;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.SortedList;
@@ -127,7 +124,8 @@ public class TransactionEntry extends AnchorPane {
 
 				@Override
 				public int compare( Account o1, Account o2 ) {
-					return Collator.getInstance().compare( getFullName( o1 ), getFullName( o2 ) );
+					return Collator.getInstance().compare( GuiUtils.getFullName( o1, amap ),
+							GuiUtils.getFullName( o2, amap ) );
 				}
 			} );
 			accountfield.setItems( sorted );
@@ -139,7 +137,7 @@ public class TransactionEntry extends AnchorPane {
 					String charo = t.getCharacter().toUpperCase();
 					Account selected = null;
 					for ( Account acct : accountfield.getItems() ) {
-						String fullname = getFullName( acct ).toUpperCase();
+						String fullname = GuiUtils.getFullName( acct, amap ).toUpperCase();
 						if ( fullname.startsWith( charo ) ) {
 							selected = acct;
 							break;
@@ -405,30 +403,13 @@ public class TransactionEntry extends AnchorPane {
 		}
 	}
 
-	private String getFullName( Account a ) {
-		try {
-			List<Account> parents = amap.getParents( a );
-			StringBuilder sb = new StringBuilder();
-			for ( Account parent : parents ) {
-				sb.append( parent.getName() ).append( "::" );
-			}
-			sb.append( a.getName() );
-			return sb.toString();
-		}
-		catch ( MapperException me ) {
-			log.warn( me, me );
-		}
-
-		return a.getName();
-	}
-
 	private ListCell<Account> makeAccountCell() {
 		return new ListCell<Account>() {
 			@Override
-			protected void updateItem( Account t, boolean empty ) {
-				super.updateItem( t, empty );
-				if ( !( null == t || empty ) ) {
-					setText( getFullName( t ) );
+			protected void updateItem( Account acct, boolean empty ) {
+				super.updateItem( acct, empty );
+				if ( !( null == acct || empty ) ) {
+					setText( GuiUtils.getFullName( acct, amap ) );
 				}
 			}
 		};
