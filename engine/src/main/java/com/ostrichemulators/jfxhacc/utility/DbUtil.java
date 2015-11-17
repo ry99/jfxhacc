@@ -103,9 +103,7 @@ public class DbUtil {
 	}
 
 	public static RepositoryConnection createInMemRepository() throws RepositoryException {
-		ForwardChainingRDFSInferencer fci
-				= new ForwardChainingRDFSInferencer( new MemoryStore() );
-		Repository repo = new SailRepository( fci );
+		Repository repo = new SailRepository( new MemoryStore() );
 		repo.initialize();
 		RepositoryConnection rc = repo.getConnection();
 		initDb( rc );
@@ -131,9 +129,7 @@ public class DbUtil {
 			datadir = datadir.getParentFile();
 		}
 
-		ForwardChainingRDFSInferencer fci
-				= new ForwardChainingRDFSInferencer( new MemoryStore( datadir ) );
-		Repository repo = new SailRepository( fci );
+		Repository repo = new SailRepository( new MemoryStore( datadir ) );
 		repo.initialize();
 		return repo.getConnection();
 	}
