@@ -27,17 +27,18 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.SortedList;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
-import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
@@ -85,6 +86,8 @@ public class TransactionEntry extends AnchorPane {
 	private AutoCompletePopupHandler autocomplete;
 
 	private Map<String, Payee> payeemap = new HashMap<>();
+	private final ObservableList<Account> accounts
+			= FXCollections.observableArrayList();
 
 	public TransactionEntry() {
 		FXMLLoader fxmlLoader
@@ -113,8 +116,7 @@ public class TransactionEntry extends AnchorPane {
 		account = a;
 
 		try {
-			ObservableList<Account> accounts
-					= FXCollections.observableArrayList( amap.getAll() );
+			accounts.addAll( amap.getAll() );
 			accounts.remove( a );
 			SortedList<Account> sorted = new SortedList<>( accounts );
 			sorted.setComparator( new Comparator<Account>() {
@@ -125,6 +127,50 @@ public class TransactionEntry extends AnchorPane {
 				}
 			} );
 			accountfield.setItems( sorted );
+
+			accountfield.setOnKeyTyped( new EventHandler<KeyEvent>() {
+				String typedSoFar = "";
+
+				@Override
+				public void handle( KeyEvent t ) {
+					String txt = t.getText();
+					log.debug( "key text: " + txt );
+					if ( !t.getCharacter().trim().isEmpty() ) {
+						typedSoFar += t.getCharacter();
+					}
+
+					if ( typedSoFar.isEmpty() ) {
+						try {
+							accounts.setAll( amap.getAll() );
+						}
+						catch ( MapperException me ) {
+							log.warn( "autocomplete account problem", me );
+						}
+					}
+					else {
+						ListIterator<Account> li = accounts.listIterator();
+						while ( li.hasNext() ) {
+							Account acct = li.next();
+							String fullname = getFullName( acct ).toUpperCase();
+							if ( !fullname.contains( typedSoFar.toUpperCase() ) ) {
+								li.remove();
+							}
+						}
+					}
+
+					accountfield.show();
+				}
+			} );
+
+			accountfield.setOnHidden( event -> {
+				// when the popup goes away, reset the choices
+				try {
+					accounts.setAll( amap.getAll() );
+				}
+				catch ( MapperException me ) {
+					log.warn( "autocomplete account problem", me );
+				}
+			} );
 		}
 		catch ( MapperException me ) {
 			log.error( me, me );
@@ -360,9 +406,10 @@ public class TransactionEntry extends AnchorPane {
 
 	@FXML
 	protected void keypress( KeyEvent ke ) {
-		log.debug( "key pressed!" );
 		KeyCode code = ke.getCode();
 		if ( KeyCode.ESCAPE == code ) {
+			log.debug( "esc pressed!" );
+			ke.consume();
 			for ( CloseListener cl : listenees ) {
 				cl.closed();
 			}
