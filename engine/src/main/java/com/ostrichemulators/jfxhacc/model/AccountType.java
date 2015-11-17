@@ -18,16 +18,16 @@ public enum AccountType {
 	LIABILITY( true, JfxHacc.LIABILITY ), EQUITY( true, JfxHacc.EQUITY ),
 	REVENUE( true, JfxHacc.REVENUE );
 
-	private final boolean rp;
+	private final boolean debitPlus;
 	private final URI uri;
 
 	AccountType( boolean rightplus, URI typeuri ) {
-		rp = rightplus;
+		debitPlus = rightplus;
 		uri = typeuri;
 	}
 
-	public boolean isRightPlus() {
-		return rp;
+	public boolean isDebitPlus() {
+		return debitPlus;
 	}
 
 	public URI getUri() {

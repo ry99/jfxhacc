@@ -52,7 +52,7 @@ public interface TransactionMapper extends DataMapper<Transaction> {
 				debits += value;
 			}
 
-			if ( atype.isRightPlus() ) {
+			if ( atype.isDebitPlus() ) {
 				rights += value;
 			}
 			else {
@@ -91,14 +91,18 @@ public interface TransactionMapper extends DataMapper<Transaction> {
 	public Split create( Money m, String memo, ReconcileState rs );
 
 	/**
-	 * Sets the persisted state of the given split to the given reconcile state,
+	 * Sets the persisted state of the given splits to the given reconcile state,
 	 * and (for convenience) calls
 	 * {@link Split#setReconciled(com.ostrichemulators.jfxhacc.model.Split.ReconcileState) }
 	 *
-	 * @param s
-	 * @param rs
-	 * @return
+	 * @param rs the splits to change
+	 * @param splits the new state
+	 * @param acct the account containing all the splits
 	 * @throws MapperException
 	 */
-	public Split reconcile( Split s, ReconcileState rs ) throws MapperException;
+	public void reconcile( ReconcileState rs, Account acct, Split... splits ) throws MapperException;
+
+	public void addMapperListener( TransactionListener tl );
+
+	public void removeMapperListener( TransactionListener tl );
 }

@@ -37,7 +37,6 @@ import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.SplitPane;
-import javafx.scene.control.TableCell;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableColumn.SortType;
@@ -297,7 +296,7 @@ public class TransactionViewer extends AnchorPane implements ShutdownListener, M
 			ReconcileState rs = s.getReconciled();
 			ReconcileState states[] = ReconcileState.values();
 			try {
-				tmap.reconcile( s, states[( rs.ordinal() + 1 ) % states.length] );
+				tmap.reconcile( states[( rs.ordinal() + 1 ) % states.length], account, s );
 				updated( t );
 			}
 			catch ( MapperException me ) {

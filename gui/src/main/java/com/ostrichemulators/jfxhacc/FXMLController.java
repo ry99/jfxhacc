@@ -1,12 +1,15 @@
 package com.ostrichemulators.jfxhacc;
 
 import com.ostrichemulators.jfxhacc.cells.MoneyTableTreeCellFactory;
+import com.ostrichemulators.jfxhacc.engine.DataEngine;
 import com.ostrichemulators.jfxhacc.mapper.AccountMapper;
 import com.ostrichemulators.jfxhacc.mapper.AccountMapper.BalanceType;
 import com.ostrichemulators.jfxhacc.mapper.MapperException;
 import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
+import com.ostrichemulators.jfxhacc.utility.AccountBalanceCache;
+import com.ostrichemulators.jfxhacc.utility.AccountBalanceCache.MoneyPair;
 import com.ostrichemulators.jfxhacc.utility.GuiUtils;
 import java.net.URL;
 import java.util.Date;
@@ -19,6 +22,7 @@ import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.collections.MapChangeListener;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Accordion;
@@ -57,13 +61,19 @@ public class FXMLController implements Initializable, ShutdownListener {
 	private TransactionViewer transactions;
 	@FXML
 	private Label balrec;
-
 	@FXML
 	private Label acctname;
+
+	private AccountBalanceCache acb;
 
 	@Override
 	public void initialize( URL url, ResourceBundle rb ) {
 		MainApp.getShutdownNotifier().addShutdownListener( this );
+
+		DataEngine engine = MainApp.getEngine();
+		AccountMapper amap = engine.getAccountMapper();
+
+		acb = new AccountBalanceCache( amap, engine.getTransactionMapper() );
 
 		Preferences prefs = Preferences.userNodeForPackage( getClass() );
 		String selidstr = prefs.get( PREF_SELECTED, "" );
@@ -73,7 +83,6 @@ public class FXMLController implements Initializable, ShutdownListener {
 
 		accordion.setExpandedPane( accountsPane );
 		TreeItem<Account> toselect1 = null;
-		AccountMapper amap = MainApp.getEngine().getAccountMapper();
 		Map<Account, TreeItem<Account>> items = new HashMap<>();
 		Map<Account, Account> childparentlkp = new HashMap<>();
 		try {
@@ -106,8 +115,8 @@ public class FXMLController implements Initializable, ShutdownListener {
 				-> new ReadOnlyStringWrapper( p.getValue().getValue().getName() ) );
 
 		accountBalance.setCellValueFactory( ( CellDataFeatures<Account, Money> p )
-				-> new ReadOnlyObjectWrapper<>( amap.getBalance( p.getValue().getValue(),
-								AccountMapper.BalanceType.CURRENT ) ) );
+				-> new ReadOnlyObjectWrapper<>( acb.get( p.getValue().getValue(),
+								BalanceType.CURRENT ) ) );
 		accountBalance.setCellFactory( new MoneyTableTreeCellFactory() );
 
 		root.setExpanded( true );
@@ -127,9 +136,20 @@ public class FXMLController implements Initializable, ShutdownListener {
 				acctname.setText( fname );
 				MainApp.getShutdownNotifier().getStage().setTitle( fname );
 
-				Money curr = amap.getBalance( acct, BalanceType.CURRENT );
-				Money rec = amap.getBalance( acct, BalanceType.RECONCILED );
-				balrec.setText( curr.toString() + "/" + rec.toString() + " R" );
+				updateBalancesLabel();
+			}
+		} );
+
+		acb.getMap().addListener( new MapChangeListener<Account, MoneyPair>() {
+
+			@Override
+			public void onChanged( MapChangeListener.Change<? extends Account, ? extends MoneyPair> change ) {
+				TreeItem<Account> item = accounts.getSelectionModel().getSelectedItem();
+				Account acct = ( null == item ? null : item.getValue() );
+
+				if ( change.getKey().equals( acct ) ) {
+					updateBalancesLabel();
+				}
 			}
 		} );
 
@@ -149,6 +169,16 @@ public class FXMLController implements Initializable, ShutdownListener {
 				splitter.setDividerPositions( splitterpos );
 			}
 		} );
+	}
+
+	private void updateBalancesLabel() {
+		TreeItem<Account> item = accounts.getSelectionModel().getSelectedItem();
+		if ( null != item ) {
+			Account acct = item.getValue();
+			Money curr = acb.get( acct, BalanceType.CURRENT );
+			Money rec = acb.get( acct, BalanceType.RECONCILED );
+			balrec.setText( curr.toString() + "/" + rec.toString() + " R" );
+		}
 	}
 
 	@Override

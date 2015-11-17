@@ -232,7 +232,7 @@ public class TransactionEntry extends AnchorPane {
 		Money money = Money.valueOf( amountfield.getText() );
 		boolean posmoney = money.isPositive();
 
-		if ( account.getAccountType().isRightPlus() ) {
+		if ( account.getAccountType().isDebitPlus() ) {
 			if ( to ) {
 				return ( posmoney ? money.opposite() : money );
 			}

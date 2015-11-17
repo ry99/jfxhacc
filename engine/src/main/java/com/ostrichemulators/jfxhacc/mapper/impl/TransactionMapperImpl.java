@@ -9,6 +9,7 @@ import com.ostrichemulators.jfxhacc.mapper.AccountMapper;
 import com.ostrichemulators.jfxhacc.mapper.MapperException;
 import com.ostrichemulators.jfxhacc.mapper.PayeeMapper;
 import com.ostrichemulators.jfxhacc.mapper.QueryHandler;
+import com.ostrichemulators.jfxhacc.mapper.TransactionListener;
 import com.ostrichemulators.jfxhacc.mapper.TransactionMapper;
 import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.Journal;
@@ -26,6 +27,7 @@ import com.ostrichemulators.jfxhacc.utility.DbUtil;
 import com.ostrichemulators.jfxhacc.utility.UriUtil;
 import info.aduna.iteration.Iterations;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -52,12 +54,25 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 	private static final Logger log = Logger.getLogger( TransactionMapperImpl.class );
 	private final PayeeMapper pmap;
 	private final AccountMapper amap;
+	private final List<TransactionListener> listenees = new ArrayList<>();
 
 	public TransactionMapperImpl( RepositoryConnection repoc, AccountMapper amap,
 			PayeeMapper pmap ) {
 		super( repoc, JfxHacc.TRANSACTION_TYPE );
 		this.pmap = pmap;
 		this.amap = amap;
+	}
+
+	@Override
+	public void addMapperListener( TransactionListener tl ) {
+		super.addMapperListener( tl );
+		listenees.add( tl );
+	}
+
+	@Override
+	public void removeMapperListener( TransactionListener tl ) {
+		super.removeMapperListener( tl );
+		listenees.remove( tl );
 	}
 
 	@Override
@@ -304,15 +319,21 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 	}
 
 	@Override
-	public Split reconcile( Split s, ReconcileState rs ) throws MapperException {
+	public void reconcile( ReconcileState rs, Account acct, Split... splits ) throws MapperException {
 		RepositoryConnection rc = getConnection();
 		try {
 			rc.begin();
-			rc.remove( s.getId(), Splits.RECO_PRED, null );
-			rc.add( s.getId(), Splits.RECO_PRED, new LiteralImpl( rs.toString() ) );
-			s.setReconciled( rs );
+			for ( Split s : splits ) {
+				rc.remove( s.getId(), Splits.RECO_PRED, null );
+				rc.add( s.getId(), Splits.RECO_PRED, new LiteralImpl( rs.toString() ) );
+				s.setReconciled( rs );
+			}
 			rc.commit();
-			return s;
+
+			List<Split> list = Arrays.asList( splits );
+			for ( TransactionListener tl : listenees ) {
+				tl.reconciled( acct, list );
+			}
 		}
 		catch ( RepositoryException re ) {
 			rollback( rc );
