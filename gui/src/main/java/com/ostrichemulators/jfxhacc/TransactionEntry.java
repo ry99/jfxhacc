@@ -29,6 +29,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import javafx.application.Platform;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.SortedList;
@@ -86,6 +89,7 @@ public class TransactionEntry extends AnchorPane {
 	private AutoCompletePopupHandler autocomplete;
 
 	private Map<String, Payee> payeemap = new HashMap<>();
+	private final List<Account> allaccounts = new ArrayList<>();
 	private final ObservableList<Account> accounts
 			= FXCollections.observableArrayList();
 
@@ -129,46 +133,34 @@ public class TransactionEntry extends AnchorPane {
 			accountfield.setItems( sorted );
 
 			accountfield.setOnKeyTyped( new EventHandler<KeyEvent>() {
-				String typedSoFar = "";
-
 				@Override
 				public void handle( KeyEvent t ) {
-					String txt = t.getText();
-					log.debug( "key text: " + txt );
-					if ( !t.getCharacter().trim().isEmpty() ) {
-						typedSoFar += t.getCharacter();
+					t.consume();
+					String charo = t.getCharacter().toUpperCase();
+					Account selected = null;
+					for ( Account acct : accountfield.getItems() ) {
+						String fullname = getFullName( acct ).toUpperCase();
+						if ( fullname.startsWith( charo ) ) {
+							selected = acct;
+							break;
+						}
 					}
 
-					if ( typedSoFar.isEmpty() ) {
-						try {
-							accounts.setAll( amap.getAll() );
-						}
-						catch ( MapperException me ) {
-							log.warn( "autocomplete account problem", me );
-						}
-					}
-					else {
-						ListIterator<Account> li = accounts.listIterator();
-						while ( li.hasNext() ) {
-							Account acct = li.next();
-							String fullname = getFullName( acct ).toUpperCase();
-							if ( !fullname.contains( typedSoFar.toUpperCase() ) ) {
-								li.remove();
+					if ( null == selected ) {
+						// didn't find a match with full names, so check regular names
+						for ( Account acct : accountfield.getItems() ) {
+							String fullname = acct.getName().toUpperCase();
+							if ( fullname.startsWith( charo ) ) {
+								selected = acct;
+								break;
 							}
 						}
 					}
 
-					accountfield.show();
-				}
-			} );
-
-			accountfield.setOnHidden( event -> {
-				// when the popup goes away, reset the choices
-				try {
-					accounts.setAll( amap.getAll() );
-				}
-				catch ( MapperException me ) {
-					log.warn( "autocomplete account problem", me );
+					if ( null != selected ) {
+						accountfield.getSelectionModel().select( selected );
+						accountfield.setValue( selected );
+					}
 				}
 			} );
 		}
@@ -275,6 +267,8 @@ public class TransactionEntry extends AnchorPane {
 			DataEngine eng = MainApp.getEngine();
 			pmap = eng.getPayeeMapper();
 			amap = eng.getAccountMapper();
+			allaccounts.clear();
+			allaccounts.addAll( amap.getAll() );
 			tmap = eng.getTransactionMapper();
 
 			for ( Payee p : pmap.getAll() ) {
@@ -295,11 +289,6 @@ public class TransactionEntry extends AnchorPane {
 				return makeAccountCell();
 			}
 		} );
-
-//		datefield.setOnAction( event -> {
-//			LocalDate date = datefield.getValue();
-//			System.out.println( "Selected date: " + date );
-//		} );
 	}
 
 	public void setTransaction( Date d, ReconcileState rs, boolean to ) {
