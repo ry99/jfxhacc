@@ -190,7 +190,7 @@ public class AccountMapperImpl extends SimpleEntityRdfMapper<Account> implements
 			return a.getOpeningBalance();
 		}
 
-		String sparql = "SELECT ?val WHERE {"
+		String sparql = "SELECT ( SUM( ?val ) AS ?sum ) WHERE {"
 				+ "  ?split ?sval ?val . "
 				+ "  ?split ?sreco ?reco ."
 				+ "  ?split ?sacct ?accountid "
@@ -206,6 +206,10 @@ public class AccountMapperImpl extends SimpleEntityRdfMapper<Account> implements
 		try {
 			Value val = oneval( sparql, map );
 			int balance = ( null == val ? 0 : Literal.class.cast( val ).intValue() );
+			if ( a.getAccountType().isDebitPlus() ) {
+				balance = 0 - balance;
+			}
+
 			return a.getOpeningBalance().add( new Money( balance ) );
 		}
 		catch ( MapperException me ) {
@@ -222,7 +226,7 @@ public class AccountMapperImpl extends SimpleEntityRdfMapper<Account> implements
 			return a.getOpeningBalance();
 		}
 
-		String sparql = "SELECT ?val WHERE {"
+		String sparql = "SELECT ( SUM( ?val ) AS ?sum ) WHERE {"
 				+ "  ?split ?sval ?val . "
 				+ "  ?split ?sreco ?reco ."
 				+ "  ?split ?sacct ?accountid ."
@@ -244,6 +248,10 @@ public class AccountMapperImpl extends SimpleEntityRdfMapper<Account> implements
 		try {
 			Value val = oneval( sparql, map );
 			int balance = ( null == val ? 0 : Literal.class.cast( val ).intValue() );
+			if ( a.getAccountType().isDebitPlus() ) {
+				balance = 0 - balance;
+			}
+
 			return a.getOpeningBalance().add( new Money( balance ) );
 		}
 		catch ( MapperException me ) {
