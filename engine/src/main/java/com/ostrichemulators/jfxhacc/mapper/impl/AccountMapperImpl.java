@@ -16,10 +16,12 @@ import com.ostrichemulators.jfxhacc.model.impl.AccountImpl;
 import com.ostrichemulators.jfxhacc.model.vocabulary.Accounts;
 import com.ostrichemulators.jfxhacc.model.vocabulary.JfxHacc;
 import com.ostrichemulators.jfxhacc.model.vocabulary.Splits;
+import com.ostrichemulators.jfxhacc.model.vocabulary.Transactions;
 import com.ostrichemulators.jfxhacc.utility.TreeNode;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -30,6 +32,7 @@ import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.LiteralImpl;
+import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.query.BindingSet;
 import org.openrdf.repository.RepositoryConnection;
@@ -196,6 +199,44 @@ public class AccountMapperImpl extends SimpleEntityRdfMapper<Account> implements
 		map.put( "sval", Splits.VALUE_PRED );
 		map.put( "sreco", Splits.RECO_PRED );
 		map.put( "sacct", Splits.ACCOUNT_PRED );
+		if ( BalanceType.RECONCILED == type ) {
+			map.put( "reco", new LiteralImpl( ReconcileState.RECONCILED.toString() ) );
+		}
+
+		try {
+			Value val = oneval( sparql, map );
+			int balance = ( null == val ? 0 : Literal.class.cast( val ).intValue() );
+			return a.getOpeningBalance().add( new Money( balance ) );
+		}
+		catch ( MapperException me ) {
+			log.error( me, me );
+		}
+
+		log.warn( "using opening balance instead of " + type );
+		return a.getOpeningBalance();
+	}
+
+	@Override
+	public Money getBalance( Account a, BalanceType type, Date asof ) {
+		if ( BalanceType.OPENING == type ) {
+			return a.getOpeningBalance();
+		}
+
+		String sparql = "SELECT ?val WHERE {"
+				+ "  ?split ?sval ?val . "
+				+ "  ?split ?sreco ?reco ."
+				+ "  ?split ?sacct ?accountid ."
+				+ "  ?trans ?entry ?split ."
+				+ "  ?trans ?tdate ?date ."
+				+ "  FILTER ( ?date < ?asof )"
+				+ "}";
+		Map<String, Value> map = bindmap( "accountid", a.getId() );
+		map.put( "sval", Splits.VALUE_PRED );
+		map.put( "sreco", Splits.RECO_PRED );
+		map.put( "sacct", Splits.ACCOUNT_PRED );
+		map.put( "entry", Transactions.SPLIT_PRED );
+		map.put( "tdate", Transactions.DATE_PRED );
+		map.put( "asof", new ValueFactoryImpl().createLiteral( asof ) );
 		if ( BalanceType.RECONCILED == type ) {
 			map.put( "reco", new LiteralImpl( ReconcileState.RECONCILED.toString() ) );
 		}

@@ -5,7 +5,7 @@
  */
 package com.ostrichemulators.jfxhacc.cells;
 
-import com.ostrichemulators.jfxhacc.TransactionViewer.PAMData;
+import com.ostrichemulators.jfxhacc.TransactionViewController.PAMData;
 import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.Transaction;

@@ -8,25 +8,21 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<fx:root type="javafx.scene.layout.AnchorPane" xmlns="http://javafx.com/javafx/8.0.40" xmlns:fx="http://javafx.com/fxml/1">
-	<children>
-		<SplitPane fx:id="splitter" orientation="VERTICAL" prefHeight="400.0" prefWidth="600.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-			<items>
-				<AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="100.0" prefWidth="160.0">
-					<children>
-						<TableView fx:id="transtable" prefHeight="252.0" prefWidth="598.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-							<columns>
-								<TableColumn fx:id="date" prefWidth="75.0" text="Date" />
-								<TableColumn fx:id="number" prefWidth="75.0" text="Number" />
-								<TableColumn fx:id="payee" prefWidth="255.0" text="Payee/Account/Memo" />
-								<TableColumn fx:id="credit" minWidth="0.0" prefWidth="67.0" text="Credit" />
-								<TableColumn fx:id="debit" minWidth="5.0" prefWidth="73.0" text="Debit" />
-								<TableColumn fx:id="reco" prefWidth="52.0" text="Rec" />
-							</columns>
-						</TableView>
-					</children>
-				</AnchorPane>
-			</items>
-		</SplitPane>
-	</children>
-</fx:root>
+<SplitPane fx:id="splitter" orientation="VERTICAL" prefHeight="400.0" prefWidth="600.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" xmlns="http://javafx.com/javafx/8.0.40" xmlns:fx="http://javafx.com/fxml/1">
+	<items>
+		<AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="100.0" prefWidth="160.0">
+			<children>
+				<TableView fx:id="transtable" prefHeight="252.0" prefWidth="598.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+					<columns>
+						<TableColumn fx:id="date" prefWidth="75.0" text="Date" />
+						<TableColumn fx:id="number" prefWidth="75.0" text="Number" />
+						<TableColumn fx:id="payee" prefWidth="255.0" text="Payee/Account/Memo" />
+						<TableColumn fx:id="credit" minWidth="0.0" prefWidth="67.0" text="Credit" />
+						<TableColumn fx:id="debit" minWidth="5.0" prefWidth="73.0" text="Debit" />
+						<TableColumn fx:id="reco" prefWidth="52.0" text="Rec" />
+					</columns>
+				</TableView>
+			</children>
+		</AnchorPane>
+	</items>
+</SplitPane>

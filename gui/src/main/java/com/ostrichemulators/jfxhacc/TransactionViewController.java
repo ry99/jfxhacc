@@ -13,7 +13,6 @@ import com.ostrichemulators.jfxhacc.cells.PayeeAccountMemoCellFactory;
 import com.ostrichemulators.jfxhacc.cells.PayeeAccountMemoValueFactory;
 import com.ostrichemulators.jfxhacc.cells.RecoCellFactory;
 import com.ostrichemulators.jfxhacc.cells.RecoValueFactory;
-import com.ostrichemulators.jfxhacc.engine.DataEngine;
 import com.ostrichemulators.jfxhacc.mapper.MapperException;
 import com.ostrichemulators.jfxhacc.mapper.MapperListener;
 import com.ostrichemulators.jfxhacc.mapper.TransactionMapper;
@@ -23,7 +22,6 @@ import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
 import com.ostrichemulators.jfxhacc.model.Transaction;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -35,14 +33,12 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableColumn.SortType;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.AnchorPane;
 import org.apache.log4j.Logger;
 import org.openrdf.model.URI;
 
@@ -51,9 +47,9 @@ import org.openrdf.model.URI;
  *
  * @author ryan
  */
-public class TransactionViewer extends AnchorPane implements ShutdownListener, MapperListener<Transaction> {
+public class TransactionViewController implements ShutdownListener, MapperListener<Transaction> {
 
-	private static final Logger log = Logger.getLogger( TransactionViewer.class );
+	private static final Logger log = Logger.getLogger(TransactionViewController.class );
 	private static final String PREF_SPLITTER = "transviewer.splitter.location";
 	private static final String PREF_SORTCOL = "transviewer.sort.col";
 	private static final String PREF_SORTASC = "transviewer.sort.asc";
@@ -61,7 +57,7 @@ public class TransactionViewer extends AnchorPane implements ShutdownListener, M
 	@FXML
 	private SplitPane splitter;
 	@FXML
-	private TableView<Transaction> transtable;
+	protected TableView<Transaction> transtable;
 	@FXML
 	private TableColumn<Transaction, Date> date;
 	@FXML
@@ -75,63 +71,50 @@ public class TransactionViewer extends AnchorPane implements ShutdownListener, M
 	@FXML
 	private TableColumn<Transaction, ReconcileState> reco;
 
-	private TransactionEntry dataentry = new TransactionEntry();
+	private final TransactionEntry dataentry = new TransactionEntry();
 
-	private Account account;
+	protected Account account;
+	protected Journal journal;
 	private final PayeeAccountMemoValueFactory payeefac = new PayeeAccountMemoValueFactory();
 	private final CreditDebitValueFactory creditfac = new CreditDebitValueFactory( true );
 	private final CreditDebitValueFactory debitfac = new CreditDebitValueFactory( false );
 	private final RecoValueFactory recofac = new RecoValueFactory();
 	private boolean firstload = true;
-	private double splitterpos;
-	private TransactionMapper tmap;
-	private final ObservableList<Transaction> transactions
+	protected double splitterpos;
+	protected TransactionMapper tmap;
+	protected final ObservableList<Transaction> transactions
 			= FXCollections.observableArrayList();
 
-	public TransactionViewer() {
-		FXMLLoader fxmlLoader
-				= new FXMLLoader( getClass().getResource( "/fxml/TransactionViewer.fxml" ) );
-		fxmlLoader.setRoot( this );
-		fxmlLoader.setController( this );
-
-		try {
-			fxmlLoader.load();
-		}
-		catch ( IOException exception ) {
-			throw new RuntimeException( exception );
-		}
-	}
-
-	public void setAccount( Account acct ) {
+	public void setAccount( Account acct, Journal j ) {
 		account = acct;
+		journal = j;
 		payeefac.setAccount( acct );
 		creditfac.setAccount( acct );
 		debitfac.setAccount( acct );
 		recofac.setAccount( acct );
-		dataentry.setAccount( acct );
+		dataentry.setAccount( acct, journal );
 		refresh();
+	}
+
+	protected List<Transaction> getTransactions() {
+		try {
+			log.debug( "fetching transactions for " + account + " in journal " + journal );
+			return tmap.getAll( account, journal );
+		}
+		catch ( MapperException me ) {
+			log.error( me, me );
+		}
+		return new ArrayList<>();
 	}
 
 	public void refresh() {
 		List<TableColumn<Transaction, ?>> sortcols = new ArrayList<>();
 		sortcols.addAll( transtable.getSortOrder() );
 
-		transactions.clear();
-
-		DataEngine engine = MainApp.getEngine();
-		try {
-			List<Journal> journals = new ArrayList<>( engine.getJournalMapper().getAll() );
-			Journal jnl = journals.get( 0 );
-			dataentry.setJournal( jnl );
-			log.debug( "fetching transactions for " + account + " in journal " + jnl );
-			transactions.addAll( tmap.getAll( account, jnl ) );
-			log.debug( "populated transaction viewer with " + transactions.size()
-					+ " transactions" );
-			transtable.setItems( transactions );
-		}
-		catch ( MapperException me ) {
-			log.error( me, me );
-		}
+		transactions.setAll( getTransactions() );
+		log.debug( "populated transaction viewer with " + transactions.size()
+				+ " transactions" );
+		transtable.setItems( transactions );
 
 		if ( firstload ) {
 			firstload = false;
@@ -159,22 +142,29 @@ public class TransactionViewer extends AnchorPane implements ShutdownListener, M
 		transtable.sort();
 	}
 
+	protected double getRowHeight() {
+		return 48d; // FIXME
+	}
+
+	protected PayeeAccountMemoCellFactory getPayeeAccountMemoCellFactory() {
+		return new PayeeAccountMemoCellFactory( false );
+	}
+
 	@FXML
 	public void initialize() {
 		MainApp.getShutdownNotifier().addShutdownListener( this );
 		transtable.setOnKeyTyped( event -> keyTyped( event ) );
 
+		transtable.setFixedCellSize( getRowHeight() );
 		transtable.setItems( transactions );
-
-		transtable.setFixedCellSize( 48 ); // FIXME
 
 		date.setCellValueFactory( ( TableColumn.CellDataFeatures<Transaction, Date> p )
 				-> new ReadOnlyObjectWrapper<>( p.getValue().getDate() ) );
 		date.setCellFactory( new DateCellFactory() );
 
 		payee.setCellValueFactory( payeefac );
-		payee.setCellFactory( new PayeeAccountMemoCellFactory() );
-
+		payee.setCellFactory( getPayeeAccountMemoCellFactory() );
+	
 		number.setCellValueFactory( ( TableColumn.CellDataFeatures<Transaction, String> p )
 				-> new ReadOnlyStringWrapper( p.getValue().getNumber() ) );
 
@@ -189,7 +179,7 @@ public class TransactionViewer extends AnchorPane implements ShutdownListener, M
 
 		splitter.getItems().add( dataentry );
 
-		Preferences prefs = Preferences.userNodeForPackage( TransactionViewer.class );
+		Preferences prefs = Preferences.userNodeForPackage(TransactionViewController.class );
 		splitterpos = prefs.getDouble( PREF_SPLITTER, 0.70 );
 		splitter.setDividerPositions( 1.0 );
 
@@ -202,12 +192,9 @@ public class TransactionViewer extends AnchorPane implements ShutdownListener, M
 
 				// see if our mouse click is actually past our row position
 				// (user clicked in empty space below all items)
-				if ( y > maxy ) {
-					openEditor( new Date(), ReconcileState.NOT_RECONCILED );
-				}
-				else {
-					openEditor( transtable.getSelectionModel().getSelectedItem() );
-				}
+				mouseClick( y > maxy
+						? null
+						: transtable.getSelectionModel().getSelectedItem() );
 			}
 		} );
 
@@ -235,9 +222,22 @@ public class TransactionViewer extends AnchorPane implements ShutdownListener, M
 		} );
 	}
 
+	protected ReconcileState getDefaultReconcileState() {
+		return ReconcileState.NOT_RECONCILED;
+	}
+
+	protected void mouseClick( Transaction t ) {
+		if ( null == t ) {
+			openEditor( new Date(), getDefaultReconcileState() );
+		}
+		else {
+			openEditor( transtable.getSelectionModel().getSelectedItem() );
+		}
+	}
+
 	public void openEditor( Transaction t ) {
 		if ( null == t ) {
-			openEditor( new Date(), ReconcileState.NOT_RECONCILED );
+			openEditor( new Date(), getDefaultReconcileState() );
 		}
 		else {
 			splitter.setDividerPositions( splitterpos );
@@ -286,8 +286,7 @@ public class TransactionViewer extends AnchorPane implements ShutdownListener, M
 		if ( "I".equalsIgnoreCase( code ) ) {
 			ke.consume();
 			Date tdate = ( null == t ? new Date() : t.getDate() );
-			ReconcileState rs = ReconcileState.NOT_RECONCILED;
-			openEditor( tdate, rs );
+			openEditor( tdate, getDefaultReconcileState() );
 		}
 		else if ( "R".equalsIgnoreCase( code ) ) {
 			ke.consume();

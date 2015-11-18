@@ -113,8 +113,9 @@ public class TransactionEntry extends AnchorPane {
 		listenees.remove( cc );
 	}
 
-	public void setAccount( Account a ) {
+	public void setAccount( Account a, Journal j ) {
 		account = a;
+		journal = j;
 
 		try {
 			accounts.addAll( amap.getAll() );
@@ -166,10 +167,6 @@ public class TransactionEntry extends AnchorPane {
 			log.error( me, me );
 			// FIXME: tell the user
 		}
-	}
-
-	public void setJournal( Journal j ) {
-		journal = j;
 	}
 
 	public void save() {

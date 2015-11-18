@@ -6,16 +6,16 @@ import com.ostrichemulators.jfxhacc.mapper.AccountMapper;
 import com.ostrichemulators.jfxhacc.mapper.AccountMapper.BalanceType;
 import com.ostrichemulators.jfxhacc.mapper.MapperException;
 import com.ostrichemulators.jfxhacc.model.Account;
+import com.ostrichemulators.jfxhacc.model.Journal;
 import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
 import com.ostrichemulators.jfxhacc.utility.AccountBalanceCache;
 import com.ostrichemulators.jfxhacc.utility.AccountBalanceCache.MoneyPair;
 import com.ostrichemulators.jfxhacc.utility.GuiUtils;
-import java.net.URL;
+import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.ResourceBundle;
 import java.util.prefs.Preferences;
 import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyObjectWrapper;
@@ -24,8 +24,12 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.MapChangeListener;
 import javafx.fxml.FXML;
-import javafx.fxml.Initializable;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Accordion;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.SplitPane;
@@ -34,11 +38,12 @@ import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeTableColumn;
 import javafx.scene.control.TreeTableColumn.CellDataFeatures;
 import javafx.scene.control.TreeTableView;
+import javafx.stage.Stage;
 import org.apache.log4j.Logger;
 import org.openrdf.model.URI;
 import org.openrdf.model.impl.URIImpl;
 
-public class FXMLController implements Initializable, ShutdownListener {
+public class FXMLController implements ShutdownListener {
 
 	private static final String PREF_SELECTED = "accountviewer.selected";
 	private static final String PREF_ASIZE = "accountviewer.account-width";
@@ -58,16 +63,18 @@ public class FXMLController implements Initializable, ShutdownListener {
 	@FXML
 	private SplitPane splitter;
 	@FXML
-	private TransactionViewer transactions;
-	@FXML
 	private Label balrec;
 	@FXML
 	private Label acctname;
+	@FXML
+	private Button recoBtn;
 
+	private TransactionViewController transactions = new TransactionViewController();
 	private AccountBalanceCache acb;
+	private Journal journal;
 
-	@Override
-	public void initialize( URL url, ResourceBundle rb ) {
+	@FXML
+	public void initialize() {
 		MainApp.getShutdownNotifier().addShutdownListener( this );
 
 		DataEngine engine = MainApp.getEngine();
@@ -86,6 +93,8 @@ public class FXMLController implements Initializable, ShutdownListener {
 		Map<Account, TreeItem<Account>> items = new HashMap<>();
 		Map<Account, Account> childparentlkp = new HashMap<>();
 		try {
+			journal = engine.getJournalMapper().getAll().iterator().next();
+
 			childparentlkp.putAll( amap.getParentMap() );
 			for ( Account acct : childparentlkp.keySet() ) {
 				TreeItem<Account> aitem = new TreeItem<>( acct );
@@ -122,8 +131,12 @@ public class FXMLController implements Initializable, ShutdownListener {
 		root.setExpanded( true );
 		accounts.setRoot( root );
 
-		transactions = new TransactionViewer();
-		splitter.getItems().add( transactions );
+		try {
+			splitter.getItems().add( makeTransactionViewer( transactions ) );
+		}
+		catch ( IOException ioe ) {
+			log.fatal( ioe, ioe );
+		}
 
 		accounts.getSelectionModel().selectedItemProperty().addListener( new ChangeListener<TreeItem<Account>>() {
 
@@ -131,12 +144,13 @@ public class FXMLController implements Initializable, ShutdownListener {
 			public void changed( ObservableValue<? extends TreeItem<Account>> ov,
 					TreeItem<Account> oldsel, TreeItem<Account> newsel ) {
 				Account acct = newsel.getValue();
-				transactions.setAccount( acct );
+				transactions.setAccount( acct, journal );
 				String fname = GuiUtils.getFullName( acct, amap );
 				acctname.setText( fname );
 				MainApp.getShutdownNotifier().getStage().setTitle( fname );
 
 				updateBalancesLabel();
+				recoBtn.setDisable( false );
 			}
 		} );
 
@@ -196,5 +210,35 @@ public class FXMLController implements Initializable, ShutdownListener {
 	@FXML
 	public void newtrans() {
 		transactions.openEditor( new Date(), ReconcileState.NOT_RECONCILED );
+	}
+
+	@FXML
+	public void reconcile() {
+		Account acct = accounts.getSelectionModel().getSelectedItem().getValue();
+
+		try {
+			FXMLLoader loader
+					= new FXMLLoader( getClass().getResource( "/fxml/ReconcileWindow.fxml" ) );
+			ReconcileWindowController controller = new ReconcileWindowController();
+
+			loader.setController( controller );
+			Parent root = loader.load();
+			controller.setAccount( acct, journal );
+
+			Stage stage = new Stage();
+			stage.setTitle( "Reconcile " + acct.getName() );
+			stage.setScene( new Scene( root ) );
+			stage.show();
+		}
+		catch ( Exception e ) {
+			log.error( e, e );
+		}
+	}
+
+	private Node makeTransactionViewer( TransactionViewController controller ) throws IOException {
+		FXMLLoader loader
+				= new FXMLLoader( getClass().getResource( "/fxml/TransactionViewer.fxml" ) );
+		loader.setController( controller );
+		return loader.load();
 	}
 }

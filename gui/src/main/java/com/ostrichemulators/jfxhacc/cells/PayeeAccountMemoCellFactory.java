@@ -5,7 +5,7 @@
  */
 package com.ostrichemulators.jfxhacc.cells;
 
-import com.ostrichemulators.jfxhacc.TransactionViewer.PAMData;
+import com.ostrichemulators.jfxhacc.TransactionViewController.PAMData;
 import com.ostrichemulators.jfxhacc.model.Transaction;
 import javafx.geometry.VPos;
 import javafx.scene.control.TableCell;
@@ -24,6 +24,11 @@ import org.apache.log4j.Logger;
 public class PayeeAccountMemoCellFactory implements Callback<TableColumn<Transaction, PAMData>, TableCell<Transaction, PAMData>> {
 
 	public static final Logger log = Logger.getLogger( PayeeAccountMemoCellFactory.class );
+	private final boolean reconciler;
+
+	public PayeeAccountMemoCellFactory( boolean forReconcileWindow ) {
+		reconciler = forReconcileWindow;
+	}
 
 	@Override
 	public TableCell<Transaction, PAMData> call( TableColumn<Transaction, PAMData> p ) {
@@ -38,7 +43,7 @@ public class PayeeAccountMemoCellFactory implements Callback<TableColumn<Transac
 				}
 				else {
 					pane = new Pane();
-					final double height = p.getTableView().getFixedCellSize() / 2;
+
 					final double halfwidth = p.getWidth() / 2;
 					final Font font = this.getFont();
 
@@ -47,24 +52,32 @@ public class PayeeAccountMemoCellFactory implements Callback<TableColumn<Transac
 					payee.setTextOrigin( VPos.TOP );
 					payee.relocate( 0, 0 );
 
-					Font italics
-							= Font.font( font.getName(), FontPosture.ITALIC, font.getSize() );
-					final Text account = new Text( t.account );
-					account.setFont( italics );
-					account.setTextOrigin( VPos.TOP );
-					account.setWrappingWidth( halfwidth );
-					account.relocate( 0, height );
-
 					final Text memo = new Text( t.memo );
 					memo.setFont( font );
 					memo.setTextOrigin( VPos.TOP );
 					memo.setWrappingWidth( halfwidth );
-					memo.relocate( halfwidth, height );
 
-					pane.getChildren().addAll( payee, account, memo );
+					if ( reconciler ) {
+						memo.relocate( halfwidth, 0 );
+						pane.getChildren().addAll( payee, memo );
+					}
+					else {
+						final double height = p.getTableView().getFixedCellSize() / 2;
+
+						Font italics
+								= Font.font( font.getName(), FontPosture.ITALIC, font.getSize() );
+						final Text account = new Text( t.account );
+						account.setFont( italics );
+						account.setTextOrigin( VPos.TOP );
+						account.setWrappingWidth( halfwidth );
+						account.relocate( 0, height );
+
+						memo.relocate( halfwidth, height );
+						pane.getChildren().addAll( payee, account, memo );
+					}
+					setText( null );
+					setGraphic( pane );
 				}
-				setText( null );
-				setGraphic( pane );
 			}
 		};
 	}

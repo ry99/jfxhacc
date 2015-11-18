@@ -9,6 +9,7 @@ import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.AccountType;
 import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.utility.TreeNode;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -25,6 +26,8 @@ public interface AccountMapper extends DataMapper<Account> {
 
 	public Money getBalance( Account a, BalanceType type );
 
+	public Money getBalance( Account a, BalanceType type, Date asOf );
+
 	public Account getParent( Account a ) throws MapperException;
 
 	public Account create( String name, AccountType type, Money obal, Account parent )
@@ -36,6 +39,7 @@ public interface AccountMapper extends DataMapper<Account> {
 
 	/**
 	 * Gets a mapping of account-to-parent
+	 *
 	 * @return a mapping of accounts to their parents
 	 * @throws MapperException
 	 */
