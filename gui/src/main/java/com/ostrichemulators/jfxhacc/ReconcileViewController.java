@@ -9,7 +9,6 @@ import com.ostrichemulators.jfxhacc.cells.PayeeAccountMemoCellFactory;
 import com.ostrichemulators.jfxhacc.mapper.MapperException;
 import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.Journal;
-import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
 import com.ostrichemulators.jfxhacc.model.Transaction;
@@ -118,9 +117,15 @@ public class ReconcileViewController extends TransactionViewController {
 				}
 			}
 		}
+		
 		if ( idx < transactions.size() ) {
 			transtable.getSelectionModel().clearAndSelect( idx );
 			transtable.getFocusModel().focus( idx );
+
+			// scroll, but not all the way...give a couple rows buffer
+			if ( idx - 2 > 0 ) {
+				transtable.scrollTo( idx - 2 );
+			}
 		}
 	}
 
