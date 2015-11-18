@@ -291,14 +291,25 @@ public class TransactionEntry extends AnchorPane {
 		trans = null;
 		newtrans = true;
 
-		amountfield.clear();
-		memofield.clear();
-		numberfield.clear();
-
 		tofromBtn.setText( to ? "To" : "From" );
 
 		setDate( d );
 		setReco( rs );
+		payeefield.requestFocus();
+	}
+
+	public void setTransaction( Date d, Split s ) {
+		clear();
+		trans = null;
+		newtrans = true;
+		memofield.setText( s.getMemo() );
+		amountfield.setText( s.getValue().toPositiveString() );
+		
+		tofromBtn.setText( s.isCredit() != account.getAccountType().isDebitPlus()
+				? "To" : "From" );
+
+		setDate( d );
+		setReco( s.getReconciled() );
 		payeefield.requestFocus();
 	}
 

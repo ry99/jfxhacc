@@ -6,6 +6,7 @@
 package com.ostrichemulators.jfxhacc;
 
 import com.ostrichemulators.jfxhacc.mapper.AccountMapper;
+import com.ostrichemulators.jfxhacc.mapper.TransactionMapper;
 import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.Journal;
 import com.ostrichemulators.jfxhacc.model.Money;
@@ -141,6 +142,15 @@ public class ReconcileWindowController {
 	public void newtrans( ActionEvent event ) {
 		Instant instant = Instant.from( stmtdate.getValue().atStartOfDay( ZoneId.systemDefault() ) );
 		transviewer.openEditor( Date.from( instant ), Split.ReconcileState.CLEARED );
+	}
+
+	@FXML
+	public void balance( ActionEvent event ) {
+		TransactionMapper tmap = MainApp.getEngine().getTransactionMapper();
+		Split split = tmap.create( Money.valueOf( diff.getText() ),
+				"balance adjustment", transviewer.getDefaultReconcileState() );
+		Instant instant = Instant.from( stmtdate.getValue().atStartOfDay( ZoneId.systemDefault() ) );
+		transviewer.openEditor( Date.from( instant ), split );
 	}
 
 	@FXML

@@ -266,6 +266,11 @@ public class TransactionViewController implements ShutdownListener, TransactionL
 		dataentry.setTransaction( d, rs, to );
 	}
 
+	protected void openEditor( Date d, Split s ){
+		splitter.setDividerPositions( splitterpos );
+		dataentry.setTransaction( d, s );
+	}
+
 	@Override
 	public void shutdown() {
 		Preferences prefs = Preferences.userNodeForPackage( getClass() );
