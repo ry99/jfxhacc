@@ -38,6 +38,10 @@ public final class Money implements Comparable<Money> {
 		return new Money( cents + m.cents );
 	}
 
+	public Money minus( Money m ) {
+		return new Money( cents - m.cents );
+	}
+
 	public static Money valueOf( String val ) {
 		try {
 			Number num = NumberFormat.getCurrencyInstance().parse( val );

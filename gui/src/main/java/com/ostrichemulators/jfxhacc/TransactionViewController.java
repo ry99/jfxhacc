@@ -53,9 +53,6 @@ import org.openrdf.model.URI;
 public class TransactionViewController implements ShutdownListener, TransactionListener {
 
 	private static final Logger log = Logger.getLogger( TransactionViewController.class );
-	private static final String PREF_SPLITTER = "transviewer.splitter.location";
-	private static final String PREF_SORTCOL = "transviewer.sort.col";
-	private static final String PREF_SORTASC = "transviewer.sort.asc";
 
 	@FXML
 	private SplitPane splitter;
@@ -97,6 +94,16 @@ public class TransactionViewController implements ShutdownListener, TransactionL
 		recofac.setAccount( acct );
 		dataentry.setAccount( acct, journal );
 		refresh();
+		transtable.scrollTo( transactions.size() - 1 );
+		splitter.setDividerPositions( 1.0 );
+	}
+
+	public ObservableList<Transaction> getData() {
+		return transactions;
+	}
+
+	protected String getPrefPrefix() {
+		return "transviewer";
 	}
 
 	protected List<Transaction> getTransactions() {
@@ -121,6 +128,9 @@ public class TransactionViewController implements ShutdownListener, TransactionL
 
 		if ( firstload ) {
 			firstload = false;
+			String PREF_SORTCOL = getPrefPrefix() + ".sort.col";
+			String PREF_SORTASC = getPrefPrefix() + ".sort.asc";
+
 			Preferences prefs = Preferences.userNodeForPackage( getClass() );
 			ObservableList<TableColumn<Transaction, ?>> cols = transtable.getColumns();
 			int sortcol = prefs.getInt( PREF_SORTCOL, 0 );
@@ -128,7 +138,7 @@ public class TransactionViewController implements ShutdownListener, TransactionL
 
 			int i = 0;
 			for ( TableColumn<Transaction, ?> tc : cols ) {
-				double size = prefs.getDouble( "transviewer.col" + ( i++ ), -1 );
+				double size = prefs.getDouble( getPrefPrefix() + ".col" + ( i++ ), -1 );
 				if ( size > 0 ) {
 					tc.setPrefWidth( size );
 				}
@@ -183,16 +193,17 @@ public class TransactionViewController implements ShutdownListener, TransactionL
 		splitter.getItems().add( dataentry );
 
 		Preferences prefs = Preferences.userNodeForPackage( TransactionViewController.class );
+		String PREF_SPLITTER = getPrefPrefix() + ".splitter.location";
 		splitterpos = prefs.getDouble( PREF_SPLITTER, 0.70 );
 		splitter.setDividerPositions( 1.0 );
 
-		transtable.setOnMouseClicked( new EventHandler<MouseEvent>() {
+		transtable.setOnMousePressed( new EventHandler<MouseEvent>() {
 
 			@Override
 			public void handle( MouseEvent t ) {
 				double y = t.getY();
 				double maxy = transactions.size() * transtable.getFixedCellSize();
-
+				t.consume();
 				// see if our mouse click is actually past our row position
 				// (user clicked in empty space below all items)
 				mouseClick( y > maxy
@@ -268,9 +279,11 @@ public class TransactionViewController implements ShutdownListener, TransactionL
 		}
 
 		for ( TableColumn<Transaction, ?> tc : cols ) {
-			prefs.putDouble( "transviewer.col" + ( i++ ), tc.getWidth() );
+			prefs.putDouble( getPrefPrefix() + ".col" + ( i++ ), tc.getWidth() );
 
 			if ( tc.equals( sortcol ) ) {
+				String PREF_SORTCOL = getPrefPrefix() + ".sort.col";
+				String PREF_SORTASC = getPrefPrefix() + ".sort.asc";
 				prefs.putInt( PREF_SORTCOL, i );
 
 				SortType stype = tc.getSortType();
@@ -279,6 +292,7 @@ public class TransactionViewController implements ShutdownListener, TransactionL
 			}
 		}
 
+		String PREF_SPLITTER = getPrefPrefix() + ".splitter.location";
 		prefs.putDouble( PREF_SPLITTER, splitterpos );
 	}
 

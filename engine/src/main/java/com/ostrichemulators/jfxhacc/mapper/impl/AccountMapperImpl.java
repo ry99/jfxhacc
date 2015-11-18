@@ -232,7 +232,7 @@ public class AccountMapperImpl extends SimpleEntityRdfMapper<Account> implements
 				+ "  ?split ?sacct ?accountid ."
 				+ "  ?trans ?entry ?split ."
 				+ "  ?trans ?tdate ?date ."
-				+ "  FILTER ( ?date < ?asof )"
+				+ "  FILTER ( xsd:dateTime( ?date ) < ?asof )"
 				+ "}";
 		Map<String, Value> map = bindmap( "accountid", a.getId() );
 		map.put( "sval", Splits.VALUE_PRED );

@@ -8,7 +8,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<BorderPane fx:id="borders" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" xmlns="http://javafx.com/javafx/8.0.40" xmlns:fx="http://javafx.com/fxml/1">
+<BorderPane fx:id="borders" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="600.0" prefWidth="1000.0" xmlns="http://javafx.com/javafx/8.0.40" xmlns:fx="http://javafx.com/fxml/1">
    <left>
       <GridPane hgap="5.0" prefHeight="200.0" prefWidth="296.0" vgap="5.0" BorderPane.alignment="TOP_CENTER">
          <columnConstraints>
@@ -16,24 +16,32 @@
             <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="75.0" />
          </columnConstraints>
          <rowConstraints>
-            <RowConstraints fillHeight="false" minHeight="10.0" vgrow="NEVER" />
-            <RowConstraints fillHeight="false" minHeight="10.0" vgrow="NEVER" />
-            <RowConstraints fillHeight="false" minHeight="10.0" vgrow="NEVER" />
-            <RowConstraints fillHeight="false" maxHeight="5.0" minHeight="3.0" prefHeight="5.0" vgrow="SOMETIMES" />
-            <RowConstraints fillHeight="false" minHeight="10.0" vgrow="NEVER" />
-            <RowConstraints fillHeight="false" minHeight="10.0" vgrow="NEVER" />
+            <RowConstraints fillHeight="false" minHeight="10.0" prefHeight="25.0" vgrow="NEVER" />
+            <RowConstraints fillHeight="false" minHeight="10.0" prefHeight="25.0" vgrow="NEVER" />
+            <RowConstraints fillHeight="false" minHeight="10.0" prefHeight="25.0" vgrow="NEVER" />
+            <RowConstraints fillHeight="false" maxHeight="15.0" minHeight="3.0" prefHeight="15.0" vgrow="SOMETIMES" />
+            <RowConstraints fillHeight="false" minHeight="10.0" prefHeight="30.0" vgrow="NEVER" />
+            <RowConstraints fillHeight="false" minHeight="10.0" prefHeight="25.0" vgrow="NEVER" />
+            <RowConstraints fillHeight="false" maxHeight="5.0" minHeight="3.0" prefHeight="5.0" vgrow="NEVER" />
+            <RowConstraints fillHeight="false" minHeight="10.0" prefHeight="25.0" vgrow="NEVER" />
+            <RowConstraints fillHeight="false" minHeight="10.0" prefHeight="25.0" vgrow="NEVER" />
          </rowConstraints>
          <children>
             <DatePicker fx:id="stmtdate" maxWidth="1.7976931348623157E308" onAction="#updateParams" prefHeight="26.0" prefWidth="104.0" GridPane.columnIndex="1" />
             <Label text="Statement Date" GridPane.halignment="RIGHT" />
             <Label text="Opening Balance" GridPane.halignment="RIGHT" GridPane.rowIndex="1" />
-            <TextField fx:id="stmtbal" prefHeight="26.0" prefWidth="104.0" GridPane.columnIndex="1" GridPane.rowIndex="2" />
-            <Label text="Ending Balance" GridPane.halignment="RIGHT" GridPane.rowIndex="2" />
-            <Label fx:id="openbal" maxWidth="1.7976931348623157E308" text=" " GridPane.columnIndex="1" GridPane.rowIndex="1" />
-            <Label text="Difference" GridPane.halignment="RIGHT" GridPane.rowIndex="4" />
-            <Button fx:id="newtrans" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#newtrans" text="New Transaction" GridPane.columnIndex="1" GridPane.rowIndex="5" />
-            <Label fx:id="diff" maxWidth="1.7976931348623157E308" text=" " GridPane.columnIndex="1" GridPane.rowIndex="4" />
+            <TextField fx:id="stmtbal" alignment="CENTER_RIGHT" onAction="#updateParams" prefHeight="26.0" prefWidth="104.0" GridPane.columnIndex="1" GridPane.halignment="RIGHT" GridPane.rowIndex="2" />
+            <Label text="Statement Balance" GridPane.halignment="RIGHT" GridPane.rowIndex="2" />
+            <Label fx:id="openbal" alignment="CENTER_RIGHT" maxWidth="1.7976931348623157E308" text=" " GridPane.columnIndex="1" GridPane.halignment="RIGHT" GridPane.rowIndex="1" />
+            <Label text="Difference" GridPane.halignment="RIGHT" GridPane.rowIndex="7" />
+            <Button fx:id="newtrans" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#newtrans" text="New Transaction" GridPane.columnIndex="1" GridPane.rowIndex="8" />
+            <Label fx:id="diff" alignment="CENTER_RIGHT" maxWidth="1.7976931348623157E308" text=" " GridPane.columnIndex="1" GridPane.halignment="RIGHT" GridPane.rowIndex="7" />
             <Separator prefWidth="200.0" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+            <Label alignment="CENTER_RIGHT" text="Statement Delta" GridPane.halignment="RIGHT" GridPane.rowIndex="4" />
+            <Label text="Reconciled" GridPane.halignment="RIGHT" GridPane.rowIndex="5" />
+            <Label fx:id="stmtdiff" alignment="CENTER_RIGHT" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.halignment="RIGHT" GridPane.rowIndex="4" />
+            <Label fx:id="recodiff" alignment="CENTER_RIGHT" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.halignment="RIGHT" GridPane.rowIndex="5" />
+            <Separator prefWidth="200.0" GridPane.columnIndex="1" GridPane.rowIndex="6" />
          </children>
          <BorderPane.margin>
             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />

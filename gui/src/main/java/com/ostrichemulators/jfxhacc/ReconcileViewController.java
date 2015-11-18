@@ -7,19 +7,17 @@ package com.ostrichemulators.jfxhacc;
 
 import com.ostrichemulators.jfxhacc.cells.PayeeAccountMemoCellFactory;
 import com.ostrichemulators.jfxhacc.mapper.MapperException;
-import com.ostrichemulators.jfxhacc.mapper.TransactionMapper;
+import com.ostrichemulators.jfxhacc.model.Account;
+import com.ostrichemulators.jfxhacc.model.Journal;
 import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
 import com.ostrichemulators.jfxhacc.model.Transaction;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.prefs.Preferences;
-import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableColumn.SortType;
 import javafx.scene.input.KeyEvent;
 import org.apache.log4j.Logger;
 
@@ -31,9 +29,6 @@ import org.apache.log4j.Logger;
 public class ReconcileViewController extends TransactionViewController {
 
 	private static final Logger log = Logger.getLogger( ReconcileViewController.class );
-	private static final String PREF_SPLITTER = "recviewer.splitter.location";
-	private static final String PREF_SORTCOL = "recviewer.sort.col";
-	private static final String PREF_SORTASC = "recviewer.sort.asc";
 	private Date date;
 
 	@Override
@@ -48,8 +43,26 @@ public class ReconcileViewController extends TransactionViewController {
 		return new ArrayList<>();
 	}
 
-	public void setDate( Date d ) {
+	public void setAccount( Account acct, Journal j, Date d ) {
 		date = d;
+		super.setAccount( acct, j );
+	}
+
+	public Date getDate() {
+		return date;
+	}
+
+	public Collection<Split> getSplits() {
+		List<Split> splits = new ArrayList<>();
+		for ( Transaction t : transactions ) {
+			splits.add( t.getSplits().get( account ) );
+		}
+		return splits;
+	}
+
+	@Override
+	protected String getPrefPrefix() {
+		return "recviewer";
 	}
 
 	@Override
@@ -65,33 +78,6 @@ public class ReconcileViewController extends TransactionViewController {
 	@Override
 	protected ReconcileState getDefaultReconcileState() {
 		return ReconcileState.CLEARED;
-	}
-
-	@Override
-	public void shutdown() {
-		Preferences prefs = Preferences.userNodeForPackage( getClass() );
-		ObservableList<TableColumn<Transaction, ?>> cols = transtable.getColumns();
-		int i = 0;
-
-		TableColumn<Transaction, ?> sortcol = null;
-		ObservableList<TableColumn<Transaction, ?>> sorts = transtable.getSortOrder();
-		if ( !sorts.isEmpty() ) {
-			sortcol = sorts.get( 0 );
-		}
-
-		for ( TableColumn<Transaction, ?> tc : cols ) {
-			prefs.putDouble( "recviewer.col" + ( i++ ), tc.getWidth() );
-
-			if ( tc.equals( sortcol ) ) {
-				prefs.putInt( PREF_SORTCOL, i );
-
-				SortType stype = tc.getSortType();
-				prefs.putBoolean( PREF_SORTASC,
-						( null == stype ? true : stype == SortType.ASCENDING ) );
-			}
-		}
-
-		prefs.putDouble( PREF_SPLITTER, splitterpos );
 	}
 
 	@Override
