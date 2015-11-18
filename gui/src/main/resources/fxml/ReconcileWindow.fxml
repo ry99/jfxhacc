@@ -24,7 +24,7 @@
             <RowConstraints fillHeight="false" minHeight="10.0" vgrow="NEVER" />
          </rowConstraints>
          <children>
-            <DatePicker fx:id="stmtdate" maxWidth="1.7976931348623157E308" onAction="#updateBalance" prefHeight="26.0" prefWidth="104.0" GridPane.columnIndex="1" />
+            <DatePicker fx:id="stmtdate" maxWidth="1.7976931348623157E308" onAction="#updateParams" prefHeight="26.0" prefWidth="104.0" GridPane.columnIndex="1" />
             <Label text="Statement Date" GridPane.halignment="RIGHT" />
             <Label text="Opening Balance" GridPane.halignment="RIGHT" GridPane.rowIndex="1" />
             <TextField fx:id="stmtbal" prefHeight="26.0" prefWidth="104.0" GridPane.columnIndex="1" GridPane.rowIndex="2" />
@@ -40,4 +40,15 @@
          </BorderPane.margin>
       </GridPane>
    </left>
+   <bottom>
+      <ButtonBar BorderPane.alignment="CENTER">
+         <buttons>
+            <Button cancelButton="true" mnemonicParsing="false" onAction="#cancel" text="Cancel" />
+            <Button defaultButton="true" mnemonicParsing="false" onAction="#save" text="Save" />
+         </buttons>
+         <BorderPane.margin>
+            <Insets bottom="10.0" right="5.0" top="10.0" />
+         </BorderPane.margin>
+      </ButtonBar>
+   </bottom>
 </BorderPane>

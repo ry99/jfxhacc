@@ -7,9 +7,12 @@ package com.ostrichemulators.jfxhacc;
 
 import com.ostrichemulators.jfxhacc.cells.PayeeAccountMemoCellFactory;
 import com.ostrichemulators.jfxhacc.mapper.MapperException;
+import com.ostrichemulators.jfxhacc.mapper.TransactionMapper;
 import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
 import com.ostrichemulators.jfxhacc.model.Transaction;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.prefs.Preferences;
@@ -31,10 +34,22 @@ public class ReconcileViewController extends TransactionViewController {
 	private static final String PREF_SPLITTER = "recviewer.splitter.location";
 	private static final String PREF_SORTCOL = "recviewer.sort.col";
 	private static final String PREF_SORTASC = "recviewer.sort.asc";
+	private Date date;
 
 	@Override
 	protected List<Transaction> getTransactions() {
-		return super.getTransactions();
+		try {
+			return tmap.getUnreconciled( account, journal, date );
+		}
+		catch ( MapperException ioe ) {
+			log.error( ioe, ioe );
+		}
+
+		return new ArrayList<>();
+	}
+
+	public void setDate( Date d ) {
+		date = d;
 	}
 
 	@Override
@@ -85,29 +100,40 @@ public class ReconcileViewController extends TransactionViewController {
 	}
 
 	private void toggle( Transaction t ) {
-		if ( null != t ) {
-			Split s = t.getSplits().get( account );
-			ReconcileState newrec = ( ReconcileState.CLEARED == s.getReconciled()
-					? ReconcileState.NOT_RECONCILED
-					: ReconcileState.CLEARED );
+		if ( null == t ) {
+			t = transtable.getSelectionModel().getSelectedItem();
+		}
 
-			try {
-				tmap.reconcile( newrec, account, s );
-				updated( t );
+		Split s = t.getSplits().get( account );
+		ReconcileState newrec = ( ReconcileState.CLEARED == s.getReconciled()
+				? ReconcileState.NOT_RECONCILED
+				: ReconcileState.CLEARED );
+
+		try {
+			tmap.reconcile( newrec, account, s );
+			updated( t );
+		}
+		catch ( MapperException me ) {
+			log.error( me, me );
+			// FIXME: tell the user
+		}
+
+		int idx = transtable.getSelectionModel().getSelectedIndex();
+		if ( ReconcileState.CLEARED == newrec ) {
+			ListIterator<Transaction> it = transactions.listIterator( idx );
+			while ( it.hasNext() ) {
+				// move forward to our first unreconciled transaction
+				Transaction next = it.next();
+				Split nextsplit = next.getSplits().get( account );
+				if ( ReconcileState.NOT_RECONCILED == nextsplit.getReconciled() ) {
+					idx = it.nextIndex() - 1;
+					break;
+				}
 			}
-			catch ( MapperException me ) {
-				log.error( me, me );
-				// FIXME: tell the user
-			}
-			
-			int idx = transtable.getSelectionModel().getSelectedIndex();
-			if ( ReconcileState.CLEARED == newrec ) {
-				idx++;
-			}
-			if ( idx < transactions.size() ) {
-				transtable.getSelectionModel().clearAndSelect( idx );
-				transtable.getFocusModel().focus( idx );
-			}
+		}
+		if ( idx < transactions.size() ) {
+			transtable.getSelectionModel().clearAndSelect( idx );
+			transtable.getFocusModel().focus( idx );
 		}
 	}
 
@@ -145,6 +171,24 @@ public class ReconcileViewController extends TransactionViewController {
 					break;
 				}
 			}
+		}
+	}
+
+	public void upgradeSplits() {
+		List<Split> splits = new ArrayList<>();
+		for ( Transaction t : transactions ) {
+			Split s = t.getSplits().get( account );
+			if ( ReconcileState.CLEARED == s.getReconciled() ) {
+				splits.add( s );
+			}
+		}
+
+		try {
+			tmap.reconcile( ReconcileState.RECONCILED, account,
+					splits.toArray( new Split[0] ) );
+		}
+		catch ( MapperException me ) {
+			log.error( me, me );
 		}
 	}
 }

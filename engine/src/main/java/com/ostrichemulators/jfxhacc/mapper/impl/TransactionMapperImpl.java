@@ -39,6 +39,7 @@ import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.LiteralImpl;
+import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.query.BindingSet;
 import org.openrdf.repository.RepositoryConnection;
@@ -351,6 +352,72 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 				+ "  ?t trans:entry ?s."
 				+ "  ?s splits:account ?acct ."
 				+ "  ?t trans:journal ?jnl ."
+				+ "  ?t ?p ?o "
+				+ "} ORDER BY ?t",
+				bindings, new QueryHandler<List<Transaction>>() {
+					List<Transaction> tlist = new ArrayList<>();
+					TransactionImpl last = null;
+
+					@Override
+					public void handleTuple( BindingSet set, ValueFactory vf ) {
+						URI id = URI.class.cast( set.getValue( "t" ) );
+
+						if ( null == last || !last.getId().equals( id ) ) {
+							last = new TransactionImpl( URI.class.cast( set.getValue( "t" ) ) );
+							tlist.add( last );
+						}
+
+						final URI uri = URI.class.cast( set.getValue( "p" ) );
+						if ( Transactions.PAYEE_PRED.equals( uri ) ) {
+							setPayee( last, URI.class.cast( set.getValue( "o" ) ) );
+						}
+						else if ( Transactions.DATE_PRED.equals( uri ) ) {
+							final Literal literal = Literal.class.cast( set.getValue( "o" ) );
+							last.setDate( DbUtil.toDate( literal ) );
+						}
+						else if ( Transactions.NUMBER_PRED.equals( uri ) ) {
+							last.setNumber( set.getValue( "o" ).stringValue() );
+						}
+					}
+
+					@Override
+					public List<Transaction> getResult() {
+						return tlist;
+					}
+				} );
+
+		Map<URI, Account> accounts = new HashMap<>();
+		for ( Transaction t : transactions ) {
+			Map<Split, URI> splitos = getSplits( t.getId() );
+
+			for ( Map.Entry<Split, URI> en : splitos.entrySet() ) {
+				URI acctid = en.getValue();
+				if ( !accounts.containsKey( acctid ) ) {
+					accounts.put( acctid, amap.get( acctid ) );
+				}
+
+				t.addSplit( accounts.get( en.getValue() ), en.getKey() );
+			}
+		}
+
+		return transactions;
+	}
+
+	@Override
+	public List<Transaction> getUnreconciled( Account acct, Journal journal, Date asof )
+			throws MapperException {
+
+		Map<String, Value> bindings = bindmap( "acct", acct.getId() );
+		bindings.put( "jnl", journal.getId() );
+		bindings.put( "asof", new ValueFactoryImpl().createLiteral( asof ) );
+		bindings.put( "recostate", new LiteralImpl( ReconcileState.RECONCILED.toString() ) );
+
+		List<Transaction> transactions = query( "SELECT ?t ?p ?o WHERE {"
+				+ "  ?t trans:entry ?s."
+				+ "  ?s splits:account ?acct ."
+				+ "  ?t trans:journal ?jnl ."
+				+ "  ?s splits:reconciled ?reco FILTER( ?reco != ?recostate ) ."
+				+ "  ?t dcterms:created ?date FILTER( xsd:dateTime( ?date ) < ?asof ) ."
 				+ "  ?t ?p ?o "
 				+ "} ORDER BY ?t",
 				bindings, new QueryHandler<List<Transaction>>() {

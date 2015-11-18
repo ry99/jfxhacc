@@ -40,6 +40,7 @@ public class PayeeAccountMemoCellFactory implements Callback<TableColumn<Transac
 				Pane pane = null;
 				if ( empty || null == t ) {
 					setText( null );
+					setGraphic( null );
 				}
 				else {
 					pane = new Pane();

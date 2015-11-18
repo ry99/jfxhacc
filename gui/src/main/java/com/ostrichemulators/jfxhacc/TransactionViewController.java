@@ -14,7 +14,7 @@ import com.ostrichemulators.jfxhacc.cells.PayeeAccountMemoValueFactory;
 import com.ostrichemulators.jfxhacc.cells.RecoCellFactory;
 import com.ostrichemulators.jfxhacc.cells.RecoValueFactory;
 import com.ostrichemulators.jfxhacc.mapper.MapperException;
-import com.ostrichemulators.jfxhacc.mapper.MapperListener;
+import com.ostrichemulators.jfxhacc.mapper.TransactionListener;
 import com.ostrichemulators.jfxhacc.mapper.TransactionMapper;
 import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.Journal;
@@ -23,9 +23,12 @@ import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
 import com.ostrichemulators.jfxhacc.model.Transaction;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Map;
 import java.util.prefs.Preferences;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringWrapper;
@@ -47,9 +50,9 @@ import org.openrdf.model.URI;
  *
  * @author ryan
  */
-public class TransactionViewController implements ShutdownListener, MapperListener<Transaction> {
+public class TransactionViewController implements ShutdownListener, TransactionListener {
 
-	private static final Logger log = Logger.getLogger(TransactionViewController.class );
+	private static final Logger log = Logger.getLogger( TransactionViewController.class );
 	private static final String PREF_SPLITTER = "transviewer.splitter.location";
 	private static final String PREF_SORTCOL = "transviewer.sort.col";
 	private static final String PREF_SORTASC = "transviewer.sort.asc";
@@ -164,7 +167,7 @@ public class TransactionViewController implements ShutdownListener, MapperListen
 
 		payee.setCellValueFactory( payeefac );
 		payee.setCellFactory( getPayeeAccountMemoCellFactory() );
-	
+
 		number.setCellValueFactory( ( TableColumn.CellDataFeatures<Transaction, String> p )
 				-> new ReadOnlyStringWrapper( p.getValue().getNumber() ) );
 
@@ -179,7 +182,7 @@ public class TransactionViewController implements ShutdownListener, MapperListen
 
 		splitter.getItems().add( dataentry );
 
-		Preferences prefs = Preferences.userNodeForPackage(TransactionViewController.class );
+		Preferences prefs = Preferences.userNodeForPackage( TransactionViewController.class );
 		splitterpos = prefs.getDouble( PREF_SPLITTER, 0.70 );
 		splitter.setDividerPositions( 1.0 );
 
@@ -188,7 +191,7 @@ public class TransactionViewController implements ShutdownListener, MapperListen
 			@Override
 			public void handle( MouseEvent t ) {
 				double y = t.getY();
-				double maxy = transtable.getItems().size() * transtable.getFixedCellSize();
+				double maxy = transactions.size() * transtable.getFixedCellSize();
 
 				// see if our mouse click is actually past our row position
 				// (user clicked in empty space below all items)
@@ -342,6 +345,22 @@ public class TransactionViewController implements ShutdownListener, MapperListen
 				transit.remove();
 				break;
 			}
+		}
+	}
+
+	@Override
+	public void reconciled( Account acct, Collection<Split> splits ) {
+		Map<URI, Transaction> revmap = new HashMap<>();
+		for ( Transaction t : transactions ) {
+			for ( Split s : t.getSplits().values() ) {
+				revmap.put( s.getId(), t );
+			}
+		}
+
+		for ( Split s : splits ) {
+			Transaction t = revmap.get( s.getId() );
+			t.addSplit( acct, s );
+			updated( t );
 		}
 	}
 

@@ -6,10 +6,10 @@
 package com.ostrichemulators.jfxhacc;
 
 import com.ostrichemulators.jfxhacc.mapper.AccountMapper;
+import com.ostrichemulators.jfxhacc.mapper.MapperException;
 import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.Journal;
 import com.ostrichemulators.jfxhacc.model.Split;
-import static com.ostrichemulators.jfxhacc.utility.GuiUtils.log;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -18,13 +18,13 @@ import java.util.Date;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.fxml.Initializable;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
+import javafx.stage.Stage;
 import org.apache.log4j.Logger;
 
 /**
@@ -48,8 +48,9 @@ public class ReconcileWindowController {
 	@FXML
 	private BorderPane borders;
 
+	private Stage stage;
 	private Account account;
-	private final TransactionViewController transviewer = new ReconcileViewController();
+	private final ReconcileViewController transviewer = new ReconcileViewController();
 
 	/**
 	 * Initializes the controller class.
@@ -72,22 +73,38 @@ public class ReconcileWindowController {
 
 	public void setAccount( Account a, Journal j ) {
 		account = a;
-
-		updateBalance();
+		updateParams();
 		transviewer.setAccount( a, j );
 	}
 
 	@FXML
-	private void updateBalance() {
+	private void updateParams() {
 		AccountMapper amap = MainApp.getEngine().getAccountMapper();
 		Instant instant = Instant.from( stmtdate.getValue().atStartOfDay( ZoneId.systemDefault() ) );
+		Date d = Date.from( instant );
 
-		openbal.setText( amap.getBalance( account, AccountMapper.BalanceType.RECONCILED,
-				Date.from( instant ) ).toString() );
+		openbal.setText( amap.getBalance( account,
+				AccountMapper.BalanceType.RECONCILED, d ).toString() );
+		transviewer.setDate( d );
 	}
 
 	@FXML
-	void newtrans( ActionEvent event ) {
+	public void newtrans( ActionEvent event ) {
 		transviewer.openEditor( null, Split.ReconcileState.CLEARED );
+	}
+
+	@FXML
+	public void cancel( ActionEvent event ) {
+		stage.close();
+	}
+
+	@FXML
+	public void save( ActionEvent event ) {
+		transviewer.upgradeSplits();
+		stage.close();
+	}
+
+	public void setStage( Stage s ) {
+		stage = s;
 	}
 }

@@ -228,6 +228,7 @@ public class FXMLController implements ShutdownListener {
 			Stage stage = new Stage();
 			stage.setTitle( "Reconcile " + acct.getName() );
 			stage.setScene( new Scene( root ) );
+			controller.setStage( stage );
 			stage.show();
 		}
 		catch ( Exception e ) {
