@@ -182,13 +182,13 @@ public class TransactionViewController implements ShutdownListener, TransactionL
 				-> new ReadOnlyStringWrapper( p.getValue().getNumber() ) );
 
 		reco.setCellValueFactory( recofac );
-		reco.setCellFactory( new RecoCellFactory() );
+		reco.setCellFactory( new RecoCellFactory<>() );
 
 		credit.setCellValueFactory( creditfac );
-		credit.setCellFactory( new MoneyCellFactory() );
+		credit.setCellFactory( new MoneyCellFactory<>() );
 
 		debit.setCellValueFactory( debitfac );
-		debit.setCellFactory( new MoneyCellFactory() );
+		debit.setCellFactory( new MoneyCellFactory<>() );
 
 		splitter.getItems().add( dataentry );
 
@@ -261,12 +261,11 @@ public class TransactionViewController implements ShutdownListener, TransactionL
 
 	public void openEditor( Date d, ReconcileState rs ) {
 		splitter.setDividerPositions( splitterpos );
-
 		boolean to = true;
 		dataentry.setTransaction( d, rs, to );
 	}
 
-	protected void openEditor( Date d, Split s ){
+	protected void openEditor( Date d, Split s ) {
 		splitter.setDividerPositions( splitterpos );
 		dataentry.setTransaction( d, s );
 	}

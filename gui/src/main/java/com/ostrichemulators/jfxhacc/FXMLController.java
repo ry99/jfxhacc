@@ -69,7 +69,7 @@ public class FXMLController implements ShutdownListener {
 	@FXML
 	private Button recoBtn;
 
-	private TransactionViewController transactions = new TransactionViewController();
+	private final TransactionViewController transactions = new TransactionViewController();
 	private AccountBalanceCache acb;
 	private Journal journal;
 
@@ -126,7 +126,7 @@ public class FXMLController implements ShutdownListener {
 		accountBalance.setCellValueFactory( ( CellDataFeatures<Account, Money> p )
 				-> new ReadOnlyObjectWrapper<>( acb.get( p.getValue().getValue(),
 								BalanceType.CURRENT ) ) );
-		accountBalance.setCellFactory( new MoneyTableTreeCellFactory() );
+		accountBalance.setCellFactory( new MoneyTableTreeCellFactory<>() );
 
 		root.setExpanded( true );
 		accounts.setRoot( root );

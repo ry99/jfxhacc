@@ -16,13 +16,13 @@ import org.apache.log4j.Logger;
  *
  * @author ryan
  */
-public class RecoCellFactory implements Callback<TableColumn<Transaction, ReconcileState>, TableCell<Transaction, ReconcileState>> {
+public class RecoCellFactory<T> implements Callback<TableColumn<T, ReconcileState>, TableCell<T, ReconcileState>> {
 
 	public static final Logger log = Logger.getLogger( RecoCellFactory.class );
 
 	@Override
-	public TableCell<Transaction, ReconcileState> call( TableColumn<Transaction, ReconcileState> p ) {
-		return new TableCell<Transaction, ReconcileState>() {
+	public TableCell<T, ReconcileState> call( TableColumn<T, ReconcileState> p ) {
+		return new TableCell<T, ReconcileState>() {
 			@Override
 			protected void updateItem( ReconcileState t, boolean empty ) {
 				super.updateItem( t, empty );

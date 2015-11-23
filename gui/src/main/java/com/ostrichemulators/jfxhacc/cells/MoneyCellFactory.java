@@ -6,7 +6,6 @@
 package com.ostrichemulators.jfxhacc.cells;
 
 import com.ostrichemulators.jfxhacc.model.Money;
-import com.ostrichemulators.jfxhacc.model.Transaction;
 import javafx.geometry.Pos;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
@@ -17,13 +16,13 @@ import org.apache.log4j.Logger;
  *
  * @author ryan
  */
-public class MoneyCellFactory implements Callback<TableColumn<Transaction, Money>, TableCell<Transaction, Money>> {
+public class MoneyCellFactory<T> implements Callback<TableColumn<T, Money>, TableCell<T, Money>> {
 
 	public static final Logger log = Logger.getLogger( MoneyCellFactory.class );
 
 	@Override
-	public TableCell<Transaction, Money> call( TableColumn<Transaction, Money> p ) {
-		return new TableCell<Transaction, Money>() {
+	public TableCell<T, Money> call( TableColumn<T, Money> p ) {
+		return new TableCell<T, Money>() {
 			@Override
 			protected void updateItem( Money t, boolean empty ) {
 				super.updateItem( t, empty );

@@ -35,6 +35,8 @@ import javafx.collections.transformation.SortedList;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
@@ -45,6 +47,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
+import javafx.stage.Stage;
 import javafx.util.Callback;
 import org.apache.log4j.Logger;
 
@@ -56,8 +59,6 @@ import org.apache.log4j.Logger;
 public class TransactionEntry extends AnchorPane {
 
 	private static final Logger log = Logger.getLogger( TransactionEntry.class );
-	@FXML
-	private Button splitBtn;
 	@FXML
 	private Button tofromBtn;
 	@FXML
@@ -89,6 +90,7 @@ public class TransactionEntry extends AnchorPane {
 	private final List<Account> allaccounts = new ArrayList<>();
 	private final ObservableList<Account> accounts
 			= FXCollections.observableArrayList();
+	private Map<Account, Split> newsplits = null;
 
 	public TransactionEntry() {
 		FXMLLoader fxmlLoader
@@ -178,6 +180,7 @@ public class TransactionEntry extends AnchorPane {
 			ReconcileState myreco = getReco();
 			Money mymoney = getSplitAmount();
 
+			// FIXME: use the newsplits member here somewhere
 			if ( newtrans ) {
 				Split mysplit = tmap.create( mymoney, mymemo, myreco );
 				Split yoursplit = tmap.create( mymoney.opposite(), mymemo, ReconcileState.NOT_RECONCILED );
@@ -304,7 +307,7 @@ public class TransactionEntry extends AnchorPane {
 		newtrans = true;
 		memofield.setText( s.getMemo() );
 		amountfield.setText( s.getValue().toPositiveString() );
-		
+
 		tofromBtn.setText( s.isCredit() != account.getAccountType().isDebitPlus()
 				? "To" : "From" );
 
@@ -421,6 +424,45 @@ public class TransactionEntry extends AnchorPane {
 				}
 			}
 		};
+	}
+
+	@FXML
+	public void openSplits() {
+		FXMLLoader loader
+				= new FXMLLoader( getClass().getResource( "/fxml/SplitsWindow.fxml" ) );
+		SplitsWindowController swc = new SplitsWindowController( MainApp.getEngine() );
+		loader.setController( swc );
+
+		try {
+			Parent node = loader.load();
+
+			if ( null == newsplits ) {
+				Map<Account, Split> map = new HashMap<>();
+				if ( newtrans ) {
+					Split s = tmap.create( getSplitAmount(), memofield.getText(), getReco() );
+					map.put( account, s );
+				}
+				else {
+					map.putAll( trans.getSplits() );
+				}
+
+				swc.setSplitMap( map );
+			}
+			else {
+				swc.setSplitMap( newsplits );
+			}
+
+			Stage stage = new Stage();
+			stage.setTitle( "Splits" );
+			stage.setScene( new Scene( node ) );
+			swc.setStage( stage );
+			stage.show();
+
+			newsplits = ( swc.wasCanceled() ? null : swc.getSplitMap() );
+		}
+		catch ( IOException ioe ) {
+			log.error( ioe, ioe );
+		}
 	}
 
 	public static interface CloseListener {

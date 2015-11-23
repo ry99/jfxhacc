@@ -5,7 +5,6 @@
  */
 package com.ostrichemulators.jfxhacc.cells;
 
-import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.Money;
 import javafx.geometry.Pos;
 import javafx.scene.control.TreeTableCell;
@@ -17,13 +16,13 @@ import org.apache.log4j.Logger;
  *
  * @author ryan
  */
-public class MoneyTableTreeCellFactory implements Callback<TreeTableColumn<Account, Money>, TreeTableCell<Account, Money>> {
+public class MoneyTableTreeCellFactory<T> implements Callback<TreeTableColumn<T, Money>, TreeTableCell<T, Money>> {
 
 	public static final Logger log = Logger.getLogger( MoneyTableTreeCellFactory.class );
 
 	@Override
-	public TreeTableCell<Account, Money> call( TreeTableColumn<Account, Money> p ) {
-		return new TreeTableCell<Account, Money>() {
+	public TreeTableCell<T, Money> call( TreeTableColumn<T, Money> p ) {
+		return new TreeTableCell<T, Money>() {
 			@Override
 			protected void updateItem( Money t, boolean empty ) {
 				super.updateItem( t, empty );
