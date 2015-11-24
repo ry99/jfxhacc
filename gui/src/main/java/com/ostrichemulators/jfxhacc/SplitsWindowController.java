@@ -15,8 +15,6 @@ import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
 import java.util.Map;
 import javafx.beans.property.ReadOnlyObjectWrapper;
-import javafx.beans.property.SimpleObjectProperty;
-import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableMap;
@@ -75,14 +73,8 @@ public class SplitsWindowController {
 
 	@FXML
 	public void initialize() {
-		reco.setCellValueFactory( new Callback<TableColumn.CellDataFeatures<Map.Entry<Account, Split>, ReconcileState>, ObservableValue<ReconcileState>>() {
-
-			@Override
-			public ObservableValue<ReconcileState> call( TableColumn.CellDataFeatures<Map.Entry<Account, Split>, ReconcileState> p ) {
-				Split s = p.getValue().getValue();
-				return new SimpleObjectProperty<>( null == s ? null : s.getReconciled() );
-			}
-		} );
+		reco.setCellValueFactory( ( TableColumn.CellDataFeatures<Map.Entry<Account, Split>, ReconcileState> p )
+				-> p.getValue().getValue().getReconciledProperty() );
 		reco.setCellFactory( new RecoCellFactory<>( true ) );
 
 		credit.setCellValueFactory( new CDValueFactory( true ) );
@@ -95,7 +87,7 @@ public class SplitsWindowController {
 		account.setCellFactory( new AccountCellFactory<>( engine.getAccountMapper(), true ) );
 
 		memo.setCellValueFactory( ( TableColumn.CellDataFeatures<Map.Entry<Account, Split>, String> p )
-				-> new SimpleStringProperty( p.getValue().getValue().getMemo() ) );
+				-> p.getValue().getValue().getMemoProperty() );
 		memo.setCellFactory( TextFieldTableCell.<Map.Entry<Account, Split>>forTableColumn() );
 	}
 
@@ -124,12 +116,8 @@ public class SplitsWindowController {
 		@Override
 		public ObservableValue<Money> call( TableColumn.CellDataFeatures<Map.Entry<Account, Split>, Money> p ) {
 			Split s = p.getValue().getValue();
-			Money val = null;
-			if ( ( credit && s.isCredit() ) || ( !credit && s.isDebit() ) ) {
-				val = s.getValue();
-			}
-
-			return new SimpleObjectProperty<>( val );
+			return ( ( credit && s.isCredit() ) || ( !credit && s.isDebit() )
+					? s.getValueProperty() : null );
 		}
 	}
 }

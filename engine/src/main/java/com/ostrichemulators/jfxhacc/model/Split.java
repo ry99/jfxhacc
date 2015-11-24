@@ -5,6 +5,9 @@
  */
 package com.ostrichemulators.jfxhacc.model;
 
+import javafx.beans.property.Property;
+import javafx.beans.property.StringProperty;
+
 /**
  *
  * @author ryan
@@ -20,12 +23,16 @@ public interface Split extends IDable {
 
 	public void setMemo( String memo );
 
+	public StringProperty getMemoProperty();
+
 	/**
 	 * Gets the (always positive) value of this split.
 	 *
 	 * @return
 	 */
 	public Money getValue();
+
+	public Property<Money> getValueProperty();
 
 	/**
 	 * Sets the value of this split.
@@ -41,4 +48,6 @@ public interface Split extends IDable {
 	public void setReconciled( ReconcileState rs );
 
 	public ReconcileState getReconciled();
+
+	public Property<ReconcileState> getReconciledProperty();
 }
