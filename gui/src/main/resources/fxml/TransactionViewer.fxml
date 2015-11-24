@@ -19,7 +19,7 @@
 						<TableColumn fx:id="payee" prefWidth="255.0" text="Payee/Account/Memo" />
 						<TableColumn fx:id="credit" minWidth="0.0" prefWidth="67.0" text="Credit" />
 						<TableColumn fx:id="debit" minWidth="5.0" prefWidth="73.0" text="Debit" />
-						<TableColumn fx:id="reco" prefWidth="52.0" text="Rec" />
+						<TableColumn fx:id="reco" editable="false" prefWidth="52.0" text="Rec" />
 					</columns>
 				</TableView>
 			</children>

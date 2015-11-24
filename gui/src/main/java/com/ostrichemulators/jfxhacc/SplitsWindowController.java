@@ -15,6 +15,8 @@ import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
 import java.util.Map;
 import javafx.beans.property.ReadOnlyObjectWrapper;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableMap;
@@ -22,6 +24,7 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 import org.apache.log4j.Logger;
@@ -43,13 +46,15 @@ public class SplitsWindowController {
 	private TableColumn<Map.Entry<Account, Split>, Money> debit;
 	@FXML
 	private TableColumn<Map.Entry<Account, Split>, ReconcileState> reco;
+	@FXML
+	private TableColumn<Map.Entry<Account, Split>, String> memo;
 
 	private Stage stage;
 	private final DataEngine engine;
 	private final ObservableMap<Account, Split> splits = FXCollections.observableHashMap();
 	private boolean canceled = false;
 
-	public SplitsWindowController( DataEngine eng ){
+	public SplitsWindowController( DataEngine eng ) {
 		engine = eng;
 	}
 
@@ -75,10 +80,10 @@ public class SplitsWindowController {
 			@Override
 			public ObservableValue<ReconcileState> call( TableColumn.CellDataFeatures<Map.Entry<Account, Split>, ReconcileState> p ) {
 				Split s = p.getValue().getValue();
-				return new ReadOnlyObjectWrapper<>( null == s ? null : s.getReconciled() );
+				return new SimpleObjectProperty<>( null == s ? null : s.getReconciled() );
 			}
 		} );
-		reco.setCellFactory( new RecoCellFactory<>() );
+		reco.setCellFactory( new RecoCellFactory<>( true ) );
 
 		credit.setCellValueFactory( new CDValueFactory( true ) );
 		credit.setCellFactory( new MoneyCellFactory<>() );
@@ -88,6 +93,10 @@ public class SplitsWindowController {
 		account.setCellValueFactory( ( TableColumn.CellDataFeatures<Map.Entry<Account, Split>, Account> p )
 				-> new ReadOnlyObjectWrapper<>( p.getValue().getKey() ) );
 		account.setCellFactory( new AccountCellFactory<>( engine.getAccountMapper(), true ) );
+
+		memo.setCellValueFactory( ( TableColumn.CellDataFeatures<Map.Entry<Account, Split>, String> p )
+				-> new SimpleStringProperty( p.getValue().getValue().getMemo() ) );
+		memo.setCellFactory( TextFieldTableCell.<Map.Entry<Account, Split>>forTableColumn() );
 	}
 
 	public void setSplitMap( Map<Account, Split> map ) {
@@ -120,7 +129,7 @@ public class SplitsWindowController {
 				val = s.getValue();
 			}
 
-			return new ReadOnlyObjectWrapper<>( val );
+			return new SimpleObjectProperty<>( val );
 		}
 	}
 }

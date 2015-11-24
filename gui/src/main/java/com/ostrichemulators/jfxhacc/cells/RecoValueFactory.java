@@ -10,7 +10,7 @@ import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
 import com.ostrichemulators.jfxhacc.model.Transaction;
 import java.util.Map;
-import javafx.beans.property.ReadOnlyObjectWrapper;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.scene.control.TableColumn;
 import javafx.util.Callback;
@@ -35,6 +35,6 @@ public class RecoValueFactory implements Callback<TableColumn.CellDataFeatures<T
 		Map<Account, Split> splits = trans.getSplits();
 		Split s = splits.get( selected );
 
-		return new ReadOnlyObjectWrapper<>( null == s ? null : s.getReconciled() );
+		return new SimpleObjectProperty<>( null == s ? null : s.getReconciled() );
 	}
 }

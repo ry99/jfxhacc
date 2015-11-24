@@ -6,9 +6,9 @@
 package com.ostrichemulators.jfxhacc.cells;
 
 import com.ostrichemulators.jfxhacc.model.Money;
-import javafx.geometry.Pos;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.util.Callback;
 import org.apache.log4j.Logger;
 
@@ -22,9 +22,9 @@ public class MoneyCellFactory<T> implements Callback<TableColumn<T, Money>, Tabl
 
 	@Override
 	public TableCell<T, Money> call( TableColumn<T, Money> p ) {
-		return new TableCell<T, Money>() {
+		return new TextFieldTableCell<T, Money>( new MoneyStringConverter() ) {
 			@Override
-			protected void updateItem( Money t, boolean empty ) {
+			public void updateItem( Money t, boolean empty ) {
 				super.updateItem( t, empty );
 				if ( ( null == t || empty ) ) {
 					setText( null );
@@ -32,8 +32,6 @@ public class MoneyCellFactory<T> implements Callback<TableColumn<T, Money>, Tabl
 				else {
 					setText( t.toString() );
 				}
-
-				setAlignment( Pos.TOP_RIGHT );
 			}
 		};
 	}

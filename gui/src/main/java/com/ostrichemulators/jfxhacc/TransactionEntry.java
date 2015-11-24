@@ -29,6 +29,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.SortedList;
@@ -47,6 +48,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 import org.apache.log4j.Logger;
@@ -330,17 +332,7 @@ public class TransactionEntry extends AnchorPane {
 
 		payeefield.setText( t.getPayee().getName() );
 
-		if ( splits.size() > 2 ) {
-			// do something here, eh?
-		}
-		else {
-			for ( Account a : splits.keySet() ) {
-				if ( !a.equals( account ) ) {
-					accountfield.getSelectionModel().select( a );
-					accountfield.setValue( a );
-				}
-			}
-		}
+		updateSplitData( trans.getSplits() );
 
 		numberfield.setText( t.getNumber() );
 
@@ -359,6 +351,7 @@ public class TransactionEntry extends AnchorPane {
 		numberfield.clear();
 		recofield.setSelected( false );
 		datefield.setValue( LocalDate.now() );
+		newsplits = null;
 	}
 
 	protected final void setDate( Date t ) {
@@ -419,7 +412,10 @@ public class TransactionEntry extends AnchorPane {
 			@Override
 			protected void updateItem( Account acct, boolean empty ) {
 				super.updateItem( acct, empty );
-				if ( !( null == acct || empty ) ) {
+				if ( null == acct || empty ) {
+					setText( "Split" );
+				}
+				else {
 					setText( GuiUtils.getFullName( acct, amap ) );
 				}
 			}
@@ -456,12 +452,61 @@ public class TransactionEntry extends AnchorPane {
 			stage.setTitle( "Splits" );
 			stage.setScene( new Scene( node ) );
 			swc.setStage( stage );
-			stage.show();
+			stage.showAndWait();
 
 			newsplits = ( swc.wasCanceled() ? null : swc.getSplitMap() );
+			updateSplitData( newsplits );
 		}
 		catch ( IOException ioe ) {
 			log.error( ioe, ioe );
+		}
+	}
+
+	private void updateSplitData( Map<Account, Split> splits ) {
+		log.debug( "update split data" );
+		boolean done = false;
+		if ( null == splits ) {
+			if ( newtrans ) {
+				accountfield.getSelectionModel().clearSelection();
+				accountfield.setValue( null );
+				amountfield.setEditable( true );
+				done = true;
+			}
+			else {
+				splits = trans.getSplits();
+				done = false;
+			}
+		}
+
+		if ( !done ) {
+			if ( splits.size() <= 2 ) {
+				for ( Map.Entry<Account, Split> en : splits.entrySet() ) {
+					Account a = en.getKey();
+					if ( a.equals( account ) ) {
+						Split s = en.getValue();
+
+						Platform.runLater( new Runnable() {
+
+							@Override
+							public void run() {
+								setReco( s.getReconciled() );
+								memofield.setText( s.getMemo() );
+								amountfield.setText( s.getValue().toString() );
+								amountfield.setEditable( true );
+							}
+						} );
+					}
+					else {
+						accountfield.getSelectionModel().select( a );
+						accountfield.setValue( a );
+					}
+				}
+			}
+			else {
+				accountfield.getSelectionModel().select( null );
+				accountfield.setValue( null );
+				amountfield.setEditable( false );
+			}
 		}
 	}
 

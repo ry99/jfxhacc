@@ -182,7 +182,7 @@ public class TransactionViewController implements ShutdownListener, TransactionL
 				-> new ReadOnlyStringWrapper( p.getValue().getNumber() ) );
 
 		reco.setCellValueFactory( recofac );
-		reco.setCellFactory( new RecoCellFactory<>() );
+		reco.setCellFactory( new RecoCellFactory<>( false ) );
 
 		credit.setCellValueFactory( creditfac );
 		credit.setCellFactory( new MoneyCellFactory<>() );
