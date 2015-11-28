@@ -311,7 +311,7 @@ public class TransactionViewController implements ShutdownListener, TransactionL
 		}
 		else if ( "R".equalsIgnoreCase( code ) ) {
 			ke.consume();
-			Split s = t.getSplits().get( account );
+			Split s = t.getSplit( account );
 			// cycle through the reconcile states
 			ReconcileState rs = s.getReconciled();
 			ReconcileState states[] = ReconcileState.values();
@@ -333,7 +333,7 @@ public class TransactionViewController implements ShutdownListener, TransactionL
 
 	@Override
 	public void added( Transaction t ) {
-		if ( t.getSplits().containsKey( account ) ) {
+		if ( null != t.getSplit( account ) ) {
 			transactions.add( t );
 			transtable.sort();
 		}
@@ -341,7 +341,7 @@ public class TransactionViewController implements ShutdownListener, TransactionL
 
 	@Override
 	public void updated( Transaction t ) {
-		if ( t.getSplits().containsKey( account ) ) {
+		if ( null != t.getSplit( account ) ) {
 			ListIterator<Transaction> transit = transactions.listIterator();
 			while ( transit.hasNext() ) {
 				Transaction listt = transit.next();
@@ -370,14 +370,15 @@ public class TransactionViewController implements ShutdownListener, TransactionL
 	public void reconciled( Account acct, Collection<Split> splits ) {
 		Map<URI, Transaction> revmap = new HashMap<>();
 		for ( Transaction t : transactions ) {
-			for ( Split s : t.getSplits().values() ) {
+			for ( Split s : t.getSplits() ) {
 				revmap.put( s.getId(), t );
 			}
 		}
 
 		for ( Split s : splits ) {
 			Transaction t = revmap.get( s.getId() );
-			t.addSplit( acct, s );
+			t.getSplit( acct ).setReconciled( s.getReconciled() );
+			// FIXME: don't need this anymore, I think
 			updated( t );
 		}
 	}

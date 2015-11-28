@@ -5,7 +5,10 @@
  */
 package com.ostrichemulators.jfxhacc.cells;
 
+import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
@@ -21,24 +24,21 @@ public class RecoCellFactory<T> implements Callback<TableColumn<T, ReconcileStat
 	public static final Logger log = Logger.getLogger( RecoCellFactory.class );
 	private final boolean useCheckBox;
 
-	public RecoCellFactory( boolean allowEditing ){
+	public RecoCellFactory( boolean allowEditing ) {
 		useCheckBox = allowEditing;
 	}
 
-	public RecoCellFactory(){
+	public RecoCellFactory() {
 		this( false );
 	}
 
-
 	@Override
 	public TableCell<T, ReconcileState> call( TableColumn<T, ReconcileState> p ) {
-		return new TableCell<T, ReconcileState>() {
-			private final CheckBox checkbox = new CheckBox() {
-				{
-					setAllowIndeterminate( true );
-				}
-			};
+		if ( useCheckBox ) {
+			return new CheckoCell();
+		}
 
+		return new TableCell<T, ReconcileState>() {
 			@Override
 			protected void updateItem( ReconcileState reco, boolean empty ) {
 				super.updateItem( reco, empty );
@@ -47,29 +47,61 @@ public class RecoCellFactory<T> implements Callback<TableColumn<T, ReconcileStat
 					setText( null );
 				}
 				else {
-					if ( useCheckBox ) {
-						if ( ReconcileState.CLEARED == reco ) {
-							checkbox.setIndeterminate( true );
-						}
-						else {
-							checkbox.setSelected( ReconcileState.RECONCILED == reco );
-						}
-						setGraphic( checkbox );
-					}
-					else {
-						switch ( reco ) {
-							case RECONCILED:
-								setText( "R" );
-								break;
-							case CLEARED:
-								setText( "C" );
-								break;
-							default:
-								setText( null );
-						}
+					switch ( reco ) {
+						case RECONCILED:
+							setText( "R" );
+							break;
+						case CLEARED:
+							setText( "C" );
+							break;
+						default:
+							setText( null );
 					}
 				}
 			}
 		};
+	}
+
+	private class CheckoCell extends TableCell<T, ReconcileState> implements ChangeListener<Boolean> {
+
+		private final CheckBox checkbox = new CheckBox();
+
+		public CheckoCell() {
+			checkbox.setAllowIndeterminate( true );
+			checkbox.selectedProperty().addListener( this );
+			checkbox.indeterminateProperty().addListener( this );
+		}
+
+		@Override
+		protected void updateItem( ReconcileState reco, boolean empty ) {
+			super.updateItem( reco, empty );
+
+			if ( empty || null == reco ) {
+				setText( null );
+			}
+			else {
+				if ( ReconcileState.CLEARED == reco ) {
+					checkbox.setIndeterminate( true );
+				}
+				else {
+					checkbox.setSelected( ReconcileState.RECONCILED == reco );
+				}
+				setGraphic( checkbox );
+			}
+		}
+
+		@Override
+		public void changed( ObservableValue<? extends Boolean> ov, Boolean t, Boolean t1 ) {
+			Split s = Split.class.cast( getTableRow().getItem() );
+
+			if ( checkbox.isIndeterminate() ) {
+				s.setReconciled( ReconcileState.CLEARED );
+			}
+			else {
+				s.setReconciled( checkbox.isSelected()
+						? ReconcileState.RECONCILED
+						: ReconcileState.NOT_RECONCILED );
+			}
+		}
 	}
 }

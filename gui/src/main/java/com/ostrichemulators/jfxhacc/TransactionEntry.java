@@ -17,6 +17,7 @@ import com.ostrichemulators.jfxhacc.model.Payee;
 import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
 import com.ostrichemulators.jfxhacc.model.Transaction;
+import com.ostrichemulators.jfxhacc.model.impl.SplitImpl;
 import com.ostrichemulators.jfxhacc.utility.GuiUtils;
 import java.io.IOException;
 import java.text.Collator;
@@ -27,9 +28,13 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javafx.application.Platform;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.SortedList;
@@ -48,7 +53,6 @@ import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
-import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 import org.apache.log4j.Logger;
@@ -92,7 +96,7 @@ public class TransactionEntry extends AnchorPane {
 	private final List<Account> allaccounts = new ArrayList<>();
 	private final ObservableList<Account> accounts
 			= FXCollections.observableArrayList();
-	private Map<Account, Split> newsplits = null;
+	private Set<Split> newsplits = null;
 
 	public TransactionEntry() {
 		FXMLLoader fxmlLoader
@@ -184,12 +188,13 @@ public class TransactionEntry extends AnchorPane {
 
 			// FIXME: use the newsplits member here somewhere
 			if ( newtrans ) {
-				Split mysplit = tmap.create( mymoney, mymemo, myreco );
-				Split yoursplit = tmap.create( mymoney.opposite(), mymemo, ReconcileState.NOT_RECONCILED );
+				Split mysplit = new SplitImpl( account, mymoney, mymemo, myreco );
+				Split yoursplit = new SplitImpl( accountfield.getValue(),
+						mymoney.opposite(), mymemo, ReconcileState.NOT_RECONCILED );
 
-				Map<Account, Split> splits = new HashMap<>();
-				splits.put( account, mysplit );
-				splits.put( accountfield.getValue(), yoursplit );
+				Set<Split> splits = new HashSet<>();
+				splits.add( mysplit );
+				splits.add( yoursplit );
 
 				trans = tmap.create( tdate, payee, num, splits, journal );
 
@@ -198,16 +203,15 @@ public class TransactionEntry extends AnchorPane {
 				}
 			}
 			else {
-				for ( Map.Entry<Account, Split> en : trans.getSplits().entrySet() ) {
-					Account acct = en.getKey();
-					Split s = en.getValue();
+				for ( Split s : trans.getSplits() ) {
+					Account acct = s.getAccount();
 					if ( acct.equals( account ) ) {
 						s.setMemo( mymemo );
 						s.setReconciled( myreco );
 						s.setValue( mymoney );
 					}
 					else {
-						en.getValue().setValue( mymoney.opposite() );
+						s.setValue( mymoney.opposite() );
 					}
 				}
 
@@ -323,8 +327,7 @@ public class TransactionEntry extends AnchorPane {
 		trans = t;
 		newtrans = false;
 
-		Map<Account, Split> splits = t.getSplits();
-		Split mysplit = splits.get( account );
+		Split mysplit = t.getSplit( account );
 		memofield.setText( mysplit.getMemo() );
 		amountfield.setText( mysplit.getValue().toString() );
 
@@ -433,19 +436,20 @@ public class TransactionEntry extends AnchorPane {
 			Parent node = loader.load();
 
 			if ( null == newsplits ) {
-				Map<Account, Split> map = new HashMap<>();
+				Set<Split> set = new HashSet<>();
 				if ( newtrans ) {
-					Split s = tmap.create( getSplitAmount(), memofield.getText(), getReco() );
-					map.put( account, s );
+					Split s = new SplitImpl( account, getSplitAmount(),
+							memofield.getText(), getReco() );
+					set.add( s );
 				}
 				else {
-					map.putAll( trans.getSplits() );
+					set.addAll( trans.getSplits() );
 				}
 
-				swc.setSplitMap( map );
+				swc.setSplits( set );
 			}
 			else {
-				swc.setSplitMap( newsplits );
+				swc.setSplits( newsplits );
 			}
 
 			Stage stage = new Stage();
@@ -454,7 +458,7 @@ public class TransactionEntry extends AnchorPane {
 			swc.setStage( stage );
 			stage.showAndWait();
 
-			newsplits = ( swc.wasCanceled() ? null : swc.getSplitMap() );
+			newsplits = ( swc.wasCanceled() ? null : swc.getSplits() );
 			updateSplitData( newsplits );
 		}
 		catch ( IOException ioe ) {
@@ -462,7 +466,7 @@ public class TransactionEntry extends AnchorPane {
 		}
 	}
 
-	private void updateSplitData( Map<Account, Split> splits ) {
+	private void updateSplitData( Set<Split> splits ) {
 		log.debug( "update split data" );
 		boolean done = false;
 		if ( null == splits ) {
@@ -480,10 +484,9 @@ public class TransactionEntry extends AnchorPane {
 
 		if ( !done ) {
 			if ( splits.size() <= 2 ) {
-				for ( Map.Entry<Account, Split> en : splits.entrySet() ) {
-					Account a = en.getKey();
+				for ( Split s : splits ) {
+					Account a = s.getAccount();
 					if ( a.equals( account ) ) {
-						Split s = en.getValue();
 
 						Platform.runLater( new Runnable() {
 

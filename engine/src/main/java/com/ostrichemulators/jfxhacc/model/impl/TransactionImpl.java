@@ -12,8 +12,14 @@ import com.ostrichemulators.jfxhacc.model.Transaction;
 import com.ostrichemulators.jfxhacc.model.vocabulary.JfxHacc;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Set;
+import javafx.beans.property.Property;
+import javafx.beans.property.SetProperty;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleSetProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
+import javafx.collections.FXCollections;
 import org.openrdf.model.URI;
 
 /**
@@ -22,10 +28,11 @@ import org.openrdf.model.URI;
  */
 public class TransactionImpl extends IDableImpl implements Transaction {
 
-	private Date date;
-	private Payee payee;
-	private String number;
-	private final Map<Account, Split> splits = new HashMap<>();
+	private final Property<Date> date = new SimpleObjectProperty<>();
+	private final Property<Payee> payee = new SimpleObjectProperty<>();
+	private final StringProperty number = new SimpleStringProperty();
+	private final SetProperty<Split> splits
+			= new SimpleSetProperty<>( FXCollections.observableSet() );
 
 	public TransactionImpl() {
 		super( JfxHacc.TRANSACTION_TYPE );
@@ -41,59 +48,90 @@ public class TransactionImpl extends IDableImpl implements Transaction {
 
 	public TransactionImpl( URI id, Date date, String num, Payee payee ) {
 		super( JfxHacc.TRANSACTION_TYPE, id );
-		this.payee = payee;
-		this.date = date;
-		this.number = num;
+		this.payee.setValue( payee );
+		this.date.setValue( date );
+		this.number.set( num );
 	}
 
 	@Override
 	public Date getDate() {
-		return date;
+		return date.getValue();
 	}
 
 	@Override
 	public void setDate( Date date ) {
-		this.date = date;
+		this.date.setValue( date );
 	}
 
 	@Override
 	public Payee getPayee() {
-		return payee;
+		return payee.getValue();
 	}
 
 	@Override
 	public void setPayee( Payee payee ) {
-		this.payee = payee;
+		this.payee.setValue( payee );
 	}
 
 	@Override
-	public Map<Account, Split> getSplits() {
-		return Collections.unmodifiableMap( splits );
+	public Set<Split> getSplits() {
+		return Collections.unmodifiableSet( splits.getValue() );
 	}
 
 	@Override
-	public void setSplits( Map<Account, Split> splts ) {
+	public void setSplits( Set<Split> splts ) {
 		splits.clear();
-		splits.putAll( splts );
+		splits.addAll( splts );
 	}
 
 	@Override
-	public void addSplit( Account a, Split s ) {
-		splits.put( a, s );
+	public void addSplit( Split s ) {
+		splits.add( s );
+	}
+
+	@Override
+	public Split getSplit( Account a ) {
+		for ( Split s : splits ) {
+			if ( s.getAccount().equals( a ) ) {
+				return s;
+			}
+		}
+
+		return null;
 	}
 
 	@Override
 	public String getNumber() {
-		return number;
+		return number.get();
 	}
 
 	@Override
 	public void setNumber( String number ) {
-		this.number = number;
+		this.number.set( number );
 	}
 
 	@Override
 	public int compareTo( Transaction o ) {
 		return getDate().compareTo( o.getDate() );
+	}
+
+	@Override
+	public Property<Date> getDateProperty() {
+		return date;
+	}
+
+	@Override
+	public Property<Payee> getPayeeProperty() {
+		return payee;
+	}
+
+	@Override
+	public SetProperty<Split> getSplitsProperty() {
+		return splits;
+	}
+
+	@Override
+	public StringProperty getNumberProperty() {
+		return number;
 	}
 }

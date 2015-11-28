@@ -5,6 +5,7 @@
  */
 package com.ostrichemulators.jfxhacc.model.impl;
 
+import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.vocabulary.JfxHacc;
@@ -22,10 +23,11 @@ import org.openrdf.model.URI;
 public class SplitImpl extends IDableImpl implements Split {
 
 	private final StringProperty memo = new SimpleStringProperty();
-	private final SimpleObjectProperty<Money> value = new SimpleObjectProperty<>( new Money() );
+	private final Property<Money> value = new SimpleObjectProperty<>( new Money() );
 	private boolean isdebit = false;
-	private final SimpleObjectProperty<ReconcileState> reco
+	private final Property<ReconcileState> reco
 			= new SimpleObjectProperty<>( ReconcileState.NOT_RECONCILED );
+	private final Property<Account> acct = new SimpleObjectProperty<>();
 
 	public SplitImpl() {
 		super( JfxHacc.SPLIT_TYPE );
@@ -38,13 +40,20 @@ public class SplitImpl extends IDableImpl implements Split {
 	public SplitImpl( Money m ) {
 		super( JfxHacc.SPLIT_TYPE );
 		isdebit = m.isNegative();
-		value.set( m.abs() );
+		value.setValue( m.abs() );
 	}
 
 	public SplitImpl( URI id, Money m ) {
 		super( JfxHacc.SPLIT_TYPE, id );
 		isdebit = m.isNegative();
-		value.set( m.abs() );
+		value.setValue( m.abs() );
+	}
+
+	public SplitImpl( Account a, Money m, String memo, ReconcileState rs ) {
+		this( m );
+		this.memo.set( memo );
+		this.reco.setValue( rs );
+		this.acct.setValue( a );
 	}
 
 	@Override
@@ -59,13 +68,13 @@ public class SplitImpl extends IDableImpl implements Split {
 
 	@Override
 	public Money getValue() {
-		return value.get();
+		return value.getValue();
 	}
 
 	@Override
 	public void setValue( Money m ) {
 		isdebit = m.isNegative();
-		value.set( m.abs() );
+		value.setValue( m.abs() );
 	}
 
 	@Override
@@ -80,12 +89,12 @@ public class SplitImpl extends IDableImpl implements Split {
 
 	@Override
 	public void setReconciled( ReconcileState rs ) {
-		reco.set( rs );
+		reco.setValue( rs );
 	}
 
 	@Override
 	public ReconcileState getReconciled() {
-		return reco.get();
+		return reco.getValue();
 	}
 
 	@Override
@@ -101,6 +110,7 @@ public class SplitImpl extends IDableImpl implements Split {
 		hash = 13 * hash + Objects.hashCode( this.value );
 		hash = 13 * hash + ( this.isdebit ? 1 : 0 );
 		hash = 13 * hash + Objects.hashCode( this.reco );
+		hash = 13 * hash + Objects.hashCode( this.acct );
 		return hash;
 	}
 
@@ -122,11 +132,13 @@ public class SplitImpl extends IDableImpl implements Split {
 		if ( this.isdebit != other.isdebit ) {
 			return false;
 		}
-		if ( this.reco != other.reco ) {
+		if ( !Objects.equals( this.reco, other.reco ) ) {
 			return false;
 		}
-
-		return getId().equals( other.getId() );
+		if ( !Objects.equals( this.acct, other.acct ) ) {
+			return false;
+		}
+		return true;
 	}
 
 	@Override
@@ -142,6 +154,21 @@ public class SplitImpl extends IDableImpl implements Split {
 	@Override
 	public Property<ReconcileState> getReconciledProperty() {
 		return reco;
+	}
+
+	@Override
+	public void setAccount( Account a ) {
+		acct.setValue( a );
+	}
+
+	@Override
+	public Account getAccount() {
+		return acct.getValue();
+	}
+
+	@Override
+	public Property<Account> getAccountProperty() {
+		return acct;
 	}
 
 }

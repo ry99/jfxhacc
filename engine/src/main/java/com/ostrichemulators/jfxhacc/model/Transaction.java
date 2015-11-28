@@ -6,7 +6,10 @@
 package com.ostrichemulators.jfxhacc.model;
 
 import java.util.Date;
-import java.util.Map;
+import java.util.Set;
+import javafx.beans.property.Property;
+import javafx.beans.property.SetProperty;
+import javafx.beans.property.StringProperty;
 
 /**
  * A transaction is a complex class that brings together splits, accounts, and
@@ -20,17 +23,32 @@ public interface Transaction extends IDable, Comparable<Transaction> {
 
 	public void setDate( Date date );
 
+	public Property<Date> getDateProperty();
+
 	public void setPayee( Payee payee );
 
 	public Payee getPayee();
 
-	public Map<Account, Split> getSplits();
+	public Property<Payee> getPayeeProperty();
 
-	public void setSplits( Map<Account, Split> splits );
+	public Set<Split> getSplits();
 
-	public void addSplit( Account a, Split s );
+	/**
+	 * Gets the split for the given account, or null
+	 * @param a
+	 * @return
+	 */
+	public Split getSplit( Account a );
+
+	public void setSplits( Set<Split> splits );
+
+	public SetProperty<Split> getSplitsProperty();
+
+	public void addSplit( Split s );
 
 	public String getNumber();
 
 	public void setNumber( String s );
+
+	public StringProperty getNumberProperty();
 }

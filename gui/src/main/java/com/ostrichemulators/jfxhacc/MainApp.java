@@ -17,6 +17,7 @@ import com.ostrichemulators.jfxhacc.model.Payee;
 import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
 import com.ostrichemulators.jfxhacc.model.impl.PayeeImpl;
+import com.ostrichemulators.jfxhacc.model.impl.SplitImpl;
 import com.ostrichemulators.jfxhacc.utility.DbUtil;
 import java.io.File;
 import java.io.IOException;
@@ -207,17 +208,17 @@ public class MainApp extends Application {
 			}
 
 			for ( int i = 0; i < 100; i++ ) {
-				Map<Account, Split> splits = new HashMap<>();
+				Set<Split> splits = new HashSet<>();
 				Money m = new Money( r.nextInt( 5000 ) );
-
-				Split credit = tmap.create( m, "", ReconcileState.NOT_RECONCILED );
-				Split debit = tmap.create( m.opposite(), "", ReconcileState.NOT_RECONCILED );
 
 				Account cacct = accts.get( anames[r.nextInt( anames.length )] );
 				Account dacct = accts.get( "expense-" + anames[r.nextInt( anames.length )] );
 
-				splits.put( cacct, credit );
-				splits.put( dacct, debit );
+				Split credit = new SplitImpl( cacct, m, "", ReconcileState.NOT_RECONCILED );
+				Split debit = new SplitImpl( dacct, m.opposite(), "", ReconcileState.NOT_RECONCILED );
+
+				splits.add( credit );
+				splits.add( debit );
 
 				tmap.create( new Date(), flip.get( "payee-" + r.nextInt( 10 ) ),
 						Integer.toString( i ), splits, journal );

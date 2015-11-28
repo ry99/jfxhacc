@@ -9,7 +9,7 @@ import com.ostrichemulators.jfxhacc.TransactionViewController.PAMData;
 import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.Transaction;
-import java.util.Map;
+import java.util.Set;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.value.ObservableValue;
 import javafx.scene.control.TableColumn;
@@ -32,8 +32,8 @@ public class PayeeAccountMemoValueFactory implements Callback<TableColumn.CellDa
 	@Override
 	public ObservableValue<PAMData> call( TableColumn.CellDataFeatures<Transaction, PAMData> p ) {
 		Transaction trans = p.getValue();
-		Map<Account, Split> splits = trans.getSplits();
-		Split mysplit = splits.get( selected );
+		Set<Split> splits = trans.getSplits();
+		Split mysplit = trans.getSplit( selected );
 
 		String acct = null;
 		if ( splits.size() > 2 ) {
@@ -41,9 +41,9 @@ public class PayeeAccountMemoValueFactory implements Callback<TableColumn.CellDa
 		}
 		else {
 			// we don't want to show our current account here; we want the other one
-			for ( Account a : splits.keySet() ) {
-				if ( !a.equals( selected ) ) {
-					acct = a.getName();
+			for ( Split s : splits ) {
+				if ( s != mysplit ) {
+					acct = s.getAccount().getName();
 				}
 			}
 		}

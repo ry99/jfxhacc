@@ -9,8 +9,6 @@ import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.Transaction;
-import java.util.Map;
-import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.value.ObservableValue;
 import javafx.scene.control.TableColumn;
 import javafx.util.Callback;
@@ -37,14 +35,8 @@ public class CreditDebitValueFactory implements Callback<TableColumn.CellDataFea
 	@Override
 	public ObservableValue<Money> call( TableColumn.CellDataFeatures<Transaction, Money> p ) {
 		Transaction trans = p.getValue();
-		Map<Account, Split> splits = trans.getSplits();
-		Split s = splits.get( selected );
-
-		Money val = null;
-		if ( ( credit && s.isCredit() ) || ( !credit && s.isDebit() ) ) {
-			val = s.getValue();
-		}
-
-		return new ReadOnlyObjectWrapper<>( val );
+		Split s = trans.getSplit( selected );
+		return ( ( credit && s.isCredit() ) || ( !credit && s.isDebit() )
+				? s.getValueProperty() : null );
 	}
 }

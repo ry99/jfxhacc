@@ -50,4 +50,10 @@ public interface Split extends IDable {
 	public ReconcileState getReconciled();
 
 	public Property<ReconcileState> getReconciledProperty();
+
+	public void setAccount( Account a );
+
+	public Account getAccount();
+
+	public Property<Account> getAccountProperty();
 }

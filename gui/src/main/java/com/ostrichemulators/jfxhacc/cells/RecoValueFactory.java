@@ -9,7 +9,6 @@ import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
 import com.ostrichemulators.jfxhacc.model.Transaction;
-import java.util.Map;
 import javafx.beans.value.ObservableValue;
 import javafx.scene.control.TableColumn;
 import javafx.util.Callback;
@@ -30,9 +29,7 @@ public class RecoValueFactory implements Callback<TableColumn.CellDataFeatures<T
 
 	@Override
 	public ObservableValue<ReconcileState> call( TableColumn.CellDataFeatures<Transaction, ReconcileState> p ) {
-		Transaction trans = p.getValue();
-		Map<Account, Split> splits = trans.getSplits();
-		Split s = splits.get( selected );
+		Split s = p.getValue().getSplit( selected );
 		return s.getReconciledProperty();
 	}
 }

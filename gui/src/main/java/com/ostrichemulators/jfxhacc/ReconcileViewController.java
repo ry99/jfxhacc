@@ -55,7 +55,7 @@ public class ReconcileViewController extends TransactionViewController {
 	public Collection<Split> getSplits() {
 		List<Split> splits = new ArrayList<>();
 		for ( Transaction t : transactions ) {
-			splits.add( t.getSplits().get( account ) );
+			splits.add( t.getSplit( account ) );
 		}
 		return splits;
 	}
@@ -90,7 +90,7 @@ public class ReconcileViewController extends TransactionViewController {
 			t = transtable.getSelectionModel().getSelectedItem();
 		}
 
-		Split s = t.getSplits().get( account );
+		Split s = t.getSplit( account );
 		ReconcileState newrec = ( ReconcileState.CLEARED == s.getReconciled()
 				? ReconcileState.NOT_RECONCILED
 				: ReconcileState.CLEARED );
@@ -110,7 +110,7 @@ public class ReconcileViewController extends TransactionViewController {
 			while ( it.hasNext() ) {
 				// move forward to our first unreconciled transaction
 				Transaction next = it.next();
-				Split nextsplit = next.getSplits().get( account );
+				Split nextsplit = next.getSplit( account );
 				if ( ReconcileState.NOT_RECONCILED == nextsplit.getReconciled() ) {
 					idx = it.nextIndex() - 1;
 					break;
@@ -145,7 +145,7 @@ public class ReconcileViewController extends TransactionViewController {
 
 	@Override
 	public void added( Transaction t ) {
-		if ( t.getSplits().containsKey( account ) ) {
+		if ( null != t.getSplit( account ) ) {
 			transactions.add( t );
 			transtable.sort();
 		}
@@ -153,7 +153,7 @@ public class ReconcileViewController extends TransactionViewController {
 
 	@Override
 	public void updated( Transaction t ) {
-		if ( t.getSplits().containsKey( account ) ) {
+		if ( null != t.getSplit( account ) ) {
 			ListIterator<Transaction> transit = transactions.listIterator();
 			while ( transit.hasNext() ) {
 				Transaction listt = transit.next();
@@ -169,8 +169,8 @@ public class ReconcileViewController extends TransactionViewController {
 	public void upgradeSplits() {
 		List<Split> splits = new ArrayList<>();
 		for ( Transaction t : transactions ) {
-			Split s = t.getSplits().get( account );
-			if ( ReconcileState.CLEARED == s.getReconciled() ) {
+			Split s = t.getSplit( account );
+			if ( null != s && ReconcileState.CLEARED == s.getReconciled() ) {
 				splits.add( s );
 			}
 		}

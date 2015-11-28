@@ -96,14 +96,14 @@ public class AccountBalanceCache {
 	}
 
 	private void added( Transaction t ) {
-		for ( Account a : t.getSplits().keySet() ) {
-			recache( a );
+		for ( Split s : t.getSplits() ) {
+			recache( s.getAccount() );
 		}
 	}
 
 	private void updated( Transaction t ) {
-		for ( Account a : t.getSplits().keySet() ) {
-			recache( a );
+		for ( Split s : t.getSplits() ) {
+			recache( s.getAccount() );
 		}
 	}
 

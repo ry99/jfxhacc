@@ -13,11 +13,10 @@ import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
-import java.util.Map;
-import javafx.beans.property.ReadOnlyObjectWrapper;
+import java.util.Collection;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
-import javafx.collections.ObservableMap;
+import javafx.collections.ObservableSet;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.TableColumn;
@@ -35,21 +34,21 @@ import org.apache.log4j.Logger;
 public class SplitsWindowController {
 
 	@FXML
-	private TableView<Map.Entry<Account, Split>> splittable;
+	private TableView<Split> splittable;
 	@FXML
-	private TableColumn<Map.Entry<Account, Split>, Account> account;
+	private TableColumn<Split, Account> account;
 	@FXML
-	private TableColumn<Map.Entry<Account, Split>, Money> credit;
+	private TableColumn<Split, Money> credit;
 	@FXML
-	private TableColumn<Map.Entry<Account, Split>, Money> debit;
+	private TableColumn<Split, Money> debit;
 	@FXML
-	private TableColumn<Map.Entry<Account, Split>, ReconcileState> reco;
+	private TableColumn<Split, ReconcileState> reco;
 	@FXML
-	private TableColumn<Map.Entry<Account, Split>, String> memo;
+	private TableColumn<Split, String> memo;
 
 	private Stage stage;
 	private final DataEngine engine;
-	private final ObservableMap<Account, Split> splits = FXCollections.observableHashMap();
+	private final ObservableSet<Split> splits = FXCollections.observableSet();
 	private boolean canceled = false;
 
 	public SplitsWindowController( DataEngine eng ) {
@@ -73,8 +72,8 @@ public class SplitsWindowController {
 
 	@FXML
 	public void initialize() {
-		reco.setCellValueFactory( ( TableColumn.CellDataFeatures<Map.Entry<Account, Split>, ReconcileState> p )
-				-> p.getValue().getValue().getReconciledProperty() );
+		reco.setCellValueFactory( ( TableColumn.CellDataFeatures<Split, ReconcileState> p )
+					-> p.getValue().getReconciledProperty() );
 		reco.setCellFactory( new RecoCellFactory<>( true ) );
 
 		credit.setCellValueFactory( new CDValueFactory( true ) );
@@ -82,21 +81,21 @@ public class SplitsWindowController {
 		debit.setCellValueFactory( new CDValueFactory( false ) );
 		debit.setCellFactory( new MoneyCellFactory<>() );
 
-		account.setCellValueFactory( ( TableColumn.CellDataFeatures<Map.Entry<Account, Split>, Account> p )
-				-> new ReadOnlyObjectWrapper<>( p.getValue().getKey() ) );
+		account.setCellValueFactory( ( TableColumn.CellDataFeatures<Split, Account> p )
+				-> p.getValue().getAccountProperty() );
 		account.setCellFactory( new AccountCellFactory<>( engine.getAccountMapper(), true ) );
 
-		memo.setCellValueFactory( ( TableColumn.CellDataFeatures<Map.Entry<Account, Split>, String> p )
-				-> p.getValue().getValue().getMemoProperty() );
-		memo.setCellFactory( TextFieldTableCell.<Map.Entry<Account, Split>>forTableColumn() );
+		memo.setCellValueFactory( ( TableColumn.CellDataFeatures<Split, String> p )
+				-> p.getValue().getMemoProperty() );
+		memo.setCellFactory( TextFieldTableCell.<Split>forTableColumn() );
 	}
 
-	public void setSplitMap( Map<Account, Split> map ) {
-		splits.putAll( map );
-		splittable.getItems().setAll( splits.entrySet() );
+	public void setSplits( Collection<Split> set ) {
+		splits.addAll( set );
+		splittable.getItems().setAll( splits );
 	}
 
-	public ObservableMap<Account, Split> getSplitMap() {
+	public ObservableSet<Split> getSplits() {
 		return splits;
 	}
 
@@ -104,7 +103,7 @@ public class SplitsWindowController {
 		stage = s;
 	}
 
-	private static class CDValueFactory implements Callback<TableColumn.CellDataFeatures<Map.Entry<Account, Split>, Money>, ObservableValue<Money>> {
+	private static class CDValueFactory implements Callback<TableColumn.CellDataFeatures<Split, Money>, ObservableValue<Money>> {
 
 		public static final Logger log = Logger.getLogger( CDValueFactory.class );
 		private final boolean credit;
@@ -114,8 +113,8 @@ public class SplitsWindowController {
 		}
 
 		@Override
-		public ObservableValue<Money> call( TableColumn.CellDataFeatures<Map.Entry<Account, Split>, Money> p ) {
-			Split s = p.getValue().getValue();
+		public ObservableValue<Money> call( TableColumn.CellDataFeatures<Split, Money> p ) {
+			Split s = p.getValue();
 			return ( ( credit && s.isCredit() ) || ( !credit && s.isDebit() )
 					? s.getValueProperty() : null );
 		}
