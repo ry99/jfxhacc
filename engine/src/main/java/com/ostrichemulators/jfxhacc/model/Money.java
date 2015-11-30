@@ -58,7 +58,13 @@ public final class Money implements Comparable<Money> {
 			int dollars = Integer.parseInt( null == dollarval ? "0" : dollarval );
 
 			String centval = m.group( 4 );
-			int cents = Integer.parseInt( null == centval ? "0" : centval );
+			centval = ( null == centval ? "0" : centval );
+			int cents = Integer.parseInt( centval );
+			if ( cents < 10 && !centval.startsWith( "0" ) ) {
+				// we have something like 10.2, which should be 20 cents, not 2
+				cents *= 10;
+			}
+
 			money = new Money( dollars * ROLLOVER + cents );
 		}
 		else {

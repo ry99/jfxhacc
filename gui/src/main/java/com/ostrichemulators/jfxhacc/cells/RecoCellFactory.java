@@ -77,7 +77,7 @@ public class RecoCellFactory<T> implements Callback<TableColumn<T, ReconcileStat
 			super.updateItem( reco, empty );
 
 			if ( empty || null == reco ) {
-				setText( null );
+				setGraphic( null );
 			}
 			else {
 				if ( ReconcileState.CLEARED == reco ) {
@@ -93,6 +93,9 @@ public class RecoCellFactory<T> implements Callback<TableColumn<T, ReconcileStat
 		@Override
 		public void changed( ObservableValue<? extends Boolean> ov, Boolean t, Boolean t1 ) {
 			Split s = Split.class.cast( getTableRow().getItem() );
+			if ( null == s ) {
+				return;
+			}
 
 			if ( checkbox.isIndeterminate() ) {
 				s.setReconciled( ReconcileState.CLEARED );

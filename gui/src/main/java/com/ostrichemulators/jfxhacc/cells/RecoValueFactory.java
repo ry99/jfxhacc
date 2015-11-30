@@ -30,6 +30,6 @@ public class RecoValueFactory implements Callback<TableColumn.CellDataFeatures<T
 	@Override
 	public ObservableValue<ReconcileState> call( TableColumn.CellDataFeatures<Transaction, ReconcileState> p ) {
 		Split s = p.getValue().getSplit( selected );
-		return s.getReconciledProperty();
+		return ( null == s ? null : s.getReconciledProperty() );
 	}
 }

@@ -5,7 +5,7 @@
  */
 package com.ostrichemulators.jfxhacc;
 
-import com.ostrichemulators.jfxhacc.TransactionEntry.CloseListener;
+import com.ostrichemulators.jfxhacc.TransactionEntryController.CloseListener;
 import com.ostrichemulators.jfxhacc.cells.CreditDebitValueFactory;
 import com.ostrichemulators.jfxhacc.cells.DateCellFactory;
 import com.ostrichemulators.jfxhacc.cells.MoneyCellFactory;
@@ -71,7 +71,7 @@ public class TransactionViewController implements ShutdownListener, TransactionL
 	@FXML
 	private TableColumn<Transaction, ReconcileState> reco;
 
-	private final TransactionEntry dataentry = new TransactionEntry();
+	private final TransactionEntry dataentry = new TransactionEntry( MainApp.getEngine() );
 
 	protected Account account;
 	protected Journal journal;

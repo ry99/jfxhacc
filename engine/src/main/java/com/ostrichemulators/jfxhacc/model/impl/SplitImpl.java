@@ -171,4 +171,16 @@ public class SplitImpl extends IDableImpl implements Split {
 		return acct;
 	}
 
+	@Override
+	public Money add( Money m ) {
+		Money old = value.getValue();
+		if ( isdebit ) {
+			old = old.opposite();
+		}
+
+		Money newmoney = old.add( m );
+		setValue( newmoney );
+
+		return getValue();
+	}
 }

@@ -56,4 +56,12 @@ public interface Split extends IDable {
 	public Account getAccount();
 
 	public Property<Account> getAccountProperty();
+
+	/**
+	 * Adds the given money to this split's value
+	 *
+	 * @param m
+	 * @return
+	 */
+	public Money add( Money m );
 }
