@@ -10,6 +10,8 @@ import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.Journal;
 import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.Transaction;
+import com.ostrichemulators.jfxhacc.model.impl.SplitImpl;
+import com.ostrichemulators.jfxhacc.model.impl.TransactionImpl;
 import java.io.IOException;
 import java.util.Date;
 import javafx.fxml.FXMLLoader;
@@ -28,6 +30,7 @@ public class TransactionEntry extends StackPane {
 	private final Pane splitspane;
 	private final TransactionEntryController tec;
 	private final SplitsWindowController swc;
+	private TransactionImpl trans;
 	private Account acct;
 
 	public TransactionEntry( DataEngine eng ) {
@@ -57,14 +60,13 @@ public class TransactionEntry extends StackPane {
 		splitspane.setVisible( false );
 
 		tec.setSplitsButtonOnAction( event -> {
-			swc.updateSplitData( tec.getSelectedAccount(), tec.getSplitAmount(),
-					tec.getMemo(), tec.getReco() );
+			trans.getSplit( acct ).setReconciled( tec.getReco() );
 			gridpane.setVisible( false );
 			splitspane.setVisible( true );
 		} );
 
 		swc.setOkButtonOnAction( event -> {
-			tec.updateSplitData( swc.getSplits() );
+			tec.updateSplitData();
 			gridpane.setVisible( true );
 			splitspane.setVisible( false );
 		} );
@@ -84,21 +86,21 @@ public class TransactionEntry extends StackPane {
 		tec.removeCloseListener( cc );
 	}
 
-	public void setTransaction( Date d, Split.ReconcileState rs, boolean to ) {
-		tec.setTransaction( d, rs, to );
-		swc.clear();
-		reset();
-	}
-
 	public void setTransaction( Date d, Split s ) {
-		tec.setTransaction( d, s );
-		swc.clear();
-		reset();
+		Transaction t = new TransactionImpl();
+		t.setDate( d );
+		t.addSplit( s );
+		setTransaction( t );
 	}
 
 	public void setTransaction( Transaction t ) {
-		tec.setTransaction( t );
-		swc.setSplits( t.getSplitsProperty() );
+		trans = new TransactionImpl( t.getId(), t.getDate(), t.getNumber(), t.getPayee() );
+		for ( Split s : t.getSplits() ) {
+			trans.addSplit( new SplitImpl( s ) );
+		}
+
+		tec.setTransaction( trans );
+		swc.setSplits( trans.getSplitsProperty() );
 		reset();
 	}
 

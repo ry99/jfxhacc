@@ -5,6 +5,7 @@
  */
 package com.ostrichemulators.jfxhacc;
 
+import com.ostrichemulators.jfxhacc.cells.MoneyStringConverter;
 import com.ostrichemulators.jfxhacc.engine.DataEngine;
 import com.ostrichemulators.jfxhacc.mapper.AccountMapper;
 import com.ostrichemulators.jfxhacc.mapper.MapperException;
@@ -32,6 +33,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.SortedList;
@@ -78,7 +81,7 @@ public class TransactionEntryController extends AnchorPane {
 	@FXML
 	private Button splitsBtn;
 
-	private Transaction trans;
+	private TransactionImpl trans;
 	private Account account;
 	private Journal journal;
 	private boolean newtrans;
@@ -180,8 +183,7 @@ public class TransactionEntryController extends AnchorPane {
 				splits.add( mysplit );
 				splits.add( yoursplit );
 
-				trans = tmap.create( tdate, payee, num, splits, journal );
-
+				// trans = tmap.create( tdate, payee, num, splits, journal );
 				for ( CloseListener c : listenees ) {
 					c.added( trans );
 				}
@@ -259,6 +261,46 @@ public class TransactionEntryController extends AnchorPane {
 		accountfield.setEditable( false );
 		recofield.setAllowIndeterminate( true );
 
+		accountfield.setOnAction( event -> {
+			if ( null == trans ) {
+				return;
+			}
+
+			Set<Split> splits = new HashSet<>( trans.getSplits() );
+			int splitsize = splits.size();
+			Account other = accountfield.getValue();
+			if ( 2 == splitsize ) {
+				for ( Split s : splits ) {
+					if ( !s.getAccount().equals( account ) ) {
+						s.setAccount( other );
+					}
+				}
+			}
+			else if ( 1 == splitsize ) {
+				splits.add( new SplitImpl( other, Money.valueOf( amountfield.getText() ),
+						memofield.getText(), ReconcileState.NOT_RECONCILED ) );
+			}
+			else {
+				log.debug( "Not resetting multiple splits" );
+			}
+
+			trans.setSplits( splits );
+		} );
+
+		amountfield.textProperty().addListener( new ChangeListener<String>() {
+
+			@Override
+			public void changed( ObservableValue<? extends String> ov, String t, String t1 ) {
+				if ( 2 == trans.getSplits().size() ) {
+					for ( Split s : trans.getSplits() ) {
+						if ( !s.getAccount().equals( account ) ) {
+							s.setValue( getSplitAmount().opposite() );
+						}
+					}
+				}
+			}
+		} );
+
 		try {
 			pmap = engine.getPayeeMapper();
 			amap = engine.getAccountMapper();
@@ -286,47 +328,23 @@ public class TransactionEntryController extends AnchorPane {
 		} );
 	}
 
-	public void setTransaction( Date d, ReconcileState rs, boolean to ) {
-		clear();
-		trans = null;
-		newtrans = true;
-
-		tofromBtn.setText( to ? "To" : "From" );
-
-		setDate( d );
-		setReco( rs );
-		payeefield.requestFocus();
-	}
-
-	public void setTransaction( Date d, Split s ) {
-		clear();
-		trans = null;
-		newtrans = true;
-		memofield.setText( s.getMemo() );
-		amountfield.setText( s.getValue().toPositiveString() );
-
-		tofromBtn.setText( s.isCredit() != account.getAccountType().isDebitPlus()
-				? "To" : "From" );
-
-		setDate( d );
-		setReco( s.getReconciled() );
-		payeefield.requestFocus();
-	}
-
-	public void setTransaction( Transaction t ) {
+	public void setTransaction( TransactionImpl t ) {
 		clear();
 		trans = t;
-		newtrans = false;
+		newtrans = ( null == t.getId() );
 
 		Split mysplit = t.getSplit( account );
 		memofield.setText( mysplit.getMemo() );
-		amountfield.setText( mysplit.getValue().toString() );
+		amountfield.textProperty().bindBidirectional( mysplit.getValueProperty(),
+				new MoneyStringConverter() );
+
+		memofield.textProperty().bindBidirectional( mysplit.getMemoProperty() );
 
 		setReco( mysplit.getReconciled() );
 
 		payeefield.setText( t.getPayee().getName() );
 
-		updateSplitData( trans.getSplits() );
+		updateSplitData();
 
 		numberfield.setText( t.getNumber() );
 
@@ -347,6 +365,10 @@ public class TransactionEntryController extends AnchorPane {
 		recofield.setIndeterminate( false );
 		datefield.setValue( LocalDate.now() );
 		accountfield.setValue( accountfield.getItems().get( 0 ) );
+
+		memofield.textProperty().unbind();
+		amountfield.textProperty().unbind();
+		numberfield.textProperty().unbind();
 	}
 
 	protected final void setDate( Date t ) {
@@ -429,31 +451,30 @@ public class TransactionEntryController extends AnchorPane {
 		return accountfield.getValue();
 	}
 
-	public void updateSplitData( Set<Split> splits ) {
-		log.debug( "update split data ("
-				+ ( null == splits ? "" : splits.size() ) + " splits)" );
-		if ( null == splits ) {
-			if ( newtrans ) {
-				accountfield.getSelectionModel().clearSelection();
-				accountfield.setValue( null );
-				accountfield.setDisable( false );
-				amountfield.setEditable( true );
-				amountfield.setDisable( false );
-				tofromBtn.setDisable( false );
-				return;
-			}
-			else {
-				splits = trans.getSplits();
-			}
+	public void updateSplitData() {
+		Set<Split> splits = trans.getSplits();
+		log.debug( "update split data (" + splits.size() + " splits)" );
+		Split mysplit = trans.getSplit( account );
+
+		if ( newtrans ) {
+			accountfield.getSelectionModel().clearSelection();
+			accountfield.setValue( null );
+			amountfield.setEditable( true );
+
+			accountfield.setDisable( false );
+			amountfield.setDisable( false );
+			tofromBtn.setDisable( false );
+			return;
 		}
 
 		if ( splits.size() <= 2 ) {
+			amountfield.setEditable( true );
+
+			amountfield.setDisable( false );
 			tofromBtn.setDisable( false );
 			accountfield.setDisable( false );
-			amountfield.setEditable( true );
-			amountfield.setDisable( false );
 
-			for ( Split s : splits ) {
+			for ( Split s : new HashSet<>( splits ) ) {
 				Account a = s.getAccount();
 				if ( !a.equals( account ) ) {
 					accountfield.getSelectionModel().select( a );
@@ -471,14 +492,9 @@ public class TransactionEntryController extends AnchorPane {
 			tofromBtn.setDisable( true );
 		}
 
-		for ( Split s : splits ) {
-			Account a = s.getAccount();
-			if ( a.equals( account ) ) {
-				setReco( s.getReconciled() );
-				memofield.setText( s.getMemo() );
-				amountfield.setText( s.getValue().toString() );
-			}
-		}
+		setReco( mysplit.getReconciled() );
+		//memofield.setText( s.getMemo() );
+		//amountfield.setText( s.getValue().toString() );
 	}
 
 	public static interface CloseListener {

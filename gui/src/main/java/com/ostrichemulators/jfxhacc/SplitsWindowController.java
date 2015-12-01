@@ -153,7 +153,6 @@ public class SplitsWindowController {
 			@Override
 			public String call() throws Exception {
 				Money bal = TransactionMapper.balancingValue( splits, myacct );
-
 				return ( bal.isZero() ? "OK" : "Unbalanced: " + bal.toString() );
 			}
 

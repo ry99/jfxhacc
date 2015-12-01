@@ -56,6 +56,13 @@ public class SplitImpl extends IDableImpl implements Split {
 		this.acct.setValue( a );
 	}
 
+	public SplitImpl( Split s ) {
+		this( s.getAccount(),
+				( s.isCredit() ? s.getValue() : s.getValue().opposite() ),
+				s.getMemo(), s.getReconciled() );
+		setId( s.getId() );
+	}
+
 	@Override
 	public String getMemo() {
 		return memo.get();

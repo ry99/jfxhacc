@@ -6,7 +6,6 @@
 package com.ostrichemulators.jfxhacc;
 
 import com.ostrichemulators.jfxhacc.mapper.AccountMapper;
-import com.ostrichemulators.jfxhacc.mapper.TransactionMapper;
 import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.Journal;
 import com.ostrichemulators.jfxhacc.model.Money;

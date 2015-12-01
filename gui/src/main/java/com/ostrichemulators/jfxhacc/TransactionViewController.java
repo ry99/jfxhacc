@@ -22,6 +22,7 @@ import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
 import com.ostrichemulators.jfxhacc.model.Transaction;
+import com.ostrichemulators.jfxhacc.model.impl.SplitImpl;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -261,8 +262,10 @@ public class TransactionViewController implements ShutdownListener, TransactionL
 
 	public void openEditor( Date d, ReconcileState rs ) {
 		splitter.setDividerPositions( splitterpos );
-		boolean to = true;
-		dataentry.setTransaction( d, rs, to );
+		SplitImpl s = new SplitImpl();
+		s.setAccount( account );
+		s.setReconciled( rs );
+		openEditor( d, s );
 	}
 
 	protected void openEditor( Date d, Split s ) {
