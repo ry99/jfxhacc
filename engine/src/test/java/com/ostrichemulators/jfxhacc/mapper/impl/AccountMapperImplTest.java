@@ -78,11 +78,11 @@ public class AccountMapperImplTest {
 
 	@Test
 	public void testCreate() throws Exception {
-		Account acct
-				= ami.create( "Test Account", AccountType.ASSET, new Money( 4000 ), null );
+		Account acct = ami.create( "Test Account", AccountType.ASSET,
+				new Money( 4000 ), "", "", null );
 		List<Statement> stmts = Iterations.asList( rc.getStatements( acct.getId(),
 				null, null, false ) );
-		assertEquals( 4, stmts.size() );
+		assertEquals( 6, stmts.size() );
 		assertEquals( acct, ami.get( acct.getId() ) );
 	}
 
@@ -110,15 +110,16 @@ public class AccountMapperImplTest {
 
 	@Test
 	public void testGetByType() throws Exception {
-		Account parent
-				= ami.create( "Parent", AccountType.ASSET, new Money( 6000 ), null );
-		Account child1
-				= ami.create( "Child 1", AccountType.ASSET, new Money( 5000 ), parent );
-		Account child2
-				= ami.create( "Child 2", AccountType.ASSET, new Money( 4000 ), parent );
-		Account child3
-				= ami.create( "Child 1's Child", AccountType.ASSET, new Money( 3000 ), child1 );
-		Account other	= ami.create( "Oddling", AccountType.EQUITY, new Money( 2000 ), null );
+		Account parent = ami.create( "Parent", AccountType.ASSET, new Money( 6000 ),
+				"", "", null );
+		Account child1 = ami.create( "Child 1", AccountType.ASSET, new Money( 5000 ),
+				"", "", parent );
+		Account child2 = ami.create( "Child 2", AccountType.ASSET, new Money( 4000 ),
+				"", "", parent );
+		Account child3 = ami.create( "Child 1's Child", AccountType.ASSET,
+				new Money( 3000 ), "", "", child1 );
+		Account other = ami.create( "Oddling", AccountType.EQUITY, new Money( 2000 ),
+				"", "", null );
 
 		TreeNode<Account> tree = ami.getAccounts( AccountType.ASSET );
 		assertEquals( parent, tree.getChildren().get( 0 ) );

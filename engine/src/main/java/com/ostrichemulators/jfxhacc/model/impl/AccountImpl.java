@@ -9,6 +9,11 @@ import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.AccountType;
 import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.vocabulary.JfxHacc;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.Property;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import org.openrdf.model.URI;
 
 /**
@@ -17,20 +22,22 @@ import org.openrdf.model.URI;
  */
 public class AccountImpl extends IDableImpl implements Account {
 
-	private String name;
+	private final StringProperty name = new SimpleStringProperty();
+	private final StringProperty notes = new SimpleStringProperty();
+	private final StringProperty number = new SimpleStringProperty();
+	private final ObjectProperty<Money> openingbal = new SimpleObjectProperty<>();
 	private final AccountType type;
-	private Money openingbal;
 
 	public AccountImpl( AccountType atype, URI id ) {
 		super( JfxHacc.ACCOUNT_TYPE, id );
 		type = atype;
-		openingbal = new Money( 0 );
+		openingbal.set( new Money( 0 ) );
 	}
 
 	public AccountImpl( AccountType atype ) {
 		super( JfxHacc.ACCOUNT_TYPE );
 		type = atype;
-		openingbal = new Money( 0 );
+		openingbal.set( new Money( 0 ) );
 	}
 
 	public AccountImpl( URI atype ) {
@@ -39,19 +46,19 @@ public class AccountImpl extends IDableImpl implements Account {
 
 	public AccountImpl( URI id, String name, AccountType atype, Money m ) {
 		this( atype );
-		this.name = name;
-		openingbal = m;
+		this.name.set( name );
+		openingbal.set( m );
 		setId( id );
 	}
 
 	@Override
 	public String getName() {
-		return name;
+		return name.get();
 	}
 
 	@Override
 	public void setName( String n ) {
-		name = n;
+		name.set( n );
 	}
 
 	@Override
@@ -61,16 +68,56 @@ public class AccountImpl extends IDableImpl implements Account {
 
 	@Override
 	public void setOpeningBalance( Money money ) {
-		openingbal = money;
+		openingbal.set( money );
 	}
 
 	@Override
 	public Money getOpeningBalance() {
+		return openingbal.get();
+	}
+
+	@Override
+	public Property<Money> getOpeningBalanceProperty() {
 		return openingbal;
 	}
 
 	@Override
+	public StringProperty getNameProperty() {
+		return name;
+	}
+
+	@Override
 	public String toString() {
-		return name + " (" + type + "): " + openingbal;
+		return name.get() + " (" + type + "): " + openingbal.get();
+	}
+
+	@Override
+	public void setNotes( String note ) {
+		notes.set( note );
+	}
+
+	@Override
+	public String getNotes() {
+		return notes.get();
+	}
+
+	@Override
+	public StringProperty getNotesProperty() {
+		return notes;
+	}
+
+	@Override
+	public void setNumber( String num ) {
+		number.set( num );
+	}
+
+	@Override
+	public String getNumber() {
+		return number.get();
+	}
+
+	@Override
+	public StringProperty getNumberProperty() {
+		return number;
 	}
 }

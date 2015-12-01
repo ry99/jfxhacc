@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import java.lang.*?>
+<?import java.net.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<GridPane id="GridPane" hgap="5.0" styleClass="mainFxmlClass" vgap="5.0" xmlns="http://javafx.com/javafx/8.0.40" xmlns:fx="http://javafx.com/fxml/1">
+	<stylesheets>
+		<URL value="@/styles/Styles.css" />
+	</stylesheets>
+   <children>
+      <Label layoutX="14.0" layoutY="9.0" text="Account Name" />
+      <Label layoutX="14.0" layoutY="30.0" text="Account Number" GridPane.rowIndex="1" />
+      <Label layoutX="14.0" layoutY="56.0" text="Opening Balance" GridPane.rowIndex="2" />
+      <Label layoutX="14.0" layoutY="221.0" text="Notes" GridPane.rowIndex="5" />
+      <Label layoutX="14.0" layoutY="82.0" text="Parent Account" GridPane.rowIndex="4" />
+      <Label layoutX="14.0" layoutY="108.0" text="Account Type" GridPane.rowIndex="3" />
+      <TextField fx:id="name" layoutX="125.0" layoutY="51.0" GridPane.columnIndex="1" />
+      <TextField fx:id="number" layoutX="125.0" layoutY="25.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+      <TextField fx:id="balance" layoutX="125.0" layoutY="25.0" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+      <ChoiceBox fx:id="type" layoutX="125.0" layoutY="103.0" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+      <ComboBox fx:id="parentacct" layoutX="125.0" layoutY="77.0" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+      <TextArea fx:id="notes" layoutX="125.0" layoutY="129.0" prefHeight="200.0" prefWidth="200.0" GridPane.columnIndex="1" GridPane.rowIndex="5" />
+      <ButtonBar prefHeight="40.0" prefWidth="200.0" GridPane.columnSpan="2" GridPane.rowIndex="6">
+        <buttons>
+          <Button fx:id="okBtn" defaultButton="true" mnemonicParsing="false" onAction="#okPressed" text="OK" />
+        </buttons>
+      </ButtonBar>
+   </children>
+   <columnConstraints>
+      <ColumnConstraints />
+      <ColumnConstraints />
+   </columnConstraints>
+   <rowConstraints>
+      <RowConstraints />
+      <RowConstraints minHeight="10.0" prefHeight="30.0" />
+      <RowConstraints minHeight="10.0" prefHeight="30.0" />
+      <RowConstraints minHeight="10.0" prefHeight="30.0" />
+      <RowConstraints minHeight="10.0" prefHeight="30.0" />
+      <RowConstraints minHeight="10.0" />
+      <RowConstraints minHeight="10.0" prefHeight="30.0" />
+   </rowConstraints>
+   <padding>
+      <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+   </padding>
+</GridPane>

@@ -51,9 +51,8 @@ public class AccountMapperImpl extends SimpleEntityRdfMapper<Account> implements
 	}
 
 	@Override
-	public Account create( String name, AccountType type, Money obal, Account parent )
-			throws MapperException {
-
+	public Account create( String name, AccountType type, Money obal, String notes,
+			String number, Account parent ) throws MapperException {
 		RepositoryConnection rc = getConnection();
 		ValueFactory vf = rc.getValueFactory();
 		try {
@@ -65,9 +64,18 @@ public class AccountMapperImpl extends SimpleEntityRdfMapper<Account> implements
 			if ( null != parent ) {
 				rc.add( id, Accounts.PARENT_PRED, parent.getId() );
 			}
+			if ( null != notes ) {
+				rc.add( id, Accounts.NOTES_PRED, vf.createLiteral( notes ) );
+			}
+			if ( null != number ) {
+				rc.add( id, Accounts.NUMBER_PRED, vf.createLiteral( number ) );
+			}
+
 			rc.commit();
 
 			AccountImpl ai = new AccountImpl( id, name, type, obal );
+			ai.setNotes( notes );
+			ai.setNumber( number );
 			notifyAdded( ai );
 			return ai;
 		}
@@ -99,6 +107,12 @@ public class AccountMapperImpl extends SimpleEntityRdfMapper<Account> implements
 						else if ( Accounts.OBAL_PRED.equals( uri ) ) {
 							acct.setOpeningBalance( new Money( literal.intValue() ) );
 						}
+						else if ( Accounts.NOTES_PRED.equals( uri ) ) {
+							acct.setNotes( literal.stringValue() );
+						}
+						else if ( Accounts.NUMBER_PRED.equals( uri ) ) {
+							acct.setNumber( literal.stringValue() );
+						}
 					}
 
 					@Override
@@ -109,9 +123,13 @@ public class AccountMapperImpl extends SimpleEntityRdfMapper<Account> implements
 	}
 
 	@Override
-	public void update( Account t ) throws MapperException {
+	public void update( Account acct ) throws MapperException {
+		update( acct, getParent( acct ) );
+	}
 
-		notifyUpdated( t );
+	@Override
+	public void update( Account acct, Account parent ) throws MapperException {
+		notifyUpdated( acct );
 	}
 
 	@Override

@@ -5,6 +5,9 @@
  */
 package com.ostrichemulators.jfxhacc.model;
 
+import javafx.beans.property.Property;
+import javafx.beans.property.StringProperty;
+
 /**
  *
  * @author ryan
@@ -20,4 +23,20 @@ public interface Account extends IDable {
 	public void setOpeningBalance( Money money );
 
 	public Money getOpeningBalance();
+
+	public void setNotes( String notes );
+
+	public String getNotes();
+
+	public StringProperty getNotesProperty();
+
+	public void setNumber( String num );
+
+	public String getNumber();
+
+	public StringProperty getNumberProperty();
+
+	public Property<Money> getOpeningBalanceProperty();
+
+	public StringProperty getNameProperty();
 }

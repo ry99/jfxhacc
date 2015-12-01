@@ -23,6 +23,7 @@ import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.MapChangeListener;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
@@ -234,6 +235,39 @@ public class FXMLController implements ShutdownListener {
 		catch ( Exception e ) {
 			log.error( e, e );
 		}
+	}
+
+	@FXML
+	void editAccount( ActionEvent event ) {
+		// a little hack-y, but if we have a null event, assume we want a new account
+		Account acct = ( null == event
+				? null : accounts.getSelectionModel().getSelectedItem().getValue() );
+
+		FXMLLoader loader
+				= new FXMLLoader( getClass().getResource( "/fxml/AccountDetails.fxml" ) );
+		AccountDetailsController acd = new AccountDetailsController( acct, MainApp.getEngine() );
+		loader.setController( acd );
+		try {
+			Scene scene = new Scene( loader.load() );
+			Stage stage = new Stage();
+			stage.setTitle( null == acct ? "Create Account" : "Edit " + acct.getName() );
+			stage.setScene( scene );
+
+			acd.setOkListener( e -> {
+				stage.close();
+			} );
+
+			stage.show();
+		}
+		catch ( IOException ioe ) {
+			log.error( ioe, ioe );
+		}
+
+	}
+
+	@FXML
+	void newAccount( ActionEvent event ) {
+		editAccount( null );
 	}
 
 	private Node makeTransactionViewer( TransactionViewController controller ) throws IOException {

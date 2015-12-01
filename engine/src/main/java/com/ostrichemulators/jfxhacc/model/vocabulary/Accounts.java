@@ -24,4 +24,6 @@ public class Accounts {
 	public static final URI TYPE_PRED = new URIImpl( NAMESPACE + "accountType" );
 	public static final URI OBAL_PRED = new URIImpl( NAMESPACE + "openingBalance" );
 	public static final URI PARENT_PRED = new URIImpl( NAMESPACE + "parent" );
+	public static final URI NUMBER_PRED = new URIImpl( NAMESPACE + "number" );
+	public static final URI NOTES_PRED = new URIImpl( NAMESPACE + "notes" );
 }

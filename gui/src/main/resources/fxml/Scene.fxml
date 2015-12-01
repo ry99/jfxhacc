@@ -17,6 +17,8 @@
 					<items>
 						<Button fx:id="newtransBtn" mnemonicParsing="false" onAction="#newtrans" text="New Transaction" />
                   <Button fx:id="recoBtn" disable="true" mnemonicParsing="false" onAction="#reconcile" text="Reconcile" />
+                  <Button mnemonicParsing="false" onAction="#newAccount" text="New Account" />
+                  <Button mnemonicParsing="false" onAction="#editAccount" text="Edit Account" />
 					</items>
 				</ToolBar>
 			</top>

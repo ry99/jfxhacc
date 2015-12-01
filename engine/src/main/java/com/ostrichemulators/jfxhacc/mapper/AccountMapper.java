@@ -30,8 +30,10 @@ public interface AccountMapper extends DataMapper<Account> {
 
 	public Account getParent( Account a ) throws MapperException;
 
-	public Account create( String name, AccountType type, Money obal, Account parent )
-			throws MapperException;
+	public Account create( String name, AccountType type, Money obal, String notes, 
+			String number, Account parent ) throws MapperException;
+
+	public void update( Account acct, Account parent ) throws MapperException;
 
 	public TreeNode<Account> getAccounts( AccountType type ) throws MapperException;
 
