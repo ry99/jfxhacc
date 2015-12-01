@@ -107,7 +107,8 @@ public class SplitImpl extends IDableImpl implements Split {
 	@Override
 	public String toString() {
 		return ( isDebit() ? "debit" : "credit" ) + ": " + value
-				+ " {" + reco.getValue().toString().charAt( 0 ) + "}";
+				+ " [" + acct.getValue().getName() + "] {"
+				+ reco.getValue().toString().charAt( 0 ) + "}";
 	}
 
 	@Override

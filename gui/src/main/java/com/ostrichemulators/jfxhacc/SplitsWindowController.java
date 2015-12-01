@@ -9,12 +9,11 @@ import com.ostrichemulators.jfxhacc.cells.AccountCellFactory;
 import com.ostrichemulators.jfxhacc.cells.MoneyCellFactory;
 import com.ostrichemulators.jfxhacc.cells.RecoCellFactory;
 import com.ostrichemulators.jfxhacc.engine.DataEngine;
-import com.ostrichemulators.jfxhacc.mapper.TransactionMapper;
 import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
-import com.ostrichemulators.jfxhacc.model.impl.SplitImpl;
+import com.ostrichemulators.jfxhacc.utility.TransactionHelper;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -24,11 +23,11 @@ import javafx.beans.property.SetProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.SetChangeListener;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
-import javafx.scene.control.ButtonBar;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.TextFieldTableCell;
@@ -55,8 +54,6 @@ public class SplitsWindowController {
 	private TableColumn<Split, ReconcileState> reco;
 	@FXML
 	private TableColumn<Split, String> memo;
-	@FXML
-	private ButtonBar buttons;
 	@FXML
 	private Button okBtn;
 
@@ -87,35 +84,6 @@ public class SplitsWindowController {
 		myacct = acct;
 	}
 
-	public void updateSplitData( Account acct, Money val, String memo,
-			ReconcileState rs ) {
-		boolean issplit = ( null == acct );
-
-		if ( splits.isEmpty() ) {
-			// this is a new transaction, so make some splits based on our data
-			splits.add( new SplitImpl( myacct, val, memo, rs ) );
-			if ( !issplit ) {
-				splits.add( new SplitImpl( acct, val.opposite(), memo, rs ) );
-			}
-		}
-		else {
-			for ( Split s : splits ) {
-				if ( s.getAccount().equals( myacct ) ) {
-					s.setReconciled( rs );
-					s.setMemo( memo );
-					s.setValue( val );
-				}
-				else {
-					if ( !issplit ) {
-						// only have two accounts, so we can update the table data
-						s.setAccount( acct );
-						s.setValue( val.opposite() );
-					}
-				}
-			}
-		}
-	}
-
 	@FXML
 	public void initialize() {
 		reco.setCellValueFactory( ( TableColumn.CellDataFeatures<Split, ReconcileState> p )
@@ -142,17 +110,33 @@ public class SplitsWindowController {
 		okBtn.disableProperty().unbind();
 		splits.setAll( set );
 
-		Observable amts[] = new Observable[set.size()];
+		set.addListener( new SetChangeListener<Split>() {
+
+			@Override
+			public void onChanged( SetChangeListener.Change<? extends Split> change ) {
+				if ( change.wasAdded() ) {
+					splits.add( change.getElementAdded() );
+				}
+				makeBalanceBinding();
+			}
+		} );
+
+		makeBalanceBinding();
+	}
+
+	private void makeBalanceBinding() {
+		Observable amts[] = new Observable[splits.size()];
 		int i = 0;
-		for ( Split s : set ) {
+		for ( Split s : splits ) {
 			amts[i++] = s.getValueProperty();
 		}
 
+		okBtn.textProperty().unbind();
 		okBtn.textProperty().bind( Bindings.createStringBinding( new Callable<String>() {
 
 			@Override
 			public String call() throws Exception {
-				Money bal = TransactionMapper.balancingValue( splits, myacct );
+				Money bal = TransactionHelper.balancingValue( splits, myacct );
 				return ( bal.isZero() ? "OK" : "Unbalanced: " + bal.toString() );
 			}
 
@@ -170,7 +154,7 @@ public class SplitsWindowController {
 
 	@FXML
 	public void balance() {
-		Money bal = TransactionMapper.balancingValue( splits, myacct );
+		Money bal = TransactionHelper.balancingValue( splits, myacct );
 		for ( Split s : splits ) {
 			if ( s.getAccount().equals( myacct ) ) {
 				s.add( bal );

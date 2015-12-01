@@ -12,6 +12,7 @@ import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.Transaction;
 import com.ostrichemulators.jfxhacc.model.impl.SplitImpl;
 import com.ostrichemulators.jfxhacc.model.impl.TransactionImpl;
+import com.ostrichemulators.jfxhacc.utility.TransactionHelper;
 import java.io.IOException;
 import java.util.Date;
 import javafx.fxml.FXMLLoader;
@@ -61,6 +62,12 @@ public class TransactionEntry extends StackPane {
 
 		tec.setSplitsButtonOnAction( event -> {
 			trans.getSplit( acct ).setReconciled( tec.getReco() );
+			Split other = TransactionHelper.getOther( trans, acct );
+			if ( null != other ) {
+				other.setValue( tec.getSplitAmount().opposite() );
+				other.setAccount( tec.getSelectedAccount() );
+			}
+
 			gridpane.setVisible( false );
 			splitspane.setVisible( true );
 		} );
@@ -87,8 +94,7 @@ public class TransactionEntry extends StackPane {
 	}
 
 	public void setTransaction( Date d, Split s ) {
-		Transaction t = new TransactionImpl();
-		t.setDate( d );
+		Transaction t = new TransactionImpl( null, d, null, null );
 		t.addSplit( s );
 		setTransaction( t );
 	}

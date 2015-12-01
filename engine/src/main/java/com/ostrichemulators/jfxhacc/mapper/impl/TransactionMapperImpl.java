@@ -93,7 +93,9 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 		s.setId( id );
 		rc.add( id, RDF.TYPE, JfxHacc.SPLIT_TYPE );
 		rc.add( id, Splits.ACCOUNT_PRED, s.getAccount().getId() );
-		rc.add( id, Splits.MEMO_PRED, vf.createLiteral( s.getMemo() ) );
+		if ( null != s.getMemo() ) {
+			rc.add( id, Splits.MEMO_PRED, vf.createLiteral( s.getMemo() ) );
+		}
 
 		Money m = s.getValue();
 		if ( s.isDebit() ) {
@@ -107,41 +109,50 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 			rc.commit();
 		}
 
-		return s;
+		return new SplitImpl( s );
 	}
 
 	@Override
 	public Transaction create( Date d, Payee p, String number, Collection<Split> splits,
 			Journal journal ) throws MapperException {
+		Transaction transaction = new TransactionImpl();
+		transaction.setDate( d );
+		transaction.setPayee( p );
+		transaction.setNumber( number );
+		transaction.setSplits( new HashSet<>( splits ) );
+		return create( transaction, journal );
+	}
+
+	@Override
+	public Transaction create( Transaction t, Journal j ) throws MapperException {
 		RepositoryConnection rc = getConnection();
 		ValueFactory vf = rc.getValueFactory();
 		try {
 			rc.begin();
 
-			Set<Split> realsplits = new HashSet<>();
-			List<URI> splitids = new ArrayList<>();
-			for ( Split sp : splits ) {
+			Map<Split, URI> realsplits = new HashMap<>();
+			for ( Split sp : t.getSplits() ) {
 				Split s = create( sp, null, false );
-				splitids.add( s.getId() );
-				realsplits.add( s );
+				realsplits.put( s, s.getId() );
 			}
 
 			URI id = createBaseEntity();
 
-			rc.add( id, Transactions.PAYEE_PRED, p.getId() );
-			rc.add( id, Transactions.DATE_PRED, vf.createLiteral( d ) );
-			if ( null != number ) {
-				rc.add( id, Transactions.NUMBER_PRED, vf.createLiteral( number ) );
+			rc.add( id, Transactions.PAYEE_PRED, t.getPayee().getId() );
+			rc.add( id, Transactions.DATE_PRED, vf.createLiteral( t.getDate() ) );
+			if ( null != t.getNumber() ) {
+				rc.add( id, Transactions.NUMBER_PRED, vf.createLiteral( t.getNumber() ) );
 			}
 
-			rc.add( id, Transactions.JOURNAL_PRED, journal.getId() );
-			for ( URI splitid : splitids ) {
+			rc.add( id, Transactions.JOURNAL_PRED, j.getId() );
+			for ( URI splitid : realsplits.values() ) {
 				rc.add( id, Transactions.SPLIT_PRED, splitid );
 			}
 			rc.commit();
 
-			TransactionImpl trans = new TransactionImpl( id, d, number, p );
-			trans.setSplits( realsplits );
+			TransactionImpl trans 
+					= new TransactionImpl( id, t.getDate(), t.getNumber(), t.getPayee() );
+			trans.setSplits( realsplits.keySet() );
 			notifyAdded( trans );
 			return trans;
 		}
@@ -501,18 +512,16 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 
 		for ( Split oldsplit : oldsplits ) {
 			Account oldacct = oldsplit.getAccount();
+			rc.remove( oldsplit.getId(), null, null );
 
 			if ( newmap.containsKey( oldacct ) ) {
 				Split newsplit = newmap.get( oldacct );
 				URI newid = newsplit.getId();
 				rc.remove( newid, null, null );
 
-				newsplit = create( newsplit, newsplit.getId(), false );
+				newsplit = create( newsplit, newid, false );
 				realsplits.add( newsplit );
 				newmap.remove( oldacct );
-			}
-			else {
-				rc.remove( oldsplit.getId(), null, null );
 			}
 		}
 

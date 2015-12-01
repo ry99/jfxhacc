@@ -80,8 +80,7 @@ public class TransactionImpl extends IDableImpl implements Transaction {
 
 	@Override
 	public void setSplits( Set<Split> splts ) {
-		splits.clear();
-		splits.addAll( splts );
+		splits.setValue( FXCollections.observableSet( splts ) );
 	}
 
 	@Override
