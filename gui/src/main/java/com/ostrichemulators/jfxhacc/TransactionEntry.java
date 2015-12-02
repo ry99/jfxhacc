@@ -101,6 +101,7 @@ public class TransactionEntry extends StackPane {
 
 	public void setTransaction( Transaction t ) {
 		trans = new TransactionImpl( t.getId(), t.getDate(), t.getNumber(), t.getPayee() );
+
 		for ( Split s : t.getSplits() ) {
 			trans.addSplit( new SplitImpl( s ) );
 		}

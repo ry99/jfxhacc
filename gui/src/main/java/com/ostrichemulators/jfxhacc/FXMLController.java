@@ -108,8 +108,7 @@ public class FXMLController implements ShutdownListener {
 				-> p.getValue().getValue().getNameProperty() );
 
 		accountBalance.setCellValueFactory( ( CellDataFeatures<Account, Money> p )
-				-> new ReadOnlyObjectWrapper<>( acb.get( p.getValue().getValue(),
-								BalanceType.CURRENT ) ) );
+				-> acb.getCurrentProperty( p.getValue().getValue() ) );
 		accountBalance.setCellFactory( new MoneyTableTreeCellFactory<>() );
 
 		root.setExpanded( true );

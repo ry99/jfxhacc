@@ -16,6 +16,8 @@ import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.Transaction;
 import java.util.Collection;
+import javafx.beans.property.Property;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableMap;
 import org.apache.log4j.Logger;
@@ -119,16 +121,27 @@ public class AccountBalanceCache {
 			case OPENING:
 				return a.getOpeningBalance();
 			case RECONCILED:
-				return mp.reco;
+				return mp.reco.getValue();
 			default:
-				return mp.current;
+				return mp.current.getValue();
 		}
 	}
 
+	public Property<Money> getCurrentProperty( Account acct ) {
+		return balances.get( acct ).current;
+	}
+
 	private void recache( Account a ) {
-		Money c = amap.getBalance( a, BalanceType.CURRENT );
-		Money r = amap.getBalance( a, BalanceType.RECONCILED );
-		balances.put( a, new MoneyPair( c, r ) );
+		if ( balances.containsKey( a ) ) {
+			MoneyPair mp = balances.get( a );
+			mp.current.setValue( amap.getBalance( a, BalanceType.CURRENT ) );
+			mp.reco.setValue( amap.getBalance( a, BalanceType.RECONCILED ) );
+		}
+		else {
+			Money c = amap.getBalance( a, BalanceType.CURRENT );
+			Money r = amap.getBalance( a, BalanceType.RECONCILED );
+			balances.put( a, new MoneyPair( c, r ) );
+		}
 	}
 
 	private void recache() {
@@ -139,12 +152,12 @@ public class AccountBalanceCache {
 
 	public static class MoneyPair {
 
-		public final Money current;
-		public final Money reco;
+		public final Property<Money> current;
+		public final Property<Money> reco;
 
 		public MoneyPair( Money c, Money r ) {
-			current = c;
-			reco = r;
+			current = new SimpleObjectProperty<>( c );
+			reco = new SimpleObjectProperty<>( r );
 		}
 	}
 }

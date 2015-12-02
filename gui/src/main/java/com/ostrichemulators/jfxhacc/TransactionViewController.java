@@ -37,12 +37,15 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
+import javafx.scene.Node;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableColumn.SortType;
+import javafx.scene.control.TableRow;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
+import javafx.util.Callback;
 import org.apache.log4j.Logger;
 import org.openrdf.model.URI;
 
@@ -81,6 +84,7 @@ public class TransactionViewController implements ShutdownListener, TransactionL
 	private final CreditDebitValueFactory debitfac = new CreditDebitValueFactory( false );
 	private final RecoValueFactory recofac = new RecoValueFactory();
 	private boolean firstload = true;
+	private Transaction transUnderMouse = null;
 	protected double splitterpos;
 	protected TransactionMapper tmap;
 	protected final ObservableList<Transaction> transactions
@@ -198,18 +202,28 @@ public class TransactionViewController implements ShutdownListener, TransactionL
 		splitterpos = prefs.getDouble( PREF_SPLITTER, 0.70 );
 		splitter.setDividerPositions( 1.0 );
 
+		transtable.setRowFactory( new Callback<TableView<Transaction>, TableRow<Transaction>>() {
+
+			@Override
+			public TableRow<Transaction> call( TableView<Transaction> p ) {
+				TableRow<Transaction> row = new TableRow<>();
+				row.setOnMouseEntered( event -> {
+					if ( null == row.getItem() ) {
+						transUnderMouse = null;
+					}
+					else {
+						transUnderMouse = row.getItem();
+					}
+				} );
+				return row;
+			}
+		} );
+
 		transtable.setOnMousePressed( new EventHandler<MouseEvent>() {
 
 			@Override
 			public void handle( MouseEvent t ) {
-				double y = t.getY();
-				double maxy = transactions.size() * transtable.getFixedCellSize();
-				t.consume();
-				// see if our mouse click is actually past our row position
-				// (user clicked in empty space below all items)
-				mouseClick( y > maxy
-						? null
-						: transtable.getSelectionModel().getSelectedItem() );
+				mouseClick( transUnderMouse );
 			}
 		} );
 
