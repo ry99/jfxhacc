@@ -34,8 +34,12 @@ import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
+import javafx.geometry.Side;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TableColumn;
@@ -199,7 +203,6 @@ public class TransactionViewController implements ShutdownListener, TransactionL
 		splitter.setDividerPositions( 1.0 );
 
 		transtable.setRowFactory( new Callback<TableView<Transaction>, TableRow<Transaction>>() {
-
 			@Override
 			public TableRow<Transaction> call( TableView<Transaction> p ) {
 				TableRow<Transaction> row = new TableRow<>();
@@ -211,15 +214,26 @@ public class TransactionViewController implements ShutdownListener, TransactionL
 						transUnderMouse = row.getItem();
 					}
 				} );
+
 				return row;
 			}
 		} );
 
+		final ContextMenu menu = new ContextMenu();
+		menu.getItems().add( new MenuItem() );
+		menu.setOnShowing( event -> {
+			menu.getItems().setAll( buildContextItems() );
+		} );
+
+		transtable.setContextMenu( menu );
 		transtable.setOnMousePressed( new EventHandler<MouseEvent>() {
 
 			@Override
 			public void handle( MouseEvent t ) {
-				mouseClick( transUnderMouse );
+				if ( t.isPrimaryButtonDown() ) {
+					t.consume();
+					mouseClick( transUnderMouse );
+				}
 			}
 		} );
 
@@ -258,6 +272,27 @@ public class TransactionViewController implements ShutdownListener, TransactionL
 		else {
 			openEditor( transtable.getSelectionModel().getSelectedItem() );
 		}
+	}
+
+	protected Collection<? extends MenuItem> buildContextItems() {
+		List<MenuItem> items = new ArrayList<>();
+		MenuItem item1;
+		if ( null == transUnderMouse ) {
+			item1 = new MenuItem( "About" );
+		}
+		else {
+			item1 = new MenuItem( transUnderMouse.getPayee().getName() );
+		}
+
+		item1.setOnAction( new EventHandler<ActionEvent>() {
+			@Override
+			public void handle( ActionEvent e ) {
+				System.out.println( "About" );
+			}
+		} );
+		items.add( item1 );
+
+		return items;
 	}
 
 	public void openEditor( Transaction t ) {
