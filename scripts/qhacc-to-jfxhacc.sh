@@ -72,11 +72,12 @@ while read line; do
   echo "$line" | awk --field-separator \| \
   '{printf("t:qhacc-transaction-%d a jfxhacc:transaction ; trans:journal j:qhacc-journal-%s ; dcterms:created \"%sT00:00:00.000\"^^xsd:date ; ", $1,$5,$3); if( ""!=$2 ){ printf("trans:number \"%s\" ; ",$2) } }'
   
-  payee=$(echo $line|cut -d\| -f4)
-  echo " trans:payee p:qhacc-payee-${PAYEES[$payee]} ."  
+  payee=$(echo $line|cut -d\| -f4|sed -e 's/ *$//g'|sed -e 's/^ *//g' )
+  id=${PAYEES[$payee]}
+  echo " trans:payee p:qhacc-payee-$id ."
 done < $TRANS
 
 # link transactions and splits
 sed -e"s/\([^|]\+\).\(.*\)/t:qhacc-transaction-\1 trans:entry s:qhacc-split-\2 ./g" $SPLITTRANS
 
-rm -rf $TMPDIR
+#rm -rf $TMPDIR

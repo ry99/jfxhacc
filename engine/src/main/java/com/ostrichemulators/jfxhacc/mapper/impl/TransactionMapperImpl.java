@@ -150,7 +150,7 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 			}
 			rc.commit();
 
-			TransactionImpl trans 
+			TransactionImpl trans
 					= new TransactionImpl( id, t.getDate(), t.getNumber(), t.getPayee() );
 			trans.setSplits( realsplits.keySet() );
 			notifyAdded( trans );
