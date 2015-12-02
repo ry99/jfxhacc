@@ -1,5 +1,6 @@
 package com.ostrichemulators.jfxhacc;
 
+import com.ostrichemulators.jfxhacc.MainApp.StageRememberer;
 import com.ostrichemulators.jfxhacc.cells.MoneyTableTreeCellFactory;
 import com.ostrichemulators.jfxhacc.engine.DataEngine;
 import com.ostrichemulators.jfxhacc.mapper.AccountMapper;
@@ -21,8 +22,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.prefs.Preferences;
 import javafx.application.Platform;
-import javafx.beans.property.ReadOnlyObjectWrapper;
-import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.MapChangeListener;
@@ -121,6 +120,27 @@ public class FXMLController implements ShutdownListener {
 			log.fatal( ioe, ioe );
 		}
 
+		makeListeners( acb, amap, root );
+
+		Platform.runLater( new Runnable() {
+			@Override
+			public void run() {
+
+				double asize = prefs.getDouble( PREF_ASIZE, 0.5 );
+				accountName.setPrefWidth( asize );
+
+				accounts.getSelectionModel().setSelectionMode( SelectionMode.SINGLE );
+				if ( null != toselect ) {
+					accounts.getSelectionModel().select( toselect );
+				}
+
+				double splitterpos = prefs.getDouble( PREF_SPLITTER, 0.25 );
+				splitter.setDividerPositions( splitterpos );
+			}
+		} );
+	}
+
+	private void makeListeners( AccountBalanceCache acb, AccountMapper amap, TreeItem<Account> root ) {
 		accounts.getSelectionModel().selectedItemProperty().addListener( new ChangeListener<TreeItem<Account>>() {
 
 			@Override
@@ -151,28 +171,6 @@ public class FXMLController implements ShutdownListener {
 		} );
 
 		amap.addMapperListener( new MapperListener<Account>() {
-			private TreeItem<Account> findItem( URI u ) {
-				if ( null == u ) {
-					return root;
-				}
-
-				Deque<TreeItem<Account>> todo = new ArrayDeque<>();
-				todo.addAll( root.getChildren() );
-				while ( !todo.isEmpty() ) {
-					TreeItem<Account> n = todo.poll();
-					if ( n.getValue().getId().equals( u ) ) {
-						return n;
-					}
-
-					todo.addAll( n.getChildren() );
-				}
-				return null;
-			}
-
-			private TreeItem<Account> findItem( Account a ) {
-				return findItem( null == a ? null : a.getId() );
-			}
-
 			@Override
 			public void added( Account t ) {
 				try {
@@ -198,22 +196,13 @@ public class FXMLController implements ShutdownListener {
 			}
 		} );
 
-		Platform.runLater( new Runnable() {
-			@Override
-			public void run() {
+	}
 
-				double asize = prefs.getDouble( PREF_ASIZE, 0.5 );
-				accountName.setPrefWidth( asize );
-
-				accounts.getSelectionModel().setSelectionMode( SelectionMode.SINGLE );
-				if ( null != toselect ) {
-					accounts.getSelectionModel().select( toselect );
-				}
-
-				double splitterpos = prefs.getDouble( PREF_SPLITTER, 0.25 );
-				splitter.setDividerPositions( splitterpos );
-			}
-		} );
+	public void select( Account acct ) {
+		TreeItem<Account> ti = findItem( acct );
+		if ( !accounts.getRoot().equals( ti ) ) {
+			accounts.getSelectionModel().select( ti );
+		}
 	}
 
 	private TreeItem<Account> retree( AccountMapper amap, TreeItem<Account> root,
@@ -288,6 +277,11 @@ public class FXMLController implements ShutdownListener {
 			stage.setTitle( "Reconcile " + acct.getName() );
 			stage.setScene( new Scene( root ) );
 			controller.setStage( stage );
+
+			StageRememberer mem = new StageRememberer( stage, "reconcile" );
+			mem.restore( stage );
+			stage.setOnHiding( mem );
+
 			stage.show();
 		}
 		catch ( Exception e ) {
@@ -337,5 +331,27 @@ public class FXMLController implements ShutdownListener {
 				= new FXMLLoader( getClass().getResource( "/fxml/TransactionViewer.fxml" ) );
 		loader.setController( controller );
 		return loader.load();
+	}
+
+	private TreeItem<Account> findItem( URI u ) {
+		if ( null == u ) {
+			return accounts.getRoot();
+		}
+
+		Deque<TreeItem<Account>> todo = new ArrayDeque<>();
+		todo.addAll( accounts.getRoot().getChildren() );
+		while ( !todo.isEmpty() ) {
+			TreeItem<Account> n = todo.poll();
+			if ( n.getValue().getId().equals( u ) ) {
+				return n;
+			}
+
+			todo.addAll( n.getChildren() );
+		}
+		return null;
+	}
+
+	private TreeItem<Account> findItem( Account a ) {
+		return findItem( null == a ? null : a.getId() );
 	}
 }

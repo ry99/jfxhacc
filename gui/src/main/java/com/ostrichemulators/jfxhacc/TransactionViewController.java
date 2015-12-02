@@ -22,6 +22,7 @@ import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
 import com.ostrichemulators.jfxhacc.model.Transaction;
 import com.ostrichemulators.jfxhacc.model.impl.SplitImpl;
+import com.ostrichemulators.jfxhacc.utility.TransactionHelper;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -37,7 +38,6 @@ import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
-import javafx.geometry.Side;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SplitPane;
@@ -278,18 +278,24 @@ public class TransactionViewController implements ShutdownListener, TransactionL
 		List<MenuItem> items = new ArrayList<>();
 		MenuItem item1;
 		if ( null == transUnderMouse ) {
-			item1 = new MenuItem( "About" );
+			item1 = new MenuItem();
 		}
 		else {
-			item1 = new MenuItem( transUnderMouse.getPayee().getName() );
+			Split other = TransactionHelper.getOther( transUnderMouse, account );
+			if ( null != other ) {
+				item1 = new MenuItem( "Flip to " + other.getAccount().getName() );
+				item1.setOnAction( new EventHandler<ActionEvent>() {
+					@Override
+					public void handle( ActionEvent e ) {
+						MainApp.select( other.getAccount() );
+					}
+				} );
+			}
+			else {
+				item1 = new MenuItem();
+			}
 		}
 
-		item1.setOnAction( new EventHandler<ActionEvent>() {
-			@Override
-			public void handle( ActionEvent e ) {
-				System.out.println( "About" );
-			}
-		} );
 		items.add( item1 );
 
 		return items;

@@ -38,6 +38,7 @@ import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.SelectionModel;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import org.apache.log4j.Logger;
@@ -52,6 +53,7 @@ public class MainApp extends Application {
 
 	private static RdfDataEngine engine;
 	private static StageRememberer stager;
+	private static FXMLController controller;
 
 	public static DataEngine getEngine() {
 		return engine;
@@ -61,15 +63,20 @@ public class MainApp extends Application {
 		return stager;
 	}
 
+	public static void select( Account acct ) {
+		controller.select( acct );
+	}
+
 	@Override
 	public void start( Stage stage ) throws Exception {
-		MainApp.stager = new StageRememberer( stage );
+		MainApp.stager = new StageRememberer( stage, "main" );
 
 		URL loc = getClass().getResource( "/fxml/Scene.fxml" );
 		FXMLLoader fxmlloader = new FXMLLoader( loc );
-		fxmlloader.setController( new FXMLController() );
+		controller = new FXMLController();
+		fxmlloader.setController( controller );
 
-		Parent root = FXMLLoader.load( getClass().getResource( "/fxml/Scene.fxml" ) );
+		Parent root = fxmlloader.load();
 
 		Scene scene = new Scene( root );
 		scene.getStylesheets().add( "/styles/Styles.css" );
@@ -234,14 +241,16 @@ public class MainApp extends Application {
 		tmap.release();
 	}
 
-	public class StageRememberer implements EventHandler<WindowEvent> {
+	public static class StageRememberer implements EventHandler<WindowEvent> {
 
 		Preferences userPrefs = Preferences.userNodeForPackage( MainApp.class );
 		private final Stage mystage;
+		private final String prefix;
 		private final List<ShutdownListener> listeners = new ArrayList<>();
 
-		public StageRememberer( Stage primaryStage ) {
+		public StageRememberer( Stage primaryStage, String prefix ) {
 			this.mystage = primaryStage;
+			this.prefix = prefix;
 		}
 
 		public void addShutdownListener( ShutdownListener r ) {
@@ -257,10 +266,10 @@ public class MainApp extends Application {
 		}
 
 		public void restore( Stage stage ) {
-			double x = userPrefs.getDouble( "stage.x", 100 );
-			double y = userPrefs.getDouble( "stage.y", 100 );
-			double w = userPrefs.getDouble( "stage.width", 800 );
-			double h = userPrefs.getDouble( "stage.height", 600 );
+			double x = userPrefs.getDouble( prefix + ".stage.x", 100 );
+			double y = userPrefs.getDouble( prefix + ".stage.y", 100 );
+			double w = userPrefs.getDouble( prefix + ".stage.width", 800 );
+			double h = userPrefs.getDouble( prefix + ".stage.height", 600 );
 			mystage.setX( x );
 			mystage.setY( y );
 			mystage.setWidth( w );
@@ -269,10 +278,10 @@ public class MainApp extends Application {
 
 		@Override
 		public void handle( WindowEvent t ) {
-			userPrefs.putDouble( "stage.x", mystage.getX() );
-			userPrefs.putDouble( "stage.y", mystage.getY() );
-			userPrefs.putDouble( "stage.width", mystage.getWidth() );
-			userPrefs.putDouble( "stage.height", mystage.getHeight() );
+			userPrefs.putDouble( prefix + ".stage.x", mystage.getX() );
+			userPrefs.putDouble( prefix + ".stage.y", mystage.getY() );
+			userPrefs.putDouble( prefix + ".stage.width", mystage.getWidth() );
+			userPrefs.putDouble( prefix + ".stage.height", mystage.getHeight() );
 
 			for ( ShutdownListener p : listeners ) {
 				p.shutdown();
