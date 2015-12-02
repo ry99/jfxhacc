@@ -10,7 +10,9 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -105,6 +107,44 @@ public class TreeNode<T> {
 
 		// not found!
 		return null;
+	}
+
+	public List<T> getAllChildren() {
+		List<T> list = new ArrayList<>();
+		Deque<TreeNode<T>> todo = new ArrayDeque<>( children );
+		while ( !todo.isEmpty() ) {
+			TreeNode<T> child = todo.poll();
+			list.add( child.getNode() );
+			todo.addAll( child.children );
+		}
+
+		return list;
+	}
+
+	/**
+	 * Creates a tree from a child-parent mapping. The returned tree will always
+	 * have a null root node
+	 *
+	 * @param <T>
+	 * @param childparentlkp
+	 * @return
+	 */
+	public static <T> TreeNode<T> treeify( Map<T, T> childparentlkp ) {
+		TreeNode<T> root = new TreeNode<>();
+		Map<T, TreeNode<T>> items = new HashMap<>();
+		for ( T t : childparentlkp.keySet() ) {
+			items.put( t, new TreeNode<>( t ) );
+		}
+
+		for ( Map.Entry<T, T> en : childparentlkp.entrySet() ) {
+			T child = en.getKey();
+			T parent = en.getValue();
+
+			TreeNode<T> pnode = ( null == parent ? root : items.get( parent ) );
+			pnode.addChild( items.get( child ) );
+		}
+
+		return root;
 	}
 
 	public static <T> void dump( TreeNode<T> t, PrintWriter writer, int depth ) {

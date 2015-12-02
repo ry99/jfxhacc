@@ -33,6 +33,7 @@ import org.openrdf.model.Value;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.LiteralImpl;
 import org.openrdf.model.impl.ValueFactoryImpl;
+import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.query.BindingSet;
 import org.openrdf.repository.RepositoryConnection;
@@ -129,6 +130,33 @@ public class AccountMapperImpl extends SimpleEntityRdfMapper<Account> implements
 
 	@Override
 	public void update( Account acct, Account parent ) throws MapperException {
+		RepositoryConnection rc = getConnection();
+		ValueFactory vf = rc.getValueFactory();
+		try {
+			rc.begin();
+			URI id = acct.getId();
+			rc.remove( id, null, null );
+			rc.add( id, RDF.TYPE, JfxHacc.ACCOUNT_TYPE );
+			rc.add( id, RDFS.LABEL, vf.createLiteral( acct.getName() ) );
+			rc.add( id, Accounts.TYPE_PRED, acct.getAccountType().getUri() );
+			rc.add( id, Accounts.OBAL_PRED, vf.createLiteral( acct.getOpeningBalance().value() ) );
+			if ( null != parent ) {
+				rc.add( id, Accounts.PARENT_PRED, parent.getId() );
+			}
+			if ( null != acct.getNotes() ) {
+				rc.add( id, Accounts.NOTES_PRED, vf.createLiteral( acct.getNotes() ) );
+			}
+			if ( null != acct.getNumber() ) {
+				rc.add( id, Accounts.NUMBER_PRED, vf.createLiteral( acct.getNumber() ) );
+			}
+
+			rc.commit();
+		}
+		catch ( RepositoryException re ) {
+			rollback( rc );
+			throw new MapperException( re );
+		}
+
 		notifyUpdated( acct );
 	}
 
@@ -140,6 +168,9 @@ public class AccountMapperImpl extends SimpleEntityRdfMapper<Account> implements
 
 	@Override
 	public TreeNode<Account> getAccounts( AccountType type ) throws MapperException {
+		if ( null == type ) {
+			return TreeNode.treeify( getParentMap() );
+		}
 
 		Map<URI, URI> childparent = query( "SELECT ?child ?parent WHERE {"
 				+ "  ?child a jfxhacc:account . "

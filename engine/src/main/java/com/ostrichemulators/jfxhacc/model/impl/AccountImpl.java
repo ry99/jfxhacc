@@ -51,6 +51,12 @@ public class AccountImpl extends IDableImpl implements Account {
 		setId( id );
 	}
 
+	public AccountImpl( Account acct ) {
+		this( acct.getId(), acct.getName(), acct.getAccountType(), acct.getOpeningBalance() );
+		notes.set( acct.getNotes() );
+		number.set( acct.getNumber() );
+	}
+
 	@Override
 	public String getName() {
 		return name.get();

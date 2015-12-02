@@ -5,10 +5,21 @@
  */
 package com.ostrichemulators.jfxhacc.utility;
 
+import com.ostrichemulators.jfxhacc.cells.AccountListCell;
 import com.ostrichemulators.jfxhacc.mapper.AccountMapper;
 import com.ostrichemulators.jfxhacc.mapper.MapperException;
 import com.ostrichemulators.jfxhacc.model.Account;
+import java.text.Collator;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.collections.transformation.SortedList;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
+import javafx.util.Callback;
 import org.apache.log4j.Logger;
 
 /**
@@ -37,5 +48,33 @@ public class GuiUtils {
 		}
 
 		return a.getName();
+	}
+
+	public static SortedList<Account> makeAccountCombo( ComboBox<Account> field,
+			Collection<Account> accts, AccountMapper amap ) {
+		ObservableList<Account> accounts = FXCollections.observableArrayList( accts );
+
+		SortedList<Account> sorted = new SortedList<>( accounts );
+		sorted.setComparator( new Comparator<Account>() {
+
+			@Override
+			public int compare( Account o1, Account o2 ) {
+				return Collator.getInstance().compare( GuiUtils.getFullName( o1, amap ),
+						GuiUtils.getFullName( o2, amap ) );
+			}
+		} );
+
+		field.setItems( sorted );
+
+		field.setButtonCell( new AccountListCell( amap ) );
+		field.setCellFactory( new Callback<ListView<Account>, ListCell<Account>>() {
+
+			@Override
+			public ListCell<Account> call( ListView<Account> p ) {
+				return new AccountListCell( amap );
+			}
+		} );
+
+		return sorted;
 	}
 }

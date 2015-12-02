@@ -5,6 +5,7 @@
  */
 package com.ostrichemulators.jfxhacc;
 
+import com.ostrichemulators.jfxhacc.cells.AccountListCell;
 import com.ostrichemulators.jfxhacc.cells.MoneyStringConverter;
 import com.ostrichemulators.jfxhacc.engine.DataEngine;
 import com.ostrichemulators.jfxhacc.mapper.AccountMapper;
@@ -22,12 +23,10 @@ import com.ostrichemulators.jfxhacc.model.impl.SplitImpl;
 import com.ostrichemulators.jfxhacc.model.impl.TransactionImpl;
 import com.ostrichemulators.jfxhacc.utility.GuiUtils;
 import com.ostrichemulators.jfxhacc.utility.TransactionHelper;
-import java.text.Collator;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -35,7 +34,6 @@ import java.util.Map;
 import java.util.Set;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.collections.transformation.SortedList;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -112,18 +110,7 @@ public class TransactionEntryController extends AnchorPane {
 		journal = j;
 
 		try {
-			accounts.addAll( amap.getAll() );
-			accounts.remove( a );
-			SortedList<Account> sorted = new SortedList<>( accounts );
-			sorted.setComparator( new Comparator<Account>() {
-
-				@Override
-				public int compare( Account o1, Account o2 ) {
-					return Collator.getInstance().compare( GuiUtils.getFullName( o1, amap ),
-							GuiUtils.getFullName( o2, amap ) );
-				}
-			} );
-			accountfield.setItems( sorted );
+			accounts.setAll( GuiUtils.makeAccountCombo( accountfield, amap.getAll(), amap ) );
 
 			accountfield.setOnKeyTyped( new EventHandler<KeyEvent>() {
 				@Override
@@ -386,18 +373,7 @@ public class TransactionEntryController extends AnchorPane {
 	}
 
 	private ListCell<Account> makeAccountCell() {
-		return new ListCell<Account>() {
-			@Override
-			protected void updateItem( Account acct, boolean empty ) {
-				super.updateItem( acct, empty );
-				if ( null == acct || empty ) {
-					setText( "Split" );
-				}
-				else {
-					setText( GuiUtils.getFullName( acct, amap ) );
-				}
-			}
-		};
+		return new AccountListCell( amap );
 	}
 
 	@FXML

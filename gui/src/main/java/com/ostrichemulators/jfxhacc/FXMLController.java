@@ -5,6 +5,7 @@ import com.ostrichemulators.jfxhacc.engine.DataEngine;
 import com.ostrichemulators.jfxhacc.mapper.AccountMapper;
 import com.ostrichemulators.jfxhacc.mapper.AccountMapper.BalanceType;
 import com.ostrichemulators.jfxhacc.mapper.MapperException;
+import com.ostrichemulators.jfxhacc.mapper.MapperListener;
 import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.Journal;
 import com.ostrichemulators.jfxhacc.model.Money;
@@ -13,7 +14,9 @@ import com.ostrichemulators.jfxhacc.utility.AccountBalanceCache;
 import com.ostrichemulators.jfxhacc.utility.AccountBalanceCache.MoneyPair;
 import com.ostrichemulators.jfxhacc.utility.GuiUtils;
 import java.io.IOException;
+import java.util.ArrayDeque;
 import java.util.Date;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.prefs.Preferences;
@@ -91,38 +94,18 @@ public class FXMLController implements ShutdownListener {
 
 		accordion.setExpandedPane( accountsPane );
 		TreeItem<Account> toselect1 = null;
-		Map<Account, TreeItem<Account>> items = new HashMap<>();
-		Map<Account, Account> childparentlkp = new HashMap<>();
 		try {
 			journal = engine.getJournalMapper().getAll().iterator().next();
-
-			childparentlkp.putAll( amap.getParentMap() );
-			for ( Account acct : childparentlkp.keySet() ) {
-				TreeItem<Account> aitem = new TreeItem<>( acct );
-				items.put( acct, aitem );
-
-				if ( acct.getId().equals( selected ) ) {
-					toselect1 = aitem;
-				}
-			}
+			toselect1 = retree( amap, root, selected );
 		}
 		catch ( MapperException me ) {
 			log.error( me, me );
 		}
 
-		for ( Map.Entry<Account, Account> en : childparentlkp.entrySet() ) {
-			Account child = en.getKey();
-			Account parent = en.getValue();
-			TreeItem<Account> childitem = items.get( child );
-			TreeItem<Account> parentitem
-					= ( null == parent ? root : items.get( parent ) );
-			parentitem.getChildren().add( childitem );
-		}
-
 		final TreeItem<Account> toselect = toselect1;
 
 		accountName.setCellValueFactory( ( CellDataFeatures<Account, String> p )
-				-> new ReadOnlyStringWrapper( p.getValue().getValue().getName() ) );
+				-> p.getValue().getValue().getNameProperty() );
 
 		accountBalance.setCellValueFactory( ( CellDataFeatures<Account, Money> p )
 				-> new ReadOnlyObjectWrapper<>( acb.get( p.getValue().getValue(),
@@ -168,6 +151,54 @@ public class FXMLController implements ShutdownListener {
 			}
 		} );
 
+		amap.addMapperListener( new MapperListener<Account>() {
+			private TreeItem<Account> findItem( URI u ) {
+				if ( null == u ) {
+					return root;
+				}
+
+				Deque<TreeItem<Account>> todo = new ArrayDeque<>();
+				todo.addAll( root.getChildren() );
+				while ( !todo.isEmpty() ) {
+					TreeItem<Account> n = todo.poll();
+					if ( n.getValue().getId().equals( u ) ) {
+						return n;
+					}
+
+					todo.addAll( n.getChildren() );
+				}
+				return null;
+			}
+
+			private TreeItem<Account> findItem( Account a ) {
+				return findItem( null == a ? null : a.getId() );
+			}
+
+			@Override
+			public void added( Account t ) {
+				try {
+					Account parent = amap.getParent( t );
+					TreeItem<Account> pnode = findItem( parent );
+					pnode.getChildren().add( new TreeItem<>( t ) );
+				}
+				catch ( MapperException me ) {
+					log.error( me, me );
+				}
+			}
+
+			@Override
+			public void updated( Account t ) {
+				TreeItem<Account> pnode = findItem( t );
+				pnode.getValue().setName( t.getName() );
+			}
+
+			@Override
+			public void removed( URI uri ) {
+				TreeItem<Account> pnode = findItem( uri );
+				pnode.getParent().getChildren().remove( pnode );
+			}
+		} );
+
 		Platform.runLater( new Runnable() {
 			@Override
 			public void run() {
@@ -184,6 +215,34 @@ public class FXMLController implements ShutdownListener {
 				splitter.setDividerPositions( splitterpos );
 			}
 		} );
+	}
+
+	private TreeItem<Account> retree( AccountMapper amap, TreeItem<Account> root,
+			URI selected ) throws MapperException {
+		Map<Account, TreeItem<Account>> items = new HashMap<>();
+		Map<Account, Account> childparentlkp = new HashMap<>();
+		TreeItem<Account> toselect = null;
+
+		childparentlkp.putAll( amap.getParentMap() );
+		for ( Account acct : childparentlkp.keySet() ) {
+			TreeItem<Account> aitem = new TreeItem<>( acct );
+			items.put( acct, aitem );
+
+			if ( acct.getId().equals( selected ) ) {
+				toselect = aitem;
+			}
+		}
+
+		for ( Map.Entry<Account, Account> en : childparentlkp.entrySet() ) {
+			Account child = en.getKey();
+			Account parent = en.getValue();
+			TreeItem<Account> childitem = items.get( child );
+			TreeItem<Account> parentitem
+					= ( null == parent ? root : items.get( parent ) );
+			parentitem.getChildren().add( childitem );
+		}
+
+		return toselect;
 	}
 
 	private void updateBalancesLabel() {
@@ -254,6 +313,10 @@ public class FXMLController implements ShutdownListener {
 			stage.setScene( scene );
 
 			acd.setOkListener( e -> {
+				stage.close();
+			} );
+
+			acd.setCancelAction( e -> {
 				stage.close();
 			} );
 
