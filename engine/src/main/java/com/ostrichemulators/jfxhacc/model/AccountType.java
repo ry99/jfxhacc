@@ -14,15 +14,15 @@ import org.openrdf.model.URI;
  */
 public enum AccountType {
 
-	ASSET( false, JfxHacc.ASSET ), EXPENSE( false, JfxHacc.EXPENSE ),
-	LIABILITY( true, JfxHacc.LIABILITY ), EQUITY( true, JfxHacc.EQUITY ),
+	ASSET( true, JfxHacc.ASSET ), EXPENSE( false, JfxHacc.EXPENSE ),
+	LIABILITY( false, JfxHacc.LIABILITY ), EQUITY( false, JfxHacc.EQUITY ),
 	REVENUE( true, JfxHacc.REVENUE );
 
 	private final boolean debitPlus;
 	private final URI uri;
 
-	AccountType( boolean rightplus, URI typeuri ) {
-		debitPlus = rightplus;
+	AccountType( boolean debplus, URI typeuri ) {
+		debitPlus = debplus;
 		uri = typeuri;
 	}
 

@@ -20,6 +20,11 @@ import org.apache.log4j.Logger;
 public class MoneyCellFactory<T> implements Callback<TableColumn<T, Money>, TableCell<T, Money>> {
 
 	public static final Logger log = Logger.getLogger( MoneyCellFactory.class );
+	private final boolean showcredit;
+
+	public MoneyCellFactory( boolean iscredit ) {
+		showcredit = iscredit;
+	}
 
 	@Override
 	public TableCell<T, Money> call( TableColumn<T, Money> p ) {
@@ -27,11 +32,13 @@ public class MoneyCellFactory<T> implements Callback<TableColumn<T, Money>, Tabl
 			@Override
 			public void updateItem( Money t, boolean empty ) {
 				super.updateItem( t, empty );
-				if ( ( null == t || empty ) ) {
+				if ( null == t || empty
+						|| ( ( !showcredit && t.isPositive() )
+						|| ( showcredit && t.isNegative() ) ) ) {
 					setText( null );
 				}
 				else {
-					setText( t.toString() );
+					setText( t.toPositiveString() );
 					this.setAlignment( Pos.TOP_RIGHT );
 				}
 			}

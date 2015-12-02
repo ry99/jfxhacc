@@ -129,7 +129,7 @@ public class TransactionHelper {
 
 		int balval = credits - debits;
 
-		if ( 0 != balval && mainacct.getAccountType().isDebitPlus() ) {
+		if ( !( 0 == balval || mainacct.getAccountType().isDebitPlus() ) ){
 			balval = 0 - balval;
 		}
 

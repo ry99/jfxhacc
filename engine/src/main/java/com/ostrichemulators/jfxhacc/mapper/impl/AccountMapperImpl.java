@@ -255,7 +255,7 @@ public class AccountMapperImpl extends SimpleEntityRdfMapper<Account> implements
 		try {
 			Value val = oneval( sparql, map );
 			int balance = ( null == val ? 0 : Literal.class.cast( val ).intValue() );
-			if ( a.getAccountType().isDebitPlus() ) {
+			if ( !a.getAccountType().isDebitPlus() ) {
 				balance = 0 - balance;
 			}
 

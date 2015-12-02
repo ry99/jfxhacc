@@ -10,7 +10,10 @@ import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.vocabulary.JfxHacc;
 import java.util.Objects;
+import java.util.concurrent.Callable;
+import javafx.beans.binding.Bindings;
 import javafx.beans.property.Property;
+import javafx.beans.property.ReadOnlyProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
@@ -54,6 +57,7 @@ public class SplitImpl extends IDableImpl implements Split {
 		this.memo.set( memo );
 		this.reco.setValue( rs );
 		this.acct.setValue( a );
+
 	}
 
 	public SplitImpl( Split s ) {
@@ -157,6 +161,19 @@ public class SplitImpl extends IDableImpl implements Split {
 	@Override
 	public Property<Money> getValueProperty() {
 		return value;
+	}
+
+	@Override
+	public ReadOnlyProperty<Money> getRawValueProperty() {
+		SimpleObjectProperty<Money> prop = new SimpleObjectProperty<>();
+		prop.bind( Bindings.createObjectBinding( new Callable<Money>() {
+			@Override
+			public Money call() throws Exception {
+				Money val = getValue();
+				return ( isdebit ? val.opposite() : val );
+			}
+		}, value ) );
+		return prop;
 	}
 
 	@Override

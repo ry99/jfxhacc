@@ -6,7 +6,6 @@
 package com.ostrichemulators.jfxhacc;
 
 import com.ostrichemulators.jfxhacc.TransactionEntryController.CloseListener;
-import com.ostrichemulators.jfxhacc.cells.CreditDebitValueFactory;
 import com.ostrichemulators.jfxhacc.cells.DateCellFactory;
 import com.ostrichemulators.jfxhacc.cells.MoneyCellFactory;
 import com.ostrichemulators.jfxhacc.cells.PayeeAccountMemoCellFactory;
@@ -37,7 +36,6 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
-import javafx.scene.Node;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TableColumn;
@@ -80,8 +78,6 @@ public class TransactionViewController implements ShutdownListener, TransactionL
 	protected Account account;
 	protected Journal journal;
 	private final PayeeAccountMemoValueFactory payeefac = new PayeeAccountMemoValueFactory();
-	private final CreditDebitValueFactory creditfac = new CreditDebitValueFactory( true );
-	private final CreditDebitValueFactory debitfac = new CreditDebitValueFactory( false );
 	private final RecoValueFactory recofac = new RecoValueFactory();
 	private boolean firstload = true;
 	private Transaction transUnderMouse = null;
@@ -94,8 +90,6 @@ public class TransactionViewController implements ShutdownListener, TransactionL
 		account = acct;
 		journal = j;
 		payeefac.setAccount( acct );
-		creditfac.setAccount( acct );
-		debitfac.setAccount( acct );
 		recofac.setAccount( acct );
 		dataentry.setAccount( acct, journal );
 		refresh();
@@ -189,11 +183,13 @@ public class TransactionViewController implements ShutdownListener, TransactionL
 		reco.setCellValueFactory( recofac );
 		reco.setCellFactory( new RecoCellFactory<>( false ) );
 
-		credit.setCellValueFactory( creditfac );
-		credit.setCellFactory( new MoneyCellFactory<>() );
+		credit.setCellValueFactory( ( TableColumn.CellDataFeatures<Transaction, Money> p )
+				-> p.getValue().getSplit( account ).getRawValueProperty() );
+		credit.setCellFactory( new MoneyCellFactory<>( true ) );
 
-		debit.setCellValueFactory( debitfac );
-		debit.setCellFactory( new MoneyCellFactory<>() );
+		debit.setCellValueFactory( ( TableColumn.CellDataFeatures<Transaction, Money> p )
+				-> p.getValue().getSplit( account ).getRawValueProperty() );
+		debit.setCellFactory( new MoneyCellFactory<>( false ) );
 
 		splitter.getItems().add( dataentry );
 

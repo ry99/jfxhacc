@@ -90,10 +90,12 @@ public class SplitsWindowController {
 				-> p.getValue().getReconciledProperty() );
 		reco.setCellFactory( new RecoCellFactory<>( true ) );
 
-		credit.setCellValueFactory( new CDValueFactory( true ) );
-		credit.setCellFactory( new MoneyCellFactory<>() );
-		debit.setCellValueFactory( new CDValueFactory( false ) );
-		debit.setCellFactory( new MoneyCellFactory<>() );
+		credit.setCellValueFactory( ( TableColumn.CellDataFeatures<Split, Money> p )
+				-> p.getValue().getRawValueProperty() );
+		credit.setCellFactory( new MoneyCellFactory<>( true ) );
+		debit.setCellValueFactory( ( TableColumn.CellDataFeatures<Split, Money> p )
+				-> p.getValue().getRawValueProperty() );
+		debit.setCellFactory( new MoneyCellFactory<>( false ) );
 
 		account.setCellValueFactory( ( TableColumn.CellDataFeatures<Split, Account> p )
 				-> p.getValue().getAccountProperty() );

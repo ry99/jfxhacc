@@ -229,6 +229,7 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 			rc.remove( id, Transactions.PAYEE_PRED, null );
 			rc.remove( id, Transactions.DATE_PRED, null );
 			rc.remove( id, Transactions.NUMBER_PRED, null );
+			rc.remove( id, Transactions.SPLIT_PRED, null );
 
 			rc.add( id, Transactions.PAYEE_PRED, t.getPayee().getId() );
 			rc.add( id, Transactions.DATE_PRED, vf.createLiteral( t.getDate() ) );
@@ -236,7 +237,6 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 				rc.add( id, Transactions.NUMBER_PRED, vf.createLiteral( t.getNumber() ) );
 			}
 
-			rc.remove( id, Transactions.SPLIT_PRED, null );
 			for ( Split split : realsplits ) {
 				rc.add( id, Transactions.SPLIT_PRED, split.getId() );
 			}

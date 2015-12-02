@@ -6,6 +6,7 @@
 package com.ostrichemulators.jfxhacc.model;
 
 import javafx.beans.property.Property;
+import javafx.beans.property.ReadOnlyProperty;
 import javafx.beans.property.StringProperty;
 
 /**
@@ -33,6 +34,8 @@ public interface Split extends IDable {
 	public Money getValue();
 
 	public Property<Money> getValueProperty();
+
+	public ReadOnlyProperty<Money> getRawValueProperty();
 
 	/**
 	 * Sets the value of this split.

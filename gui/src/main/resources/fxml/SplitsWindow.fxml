@@ -21,8 +21,8 @@
 			<columns>
 				<TableColumn fx:id="account" prefWidth="200.0" text="Account" />
 				<TableColumn fx:id="memo" prefWidth="150.0" text="Memo" />
-				<TableColumn fx:id="credit" prefWidth="75.0" text="Credit" />
-				<TableColumn fx:id="debit" prefWidth="75.0" text="Debit" />
+				<TableColumn fx:id="credit" prefWidth="75.0" text="Deposit" />
+				<TableColumn fx:id="debit" prefWidth="75.0" text="Withdrawal" />
 				<TableColumn fx:id="reco" prefWidth="50.0" text="Rec" />
 			</columns>
 			<columnResizePolicy>
