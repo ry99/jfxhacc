@@ -31,7 +31,6 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.prefs.Preferences;
-import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -175,7 +174,7 @@ public class TransactionViewController implements ShutdownListener, TransactionL
 		transtable.setItems( transactions );
 
 		date.setCellValueFactory( ( TableColumn.CellDataFeatures<Transaction, Date> p )
-				-> new ReadOnlyObjectWrapper<>( p.getValue().getDate() ) );
+				-> p.getValue().getDateProperty() );
 		date.setCellFactory( new DateCellFactory() );
 
 		payee.setCellValueFactory( payeefac );

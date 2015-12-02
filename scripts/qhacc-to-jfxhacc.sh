@@ -80,4 +80,4 @@ done < $TRANS
 # link transactions and splits
 sed -e"s/\([^|]\+\).\(.*\)/t:qhacc-transaction-\1 trans:entry s:qhacc-split-\2 ./g" $SPLITTRANS
 
-#rm -rf $TMPDIR
+rm -rf $TMPDIR
