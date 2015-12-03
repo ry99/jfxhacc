@@ -18,6 +18,8 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Date;
+import java.util.concurrent.Callable;
+import javafx.beans.binding.Bindings;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
@@ -25,6 +27,7 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
+import javafx.scene.control.Button;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
@@ -53,6 +56,8 @@ public class ReconcileWindowController {
 	@FXML
 	private Label recodiff;
 	@FXML
+	private Button balanceBtn;
+	@FXML
 	private BorderPane borders;
 
 	private Stage stage;
@@ -80,7 +85,7 @@ public class ReconcileWindowController {
 
 		stmtbal.setText( new Money().toString() );
 		recodiff.textProperty().bind( transviewer.getClearedValueProperty().asString() );
-		transviewer.getClearedValueProperty().addListener( new ChangeListener<Money>(){
+		transviewer.getClearedValueProperty().addListener( new ChangeListener<Money>() {
 
 			@Override
 			public void changed( ObservableValue<? extends Money> ov, Money t, Money t1 ) {
@@ -95,6 +100,14 @@ public class ReconcileWindowController {
 				updateCalculation();
 			}
 		} );
+
+		balanceBtn.disableProperty().bind( Bindings.createBooleanBinding( new Callable<Boolean>() {
+
+			@Override
+			public Boolean call() throws Exception {
+				return Money.valueOf( diff.getText() ).isZero();
+			}
+		}, diff.textProperty() ) );
 
 	}
 
