@@ -9,6 +9,7 @@ import com.ostrichemulators.jfxhacc.cells.PayeeAccountMemoCellFactory;
 import com.ostrichemulators.jfxhacc.mapper.MapperException;
 import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.Journal;
+import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
 import com.ostrichemulators.jfxhacc.model.Transaction;
@@ -17,6 +18,9 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.ListIterator;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.fxml.FXML;
 import javafx.scene.input.KeyEvent;
 import org.apache.log4j.Logger;
@@ -30,6 +34,7 @@ public class ReconcileViewController extends TransactionViewController {
 
 	private static final Logger log = Logger.getLogger( ReconcileViewController.class );
 	private Date date;
+	private final ObjectProperty<Money> reco = new SimpleObjectProperty<>( new Money() );
 
 	@Override
 	protected List<Transaction> getTransactions() {
@@ -50,6 +55,10 @@ public class ReconcileViewController extends TransactionViewController {
 
 	public Date getDate() {
 		return date;
+	}
+
+	public ReadOnlyObjectProperty<Money> getClearedValueProperty() {
+		return reco;
 	}
 
 	public Collection<Split> getSplits() {
@@ -95,14 +104,7 @@ public class ReconcileViewController extends TransactionViewController {
 				? ReconcileState.NOT_RECONCILED
 				: ReconcileState.CLEARED );
 
-		try {
-			tmap.reconcile( newrec, account, s );
-			updated( t );
-		}
-		catch ( MapperException me ) {
-			log.error( me, me );
-			// FIXME: tell the user
-		}
+		s.setReconciled( newrec );
 
 		int idx = transtable.getSelectionModel().getSelectedIndex();
 		if ( ReconcileState.CLEARED == newrec ) {
@@ -117,7 +119,7 @@ public class ReconcileViewController extends TransactionViewController {
 				}
 			}
 		}
-		
+
 		if ( idx < transactions.size() ) {
 			transtable.getSelectionModel().clearAndSelect( idx );
 			transtable.getFocusModel().focus( idx );
@@ -127,6 +129,29 @@ public class ReconcileViewController extends TransactionViewController {
 				transtable.scrollTo( idx - 2 );
 			}
 		}
+
+		updateRecoProp();
+	}
+
+	private void updateRecoProp() {
+		int calc = 0;
+		for ( Split s : getSplits() ) {
+			if ( ReconcileState.CLEARED == s.getReconciled() ) {
+				int cents = s.getValue().value();
+				if ( s.isCredit() ) {
+					calc += cents;
+				}
+				else {
+					calc -= cents;
+				}
+			}
+		}
+
+		if ( !account.getAccountType().isDebitPlus() ) {
+			calc = 0 - calc;
+		}
+
+		reco.set( new Money( calc ) );
 	}
 
 	@FXML
@@ -148,6 +173,7 @@ public class ReconcileViewController extends TransactionViewController {
 		if ( null != t.getSplit( account ) ) {
 			transactions.add( t );
 			transtable.sort();
+			updateRecoProp();
 		}
 	}
 
@@ -160,6 +186,7 @@ public class ReconcileViewController extends TransactionViewController {
 				if ( listt.equals( t ) ) {
 					transit.set( t );
 					transtable.sort();
+					updateRecoProp();
 					break;
 				}
 			}

@@ -11,7 +11,6 @@ import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.Journal;
 import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.Split;
-import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
 import com.ostrichemulators.jfxhacc.model.Transaction;
 import com.ostrichemulators.jfxhacc.model.impl.SplitImpl;
 import java.io.IOException;
@@ -19,6 +18,8 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Date;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -77,11 +78,21 @@ public class ReconcileWindowController {
 			log.fatal( ioe, ioe );
 		}
 
+		stmtbal.setText( new Money().toString() );
+		recodiff.textProperty().bind( transviewer.getClearedValueProperty().asString() );
+		transviewer.getClearedValueProperty().addListener( new ChangeListener<Money>(){
+
+			@Override
+			public void changed( ObservableValue<? extends Money> ov, Money t, Money t1 ) {
+				updateCalculation();
+			}
+		} );
+
 		transviewer.getData().addListener( new ListChangeListener<Transaction>() {
 
 			@Override
 			public void onChanged( ListChangeListener.Change<? extends Transaction> change ) {
-				updateCalculation( Money.valueOf( openbal.getText() ) );
+				updateCalculation();
 			}
 		} );
 
@@ -100,42 +111,23 @@ public class ReconcileWindowController {
 		Date d = Date.from( instant );
 		Date lastdate = transviewer.getDate();
 
-		Money openingBal = amap.getBalance( account,
-				AccountMapper.BalanceType.RECONCILED, d );
+		Money openingBal
+				= amap.getBalance( account, AccountMapper.BalanceType.RECONCILED, d );
 		openbal.setText( openingBal.toString() );
-		if ( d.equals( lastdate ) ) {
-			updateCalculation( openingBal );
-		}
-		else {
+		if ( !d.equals( lastdate ) ) {
 			transviewer.setAccount( account, journal, d );
 		}
+
+		updateCalculation();
 	}
 
-	private void updateCalculation( Money openingbal ) {
+	private void updateCalculation() {
 		Money opening = Money.valueOf( openbal.getText() );
 		Money ending = Money.valueOf( stmtbal.getText() );
 
-		int calc = 0;
-		for ( Split s : transviewer.getSplits() ) {
-			if ( ReconcileState.CLEARED == s.getReconciled() ) {
-				int cents = s.getValue().value();
-				if ( s.isCredit() ) {
-					calc += cents;
-				}
-				else {
-					calc -= cents;
-				}
-			}
-		}
-
-		if ( account.getAccountType().isDebitPlus() ) {
-			calc = 0 - calc;
-		}
-
 		Money sdiff = ending.minus( opening );
-		Money rdiff = new Money( calc );
+		Money rdiff = transviewer.getClearedValueProperty().get();
 		stmtdiff.setText( sdiff.toString() );
-		recodiff.setText( rdiff.toString() );
 		diff.setText( sdiff.minus( rdiff ).toString() );
 	}
 
@@ -148,10 +140,11 @@ public class ReconcileWindowController {
 	@FXML
 	public void balance( ActionEvent event ) {
 		Split split = new SplitImpl();
-		split.setValue( Money.valueOf( diff.getText() ) );
+		split.setValue( Money.valueOf( diff.getText() ).opposite() );
 		split.setMemo( "balance adjustment" );
 		split.setReconciled( transviewer.getDefaultReconcileState() );
 		Instant instant = Instant.from( stmtdate.getValue().atStartOfDay( ZoneId.systemDefault() ) );
+		split.setAccount( account );
 		transviewer.openEditor( Date.from( instant ), split );
 	}
 

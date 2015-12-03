@@ -131,6 +131,10 @@ public class AccountBalanceCache {
 		return balances.get( acct ).current;
 	}
 
+	public Property<Money> getRecoProperty( Account acct ) {
+		return balances.get( acct ).reco;
+	}
+
 	private void recache( Account a ) {
 		if ( balances.containsKey( a ) ) {
 			MoneyPair mp = balances.get( a );

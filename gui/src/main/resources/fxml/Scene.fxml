@@ -64,21 +64,25 @@
 				</SplitPane>
 			</center>
          <bottom>
-            <FlowPane alignment="CENTER_RIGHT">
+            <FlowPane alignment="CENTER_RIGHT" hgap="5.0">
                <children>
+                  <Label fx:id="transnum" />
                   <Label fx:id="acctname">
-                     <padding>
-                        <Insets right="10.0" />
-                     </padding>
                      <font>
                         <Font name="System Bold" size="13.0" />
                      </font>
                   </Label>
+                  <Label fx:id="balcurr" />
+                  <Label text="/" />
                   <Label fx:id="balrec">
                      <FlowPane.margin>
-                        <Insets right="10.0" />
+                        <Insets />
                      </FlowPane.margin></Label>
+                  <Label text="R" />
                </children>
+               <BorderPane.margin>
+                  <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+               </BorderPane.margin>
             </FlowPane>
          </bottom>
 		</BorderPane>

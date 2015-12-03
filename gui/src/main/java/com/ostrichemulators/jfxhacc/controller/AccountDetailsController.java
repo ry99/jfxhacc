@@ -95,9 +95,11 @@ public class AccountDetailsController {
 
 		try {
 			GuiUtils.makeAccountCombo( parentacct, accounts, engine.getAccountMapper() );
-			Account pp = engine.getAccountMapper().getParent( acct );
-			parentacct.getSelectionModel().select( pp );
-			parentacct.setValue( pp );
+			if ( null != acct ) {
+				Account pp = engine.getAccountMapper().getParent( acct );
+				parentacct.getSelectionModel().select( pp );
+				parentacct.setValue( pp );
+			}
 		}
 		catch ( MapperException me ) {
 			log.error( me, me );

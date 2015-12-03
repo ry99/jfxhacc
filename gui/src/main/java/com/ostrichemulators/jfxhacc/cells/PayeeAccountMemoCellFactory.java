@@ -7,10 +7,10 @@ package com.ostrichemulators.jfxhacc.cells;
 
 import com.ostrichemulators.jfxhacc.controller.TransactionViewController.PAMData;
 import com.ostrichemulators.jfxhacc.model.Transaction;
-import javafx.geometry.VPos;
+import javafx.scene.control.Label;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
-import javafx.scene.layout.Pane;
+import javafx.scene.layout.GridPane;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontPosture;
 import javafx.scene.text.Text;
@@ -37,45 +37,48 @@ public class PayeeAccountMemoCellFactory implements Callback<TableColumn<Transac
 			protected void updateItem( PAMData t, boolean empty ) {
 				super.updateItem( t, empty );
 
-				Pane pane = null;
 				if ( empty || null == t ) {
 					setText( null );
 					setGraphic( null );
 				}
 				else {
-					pane = new Pane();
-
 					final double halfwidth = p.getWidth() / 2;
-					final Font font = this.getFont();
+					GridPane pane = new GridPane();
+					pane.setVgap( 5d );
+					pane.setPrefWidth( p.getWidth() );
+					pane.setMaxWidth( Double.MAX_VALUE );
 
-					final Text payee = new Text( t.payee );
-					payee.setFont( font );
-					payee.setTextOrigin( VPos.TOP );
-					payee.relocate( 0, 0 );
+					Label payee = new Label( t.payee );
+					Label memo = new Label( t.memo );
 
-					final Text memo = new Text( t.memo );
-					memo.setFont( font );
-					memo.setTextOrigin( VPos.TOP );
-					memo.setWrappingWidth( halfwidth );
+					payee.setWrapText( false );
+					memo.setWrapText( false );
+					memo.prefWidthProperty().bind( p.widthProperty().divide( 2 ) );
 
 					if ( reconciler ) {
-						memo.relocate( halfwidth, 0 );
-						pane.getChildren().addAll( payee, memo );
+						pane.add( payee, 0, 0 );
+						pane.add( memo, 1, 0 );
+						payee.prefWidthProperty().bind( p.widthProperty().divide( 2 ) );
 					}
 					else {
-						final double height = p.getTableView().getFixedCellSize() / 2;
+						Label acct = new Label( t.account );
+						acct.setWrapText( false );
+
+						pane.add( payee, 0, 0, 2, 1 );
+						if ( null == t.memo || t.memo.isEmpty() ) {
+							pane.add( acct, 0, 1, 2, 1 );
+						}
+						else {
+							pane.add( acct, 0, 1 );
+							pane.add( memo, 1, 1 );
+							acct.prefWidthProperty().bind( p.widthProperty().divide( 2 ) );
+						}
 
 						Font italics
-								= Font.font( font.getName(), FontPosture.ITALIC, font.getSize() );
-						final Text account = new Text( t.account );
-						account.setFont( italics );
-						account.setTextOrigin( VPos.TOP );
-						account.setWrappingWidth( halfwidth );
-						account.relocate( 0, height );
-
-						memo.relocate( halfwidth, height );
-						pane.getChildren().addAll( payee, account, memo );
+								= Font.font( getFont().getName(), FontPosture.ITALIC, getFont().getSize() );
+						acct.setFont( italics );
 					}
+
 					setText( null );
 					setGraphic( pane );
 				}

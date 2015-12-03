@@ -9,9 +9,11 @@ import com.ostrichemulators.jfxhacc.mapper.AccountMapper;
 import com.ostrichemulators.jfxhacc.mapper.AccountMapper.BalanceType;
 import com.ostrichemulators.jfxhacc.mapper.MapperException;
 import com.ostrichemulators.jfxhacc.mapper.MapperListener;
+import com.ostrichemulators.jfxhacc.mapper.TransactionListener;
 import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.Journal;
 import com.ostrichemulators.jfxhacc.model.Money;
+import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
 import com.ostrichemulators.jfxhacc.model.Transaction;
 import com.ostrichemulators.jfxhacc.utility.AccountBalanceCache;
@@ -19,6 +21,7 @@ import com.ostrichemulators.jfxhacc.utility.AccountBalanceCache.MoneyPair;
 import com.ostrichemulators.jfxhacc.utility.GuiUtils;
 import java.io.IOException;
 import java.util.ArrayDeque;
+import java.util.Collection;
 import java.util.Date;
 import java.util.Deque;
 import java.util.HashMap;
@@ -40,7 +43,6 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.SplitPane;
-import javafx.scene.control.TableColumn;
 import javafx.scene.control.TitledPane;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeTableColumn;
@@ -76,7 +78,11 @@ public class MainWindowController implements ShutdownListener {
 	@FXML
 	private Label balrec;
 	@FXML
+	private Label balcurr;
+	@FXML
 	private Label acctname;
+	@FXML
+	private Label transnum;
 	@FXML
 	private Button recoBtn;
 
@@ -128,7 +134,7 @@ public class MainWindowController implements ShutdownListener {
 			log.fatal( ioe, ioe );
 		}
 
-		makeListeners( acb, amap, root );
+		makeListeners( acb, engine, root );
 
 		Platform.runLater( new Runnable() {
 			@Override
@@ -168,7 +174,8 @@ public class MainWindowController implements ShutdownListener {
 		} );
 	}
 
-	private void makeListeners( AccountBalanceCache acb, AccountMapper amap, TreeItem<Account> root ) {
+	private void makeListeners( AccountBalanceCache acb, DataEngine eng, TreeItem<Account> root ) {
+		AccountMapper amap = eng.getAccountMapper();
 		accounts.getSelectionModel().selectedItemProperty().addListener( new ChangeListener<TreeItem<Account>>() {
 
 			@Override
@@ -179,7 +186,6 @@ public class MainWindowController implements ShutdownListener {
 				String fname = GuiUtils.getFullName( acct, amap );
 				acctname.setText( fname );
 				MainApp.getShutdownNotifier().getStage().setTitle( fname );
-
 				updateBalancesLabel();
 				recoBtn.setDisable( false );
 			}
@@ -224,6 +230,35 @@ public class MainWindowController implements ShutdownListener {
 			}
 		} );
 
+		eng.getTransactionMapper().addMapperListener( new TransactionListener() {
+			private Account account() {
+				return accounts.getSelectionModel().getSelectedItem().getValue();
+			}
+
+			@Override
+			public void reconciled( Account acct, Collection<Split> splits ) {
+				if ( acct.equals( account() ) ) {
+					updateBalancesLabel();
+				}
+			}
+
+			@Override
+			public void added( Transaction t ) {
+				if ( null != t.getSplit( account() ) ) {
+					updateBalancesLabel();
+				}
+			}
+
+			@Override
+			public void updated( Transaction t ) {
+				added( t );
+			}
+
+			@Override
+			public void removed( URI uri ) {
+				updateBalancesLabel();
+			}
+		} );
 	}
 
 	public void select( Account acct ) {
@@ -267,7 +302,12 @@ public class MainWindowController implements ShutdownListener {
 			Account acct = item.getValue();
 			Money curr = acb.get( acct, BalanceType.CURRENT );
 			Money rec = acb.get( acct, BalanceType.RECONCILED );
-			balrec.setText( curr.toString() + "/" + rec.toString() + " R" );
+			balrec.setText( rec.toString() );
+			balcurr.setText( curr.toString() );
+
+			int size = transactions.getData().size();
+			String transtxt = ( 1 == size ? " Transaction" : " Transactions" );
+			transnum.setText( size + transtxt );
 		}
 	}
 
