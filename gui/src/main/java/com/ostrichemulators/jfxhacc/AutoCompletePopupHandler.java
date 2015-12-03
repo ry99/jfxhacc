@@ -6,6 +6,9 @@
 package com.ostrichemulators.jfxhacc;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
@@ -17,6 +20,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 
 import java.util.List;
+import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -52,21 +56,38 @@ public class AutoCompletePopupHandler {
 		text.textProperty().addListener( new ChangeListener<String>() {
 			@Override
 			public void changed( ObservableValue<? extends String> observableValue, String s, String s2 ) {
-				if ( text.getText().isEmpty() ) {
+				if ( text.getText().length() < 2 ) {
 					entriesPopup.hide();
 				}
 				else {
-					List<String> searchResult = new ArrayList<>();
-					searchResult.addAll( entries.subSet( text.getText(),
-							text.getText() + Character.MAX_VALUE ) );
-					if ( entries.size() > 0 ) {
-						populatePopup( searchResult );
-						if ( !entriesPopup.isShowing() ) {
-							entriesPopup.show( text, Side.BOTTOM, 0, 0 );
+					Map<String, Integer> searchResult = new HashMap<>();
+					String upper = text.getText().toUpperCase();
+					for ( String needle : entries ) {
+						String uneedle = needle.toUpperCase();
+						if ( uneedle.contains( upper ) ) {
+							searchResult.put( needle, uneedle.indexOf( upper ) );
 						}
 					}
-					else {
-						entriesPopup.hide();
+
+					// searchResult.addAll( entries.subSet( text.getText(),
+					//		text.getText() + Character.MAX_VALUE ) );
+					entriesPopup.hide();
+					if ( entries.size() > 0 ) {
+						List<String> results = new ArrayList<>( searchResult.keySet() );
+						Collections.sort( results, new Comparator<String>() {
+
+							@Override
+							public int compare( String o1, String o2 ) {
+								int diff = searchResult.get( o1 ) - searchResult.get( o2 );
+								if ( 0 == diff ) {
+									diff = o1.compareTo( o2 );
+								}
+								return diff;
+							}
+						} );
+
+						populatePopup( results );
+						entriesPopup.show( text, Side.BOTTOM, 0, 0 );
 					}
 				}
 			}
@@ -95,7 +116,7 @@ public class AutoCompletePopupHandler {
 	private void populatePopup( List<String> searchResult ) {
 		List<CustomMenuItem> menuItems = new ArrayList<>();
 		// If you'd like more entries, modify this line.
-		int maxEntries = 100;
+		int maxEntries = 30;
 		int count = Math.min( searchResult.size(), maxEntries );
 		for ( int i = 0; i < count; i++ ) {
 			final String result = searchResult.get( i );
