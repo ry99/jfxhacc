@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.ostrichemulators.jfxhacc;
+package com.ostrichemulators.jfxhacc.controller;
 
 import com.ostrichemulators.jfxhacc.cells.AccountCellFactory;
 import com.ostrichemulators.jfxhacc.cells.MoneyCellFactory;

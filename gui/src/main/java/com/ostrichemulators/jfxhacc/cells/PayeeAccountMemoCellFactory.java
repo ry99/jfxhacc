@@ -5,7 +5,7 @@
  */
 package com.ostrichemulators.jfxhacc.cells;
 
-import com.ostrichemulators.jfxhacc.TransactionViewController.PAMData;
+import com.ostrichemulators.jfxhacc.controller.TransactionViewController.PAMData;
 import com.ostrichemulators.jfxhacc.model.Transaction;
 import javafx.geometry.VPos;
 import javafx.scene.control.TableCell;

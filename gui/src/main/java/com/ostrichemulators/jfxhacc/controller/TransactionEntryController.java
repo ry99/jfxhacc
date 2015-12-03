@@ -3,8 +3,9 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.ostrichemulators.jfxhacc;
+package com.ostrichemulators.jfxhacc.controller;
 
+import com.ostrichemulators.jfxhacc.AutoCompletePopupHandler;
 import com.ostrichemulators.jfxhacc.cells.AccountListCell;
 import com.ostrichemulators.jfxhacc.cells.MoneyStringConverter;
 import com.ostrichemulators.jfxhacc.engine.DataEngine;
@@ -338,7 +339,7 @@ public class TransactionEntryController extends AnchorPane {
 		splitsBtn.setOnAction( ae );
 	}
 
-	protected final ReconcileState getReco() {
+	public final ReconcileState getReco() {
 		if ( recofield.isIndeterminate() ) {
 			return ReconcileState.CLEARED;
 		}

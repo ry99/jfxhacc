@@ -3,9 +3,11 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.ostrichemulators.jfxhacc;
+package com.ostrichemulators.jfxhacc.controller;
 
-import com.ostrichemulators.jfxhacc.TransactionEntryController.CloseListener;
+import com.ostrichemulators.jfxhacc.MainApp;
+import com.ostrichemulators.jfxhacc.ShutdownListener;
+import com.ostrichemulators.jfxhacc.controller.TransactionEntryController.CloseListener;
 import com.ostrichemulators.jfxhacc.cells.DateCellFactory;
 import com.ostrichemulators.jfxhacc.cells.MoneyCellFactory;
 import com.ostrichemulators.jfxhacc.cells.PayeeAccountMemoCellFactory;

@@ -1,6 +1,8 @@
-package com.ostrichemulators.jfxhacc;
+package com.ostrichemulators.jfxhacc.controller;
 
+import com.ostrichemulators.jfxhacc.MainApp;
 import com.ostrichemulators.jfxhacc.MainApp.StageRememberer;
+import com.ostrichemulators.jfxhacc.ShutdownListener;
 import com.ostrichemulators.jfxhacc.cells.MoneyTableTreeCellFactory;
 import com.ostrichemulators.jfxhacc.engine.DataEngine;
 import com.ostrichemulators.jfxhacc.mapper.AccountMapper;
@@ -11,6 +13,7 @@ import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.Journal;
 import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
+import com.ostrichemulators.jfxhacc.model.Transaction;
 import com.ostrichemulators.jfxhacc.utility.AccountBalanceCache;
 import com.ostrichemulators.jfxhacc.utility.AccountBalanceCache.MoneyPair;
 import com.ostrichemulators.jfxhacc.utility.GuiUtils;
@@ -25,6 +28,7 @@ import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.MapChangeListener;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -36,6 +40,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.SplitPane;
+import javafx.scene.control.TableColumn;
 import javafx.scene.control.TitledPane;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeTableColumn;
@@ -46,13 +51,16 @@ import org.apache.log4j.Logger;
 import org.openrdf.model.URI;
 import org.openrdf.model.impl.URIImpl;
 
-public class FXMLController implements ShutdownListener {
+public class MainWindowController implements ShutdownListener {
 
 	private static final String PREF_SELECTED = "accountviewer.selected";
-	private static final String PREF_ASIZE = "accountviewer.account-width";
-	private static final String PREF_SPLITTER = "stage.splitter-location";
+	private static final String PREF_ASIZE = "accountviewer.account.width";
+	private static final String PREF_BSIZE = "accountviewer.balance.width";
+	private static final String PREF_SORTCOL = "accountviewer.sort.col";
+	private static final String PREF_SORTASC = "accountviewer.sort.asc";
+	private static final String PREF_SPLITTER = "stage.splitter.location";
 
-	private static final Logger log = Logger.getLogger( FXMLController.class );
+	private static final Logger log = Logger.getLogger( MainWindowController.class );
 	@FXML
 	private TitledPane accountsPane;
 	@FXML
@@ -126,9 +134,6 @@ public class FXMLController implements ShutdownListener {
 			@Override
 			public void run() {
 
-				double asize = prefs.getDouble( PREF_ASIZE, 0.5 );
-				accountName.setPrefWidth( asize );
-
 				accounts.getSelectionModel().setSelectionMode( SelectionMode.SINGLE );
 				if ( null != toselect ) {
 					accounts.getSelectionModel().select( toselect );
@@ -136,6 +141,29 @@ public class FXMLController implements ShutdownListener {
 
 				double splitterpos = prefs.getDouble( PREF_SPLITTER, 0.25 );
 				splitter.setDividerPositions( splitterpos );
+
+				double asize = prefs.getDouble( PREF_ASIZE, 100 );
+				double bsize = prefs.getDouble( PREF_BSIZE, 100 );
+				accountName.setPrefWidth( asize );
+				accountBalance.setPrefWidth( bsize );
+
+				ObservableList<TreeTableColumn<Account, ?>> cols = accounts.getColumns();
+				int sortcol = prefs.getInt( PREF_SORTCOL, 0 );
+				boolean sortasc = prefs.getBoolean( PREF_SORTASC, true );
+
+				int i = 0;
+				for ( TreeTableColumn<Account, ?> tc : cols ) {
+					i++;
+
+					if ( sortcol == i ) {
+						tc.setSortType( sortasc
+								? TreeTableColumn.SortType.ASCENDING
+								: TreeTableColumn.SortType.DESCENDING );
+						accounts.getSortOrder().clear();
+						accounts.getSortOrder().add( tc );
+						accounts.sort();
+					}
+				}
 			}
 		} );
 	}
@@ -252,7 +280,27 @@ public class FXMLController implements ShutdownListener {
 		}
 
 		prefs.putDouble( PREF_ASIZE, accounts.getColumns().get( 0 ).getWidth() );
+		prefs.putDouble( PREF_BSIZE, accounts.getColumns().get( 1 ).getWidth() );
 		prefs.putDouble( PREF_SPLITTER, splitter.getDividerPositions()[0] );
+
+		ObservableList<TreeTableColumn<Account, ?>> cols = accounts.getColumns();
+		TreeTableColumn<Account, ?> sortcol = null;
+		ObservableList<TreeTableColumn<Account, ?>> sorts = accounts.getSortOrder();
+		if ( !sorts.isEmpty() ) {
+			sortcol = sorts.get( 0 );
+		}
+
+		int i = 0;
+		for ( TreeTableColumn<Account, ?> tc : cols ) {
+			i++;
+			if ( tc.equals( sortcol ) ) {
+				prefs.putInt( PREF_SORTCOL, i );
+
+				TreeTableColumn.SortType stype = tc.getSortType();
+				prefs.putBoolean( PREF_SORTASC,
+						( null == stype ? true : stype == TreeTableColumn.SortType.ASCENDING ) );
+			}
+		}
 	}
 
 	@FXML

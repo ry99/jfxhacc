@@ -1,5 +1,6 @@
 package com.ostrichemulators.jfxhacc;
 
+import com.ostrichemulators.jfxhacc.controller.MainWindowController;
 import com.ostrichemulators.jfxhacc.engine.DataEngine;
 import com.ostrichemulators.jfxhacc.engine.impl.RdfDataEngine;
 import com.ostrichemulators.jfxhacc.model.Account;
@@ -33,7 +34,7 @@ public class MainApp extends Application {
 
 	private static RdfDataEngine engine;
 	private static StageRememberer stager;
-	private static FXMLController controller;
+	private static MainWindowController controller;
 
 	public static DataEngine getEngine() {
 		return engine;
@@ -53,7 +54,7 @@ public class MainApp extends Application {
 
 		URL loc = getClass().getResource( "/fxml/Scene.fxml" );
 		FXMLLoader fxmlloader = new FXMLLoader( loc );
-		controller = new FXMLController();
+		controller = new MainWindowController();
 		fxmlloader.setController( controller );
 
 		Parent root = fxmlloader.load();
