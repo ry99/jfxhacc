@@ -33,7 +33,6 @@ import org.openrdf.repository.http.HTTPRepository;
 import org.openrdf.repository.sail.SailRepository;
 import org.openrdf.rio.RDFFormat;
 import org.openrdf.rio.RDFParseException;
-import org.openrdf.sail.inferencer.fc.ForwardChainingRDFSInferencer;
 import org.openrdf.sail.memory.MemoryStore;
 
 /**
@@ -112,7 +111,8 @@ public class DbUtil {
 		return rc;
 	}
 
-	private static RepositoryConnection createInMemRepository( File datadir ) throws RepositoryException {
+	private static RepositoryConnection createInMemRepository( File datadir )
+			throws RepositoryException {
 		boolean init = ( !datadir.exists() );
 
 		if ( init ) {

@@ -2,34 +2,14 @@ package com.ostrichemulators.jfxhacc;
 
 import com.ostrichemulators.jfxhacc.engine.DataEngine;
 import com.ostrichemulators.jfxhacc.engine.impl.RdfDataEngine;
-import com.ostrichemulators.jfxhacc.mapper.JournalMapper;
-import com.ostrichemulators.jfxhacc.mapper.MapperException;
-import com.ostrichemulators.jfxhacc.mapper.TransactionMapper;
-import com.ostrichemulators.jfxhacc.mapper.impl.AccountMapperImpl;
-import com.ostrichemulators.jfxhacc.mapper.impl.JournalMapperImpl;
-import com.ostrichemulators.jfxhacc.mapper.impl.PayeeMapperImpl;
-import com.ostrichemulators.jfxhacc.mapper.impl.TransactionMapperImpl;
 import com.ostrichemulators.jfxhacc.model.Account;
-import com.ostrichemulators.jfxhacc.model.AccountType;
-import com.ostrichemulators.jfxhacc.model.Journal;
-import com.ostrichemulators.jfxhacc.model.Money;
-import com.ostrichemulators.jfxhacc.model.Payee;
-import com.ostrichemulators.jfxhacc.model.Split;
-import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
-import com.ostrichemulators.jfxhacc.model.impl.PayeeImpl;
-import com.ostrichemulators.jfxhacc.model.impl.SplitImpl;
 import com.ostrichemulators.jfxhacc.utility.DbUtil;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
+import java.util.ListIterator;
 import java.util.prefs.Preferences;
 import javafx.application.Application;
 import static javafx.application.Application.launch;
@@ -41,9 +21,10 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import org.apache.log4j.Logger;
-import org.openrdf.model.URI;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
+import org.openrdf.rio.RDFFormat;
+import org.openrdf.rio.RDFParseException;
 
 public class MainApp extends Application {
 
@@ -97,9 +78,39 @@ public class MainApp extends Application {
 
 			File defaultdb = new File( System.getProperty( "user.home" ), ".jfxhacc" );
 			boolean doinit = ( parameters.isEmpty() && !defaultdb.exists() );
+			List<File> filesToLoad = new ArrayList<>();
 
-			String database
-					= ( parameters.isEmpty() ? defaultdb.getPath() : parameters.get( 0 ) );
+			String database;
+			if ( parameters.isEmpty() ) {
+				database = defaultdb.getPath();
+			}
+			else {
+				database = parameters.get( 0 );
+
+				if ( parameters.size() > 1 ) {
+					ListIterator<String> it = parameters.listIterator( 1 );
+					while ( it.hasNext() ) {
+						String name = it.next();
+						String uname = name.toUpperCase();
+						File file = new File( name );
+
+						if ( file.exists() ) {
+							if ( uname.endsWith( ".RDF" )
+									|| uname.endsWith( ".TTL" )
+									|| uname.endsWith( ".NT" ) ) {
+								filesToLoad.add( file );
+							}
+							else {
+								log.error( "cannot handle file: " + file
+										+ " (nt, rdf, and ttl formats only)" );
+							}
+						}
+						else {
+							log.error( "cannot find file: " + file );
+						}
+					}
+				}
+			}
 
 			rc = DbUtil.createRepository( database );
 
@@ -107,9 +118,24 @@ public class MainApp extends Application {
 				initKb( rc );
 			}
 
+			for ( File file : filesToLoad ) {
+				String ufile = file.getName().toUpperCase();
+				RDFFormat fmt = RDFFormat.NTRIPLES;
+				if ( ufile.endsWith( "RDF" ) ) {
+					fmt = RDFFormat.RDFXML;
+				}
+				else if ( ufile.endsWith( "TTL" ) ) {
+					fmt = RDFFormat.TURTLE;
+				}
+				log.info( "loading " + fmt + " data from " + file );
+				rc.begin();
+				rc.add( file, "", fmt );
+				rc.commit();
+			}
+
 			engine = new RdfDataEngine( rc );
 		}
-		catch ( Exception e ) {
+		catch ( RepositoryException | IOException | RDFParseException e ) {
 			System.err.println( e.getLocalizedMessage() );
 			log.fatal( e, e );
 			Platform.exit();
@@ -156,88 +182,6 @@ public class MainApp extends Application {
 
 	private static void initKb( RepositoryConnection rc ) throws RepositoryException {
 		// this is a good place to add the standard ontology
-
-		Random r = new Random();
-
-		JournalMapper jmap = new JournalMapperImpl( rc );
-		Journal journal = null;
-		try {
-			journal = jmap.create( "General" );
-		}
-		catch ( MapperException ne ) {
-			log.error( ne, ne );
-		}
-
-		PayeeMapperImpl pmap = new PayeeMapperImpl( rc );
-		for ( int i = 0; i < 10; i++ ) {
-			try {
-				pmap.create( "payee-" + i );
-			}
-			catch ( MapperException ne ) {
-				log.error( ne, ne );
-			}
-		}
-
-		AccountMapperImpl amap = new AccountMapperImpl( rc );
-		String[] anames = { "Eh", "BEE", "si" };
-
-		Set<Account> testers = new HashSet<>();
-
-		for ( String name : anames ) {
-			try {
-				Account a = amap.create( name, AccountType.ASSET, new Money( r.nextInt( 50000 ) ),
-						"", "", null );
-				Account e = amap.create( "expense-" + name, AccountType.EXPENSE,
-						new Money( r.nextInt( 50000 ) ), "", "", null );
-
-				testers.add( a );
-				testers.add( e );
-			}
-			catch ( MapperException ne ) {
-				log.error( ne, ne );
-			}
-		}
-
-		TransactionMapper tmap = new TransactionMapperImpl( rc, amap, pmap );
-		try {
-			Map<String, Account> accts = new HashMap<>();
-			Set<Account> alls = new HashSet<>( amap.getAll() );
-			log.debug( testers.equals( alls ) );
-
-			for ( Account a : amap.getAll() ) {
-				accts.put( a.getName(), a );
-			}
-
-			Map<URI, String> payees = pmap.getPayees();
-			Map<String, Payee> flip = new HashMap<>();
-			for ( Map.Entry<URI, String> en : payees.entrySet() ) {
-				flip.put( en.getValue(), new PayeeImpl( en.getKey(), en.getValue() ) );
-			}
-
-			for ( int i = 0; i < 100; i++ ) {
-				Set<Split> splits = new HashSet<>();
-				Money m = new Money( r.nextInt( 5000 ) );
-
-				Account cacct = accts.get( anames[r.nextInt( anames.length )] );
-				Account dacct = accts.get( "expense-" + anames[r.nextInt( anames.length )] );
-
-				Split credit = new SplitImpl( cacct, m, "", ReconcileState.NOT_RECONCILED );
-				Split debit = new SplitImpl( dacct, m.opposite(), "", ReconcileState.NOT_RECONCILED );
-
-				splits.add( credit );
-				splits.add( debit );
-
-				tmap.create( new Date(), flip.get( "payee-" + r.nextInt( 10 ) ),
-						Integer.toString( i ), splits, journal );
-			}
-		}
-		catch ( MapperException me ) {
-			log.error( me, me );
-		}
-
-		amap.release();
-		pmap.release();
-		tmap.release();
 	}
 
 	public static class StageRememberer implements EventHandler<WindowEvent> {
