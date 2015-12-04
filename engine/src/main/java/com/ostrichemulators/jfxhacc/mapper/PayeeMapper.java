@@ -5,6 +5,7 @@
  */
 package com.ostrichemulators.jfxhacc.mapper;
 
+import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.Payee;
 import java.util.Map;
 import org.openrdf.model.URI;

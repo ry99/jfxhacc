@@ -8,6 +8,7 @@ package com.ostrichemulators.jfxhacc.mapper.impl;
 import com.ostrichemulators.jfxhacc.mapper.MapperException;
 import com.ostrichemulators.jfxhacc.mapper.PayeeMapper;
 import com.ostrichemulators.jfxhacc.mapper.QueryHandler;
+import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.Payee;
 import com.ostrichemulators.jfxhacc.model.impl.PayeeImpl;
 import com.ostrichemulators.jfxhacc.model.vocabulary.JfxHacc;

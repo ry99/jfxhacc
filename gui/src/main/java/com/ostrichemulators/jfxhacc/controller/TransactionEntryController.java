@@ -33,6 +33,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -111,7 +113,8 @@ public class TransactionEntryController extends AnchorPane {
 		journal = j;
 
 		try {
-			accounts.setAll( GuiUtils.makeAccountCombo( accountfield, amap.getAll(), amap ) );
+			accounts.setAll( GuiUtils.makeAccountCombo( accountfield, amap.getAll(),
+					amap ) );
 
 			accountfield.setOnKeyTyped( new EventHandler<KeyEvent>() {
 				@Override
@@ -235,6 +238,30 @@ public class TransactionEntryController extends AnchorPane {
 		payeefield.setEditable( true );
 		autocomplete = new AutoCompletePopupHandler( payeefield );
 
+		payeefield.textProperty().addListener( new ChangeListener<String>() {
+
+			@Override
+			public void changed( ObservableValue<? extends String> ov, String t, String t1 ) {
+				if ( newtrans && payeemap.containsKey( t1 ) ) {
+					try {
+						List<Account> populars
+								= amap.getPopularAccounts( payeemap.get( t1 ), account );
+						if ( !populars.isEmpty() ) {
+							Account acct = populars.get( 0 );
+							accountfield.getSelectionModel().select( acct );
+							accountfield.setValue( acct );
+							amountfield.requestFocus();
+							amountfield.selectAll();
+						}
+
+					}
+					catch ( MapperException me ) {
+						log.error( me, me );
+					}
+				}
+			}
+		} );
+
 		accountfield.setEditable( false );
 		recofield.setAllowIndeterminate( true );
 
@@ -352,7 +379,7 @@ public class TransactionEntryController extends AnchorPane {
 	@FXML
 	protected void switchToFrom() {
 		tofromBtn.setText( tofromBtn.getText().equals( "To" ) ? "From" : "To" );
-		for( Split s : trans.getSplits() ){
+		for ( Split s : trans.getSplits() ) {
 			s.setValue( s.getValue().opposite() );
 		}
 	}

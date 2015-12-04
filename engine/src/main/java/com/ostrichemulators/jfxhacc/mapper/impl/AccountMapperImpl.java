@@ -11,6 +11,7 @@ import com.ostrichemulators.jfxhacc.mapper.QueryHandler;
 import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.AccountType;
 import com.ostrichemulators.jfxhacc.model.Money;
+import com.ostrichemulators.jfxhacc.model.Payee;
 import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
 import com.ostrichemulators.jfxhacc.model.impl.AccountImpl;
 import com.ostrichemulators.jfxhacc.model.vocabulary.Accounts;
@@ -333,4 +334,38 @@ public class AccountMapperImpl extends SimpleEntityRdfMapper<Account> implements
 
 		return accts;
 	}
+
+	@Override
+	public List<Account> getPopularAccounts( Payee p, Account except )
+			throws MapperException {
+		Map<String, Value> bindings = bindmap( "payee", p.getId() );
+		bindings.put( "except", except.getId() );
+
+		return query( "SELECT ?acct (COUNT(?split) AS ?cnt) WHERE {"
+				+ "  ?tid trans:payee ?payee . "
+				+ "  ?tid trans:entry ?split ."
+				+ "  ?split splits:account ?acct . FILTER( ?acct != ?except ) ."
+				+ "} GROUP BY ?acct ORDER BY DESC( ?cnt )",
+				bindings,
+				new QueryHandler<List<Account>>() {
+					List<Account> list = new ArrayList<>();
+
+					@Override
+					public void handleTuple( BindingSet set, ValueFactory vf ) {
+						URI id = URI.class.cast( set.getValue( "acct" ) );
+						try {
+							list.add( get( id ) );
+						}
+						catch ( MapperException me ) {
+							log.error( me, me );
+						}
+					}
+
+					@Override
+					public List<Account> getResult() {
+						return list;
+					}
+				} );
+	}
+
 }
