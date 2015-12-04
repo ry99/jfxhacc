@@ -386,9 +386,13 @@ public class TransactionViewController implements ShutdownListener, TransactionL
 		}
 	}
 
+	protected boolean includable( Transaction t ) {
+		return ( null != t.getSplit( account ) );
+	}
+
 	@Override
 	public void added( Transaction t ) {
-		if ( null != t.getSplit( account ) ) {
+		if ( includable( t ) ) {
 			transactions.add( t );
 			transtable.sort();
 		}
@@ -396,7 +400,7 @@ public class TransactionViewController implements ShutdownListener, TransactionL
 
 	@Override
 	public void updated( Transaction t ) {
-		if ( null != t.getSplit( account ) ) {
+		if ( includable( t ) ) {
 			ListIterator<Transaction> transit = transactions.listIterator();
 			while ( transit.hasNext() ) {
 				Transaction listt = transit.next();
@@ -431,10 +435,23 @@ public class TransactionViewController implements ShutdownListener, TransactionL
 		}
 
 		for ( Split s : splits ) {
-			Transaction t = revmap.get( s.getId() );
-			t.getSplit( acct ).setReconciled( s.getReconciled() );
-			// FIXME: don't need this anymore, I think
-			updated( t );
+			try {
+				Transaction t;
+				if ( revmap.containsKey( s.getId() ) ) {
+					t = revmap.get( s.getId() );
+				}
+				else {
+					t = tmap.getTransaction( s );
+				}
+
+				Split spl = t.getSplit( acct );
+				spl.setReconciled( s.getReconciled() );
+				// FIXME: don't need this anymore, I think
+				updated( t );
+			}
+			catch ( MapperException me ) {
+				log.error( me, me );
+			}
 		}
 	}
 

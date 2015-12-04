@@ -355,7 +355,8 @@ public class MainWindowController implements ShutdownListener {
 		try {
 			FXMLLoader loader
 					= new FXMLLoader( getClass().getResource( "/fxml/ReconcileWindow.fxml" ) );
-			ReconcileWindowController controller = new ReconcileWindowController();
+			ReconcileWindowController controller
+					= new ReconcileWindowController( acb.getRecoProperty( acct ) );
 
 			loader.setController( controller );
 			Parent root = loader.load();

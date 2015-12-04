@@ -16,7 +16,7 @@ import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.Transaction;
 import java.util.Collection;
-import javafx.beans.property.Property;
+import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableMap;
@@ -127,11 +127,11 @@ public class AccountBalanceCache {
 		}
 	}
 
-	public Property<Money> getCurrentProperty( Account acct ) {
+	public ObjectProperty<Money> getCurrentProperty( Account acct ) {
 		return balances.get( acct ).current;
 	}
 
-	public Property<Money> getRecoProperty( Account acct ) {
+	public ObjectProperty<Money> getRecoProperty( Account acct ) {
 		return balances.get( acct ).reco;
 	}
 
@@ -156,8 +156,8 @@ public class AccountBalanceCache {
 
 	public static class MoneyPair {
 
-		public final Property<Money> current;
-		public final Property<Money> reco;
+		public final ObjectProperty<Money> current;
+		public final ObjectProperty<Money> reco;
 
 		public MoneyPair( Money c, Money r ) {
 			current = new SimpleObjectProperty<>( c );

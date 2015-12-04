@@ -24,6 +24,7 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.fxml.FXML;
 import javafx.scene.input.KeyEvent;
 import org.apache.log4j.Logger;
+import org.openrdf.model.URI;
 
 /**
  * FXML Controller class
@@ -39,7 +40,8 @@ public class ReconcileViewController extends TransactionViewController {
 	@Override
 	protected List<Transaction> getTransactions() {
 		try {
-			return tmap.getUnreconciled( account, journal, date );
+			List<Transaction> list = tmap.getUnreconciled( account, journal, date );
+			return list;
 		}
 		catch ( MapperException ioe ) {
 			log.error( ioe, ioe );
@@ -169,27 +171,51 @@ public class ReconcileViewController extends TransactionViewController {
 	}
 
 	@Override
+	protected boolean includable( Transaction t ) {
+		boolean ok = ( super.includable( t ) && !t.getDate().after( date ) );
+
+		// check to make sure this isn't an already-reconciled split
+		if ( ok ) {
+			Split s = t.getSplit( account );
+			ok = ( !( null == s || ReconcileState.RECONCILED == s.getReconciled() ) );
+		}
+
+		return ok;
+	}
+
+	@Override
 	public void added( Transaction t ) {
-		if ( null != t.getSplit( account ) ) {
-			transactions.add( t );
-			transtable.sort();
+		super.added( t );
+		if ( includable( t ) ) {
 			updateRecoProp();
 		}
 	}
 
 	@Override
 	public void updated( Transaction t ) {
-		if ( null != t.getSplit( account ) ) {
-			ListIterator<Transaction> transit = transactions.listIterator();
-			while ( transit.hasNext() ) {
-				Transaction listt = transit.next();
-				if ( listt.equals( t ) ) {
-					transit.set( t );
-					transtable.sort();
+		super.updated( t );
+		// see if this new transaction is in our
+		// current list...if not, we need to add it
+
+		final URI tid = t.getId();
+		if ( includable( t ) ) {
+			boolean found = false;
+			for ( Transaction tt : getData() ) {
+				if ( tt.getId().equals( tid ) ) {
+					found = true;
 					updateRecoProp();
-					break;
+					break; // nothing more to do...it's already been updated in super
 				}
 			}
+
+			if ( !found ) {
+				super.added( t );
+			}
+		}
+		else {
+			// see if we need to remove this split (already reconciled)
+			removed( tid );
+			updateRecoProp();
 		}
 	}
 
@@ -209,5 +235,11 @@ public class ReconcileViewController extends TransactionViewController {
 		catch ( MapperException me ) {
 			log.error( me, me );
 		}
+	}
+
+
+	@Override
+	public void reconciled( Account acct, Collection<Split> splits ) {
+		super.reconciled( acct, splits );
 	}
 }

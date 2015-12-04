@@ -261,7 +261,9 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 				return null;
 			}
 
-			return get( URI.class.cast( stmts.get( 0 ).getSubject() ) );
+			Transaction trans = get( URI.class.cast( stmts.get( 0 ).getSubject() ) );
+			trans.setSplits( getSplitMap( trans.getId() ) );
+			return trans;
 		}
 		catch ( RepositoryException re ) {
 			throw new MapperException( re );
