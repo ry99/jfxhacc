@@ -58,4 +58,14 @@ public interface AccountMapper extends DataMapper<Account> {
 	 * @throws MapperException
 	 */
 	public List<Account> getPopularAccounts( Payee p, Account except ) throws MapperException;
+
+	/**
+	 * Gets the most popular non-expense accounts. Popularity is determined by the
+	 * number of transactions that reference the account
+	 *
+	 * @return a high-to-low ordered list of accounts
+	 * @param topx limit the list to the topX entries. if &lt; 1, do not limit
+	 * @throws MapperException
+	 */
+	public List<Account> getPopularAccounts( int topx ) throws MapperException;
 }

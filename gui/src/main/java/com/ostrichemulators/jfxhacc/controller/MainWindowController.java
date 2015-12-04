@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.prefs.Preferences;
 import javafx.application.Platform;
@@ -44,10 +45,13 @@ import javafx.scene.control.Label;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TitledPane;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeTableColumn;
 import javafx.scene.control.TreeTableColumn.CellDataFeatures;
 import javafx.scene.control.TreeTableView;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.apache.log4j.Logger;
 import org.openrdf.model.URI;
@@ -85,6 +89,8 @@ public class MainWindowController implements ShutdownListener {
 	private Label transnum;
 	@FXML
 	private Button recoBtn;
+	@FXML
+	private VBox topxbox;
 
 	private final TransactionViewController transactions = new TransactionViewController();
 	private AccountBalanceCache acb;
@@ -110,6 +116,32 @@ public class MainWindowController implements ShutdownListener {
 		try {
 			journal = engine.getJournalMapper().getAll().iterator().next();
 			toselect1 = retree( amap, root, selected );
+
+			List<Account> accts = amap.getPopularAccounts( 10 );
+			ToggleGroup bg = new ToggleGroup();
+			for ( Account a : accts ) {
+				ToggleButton btn = new ToggleButton( a.getName() );
+				btn.prefWidthProperty().bind( topxbox.widthProperty() );
+				btn.prefHeightProperty().bind( topxbox.heightProperty().divide( accts.size() ) );
+				btn.setToggleGroup( bg );
+				topxbox.getChildren().add( btn );
+
+				btn.setOnAction( ( ActionEvent event ) -> {
+					TreeItem<Account> ti = findItem( a );
+					accounts.getSelectionModel().select( ti );
+					accounts.scrollTo( accounts.getRow( ti ) );
+				} );
+				accounts.getSelectionModel().selectedItemProperty().addListener( new ChangeListener<TreeItem<Account>>() {
+
+					@Override
+					public void changed( ObservableValue<? extends TreeItem<Account>> ov, TreeItem<Account> t, TreeItem<Account> t1 ) {
+						Account treeval = t1.getValue();
+						if ( treeval.equals( a ) ) {
+							btn.setSelected( true );
+						}
+					}
+				} );
+			}
 		}
 		catch ( MapperException me ) {
 			log.error( me, me );
@@ -143,6 +175,7 @@ public class MainWindowController implements ShutdownListener {
 				accounts.getSelectionModel().setSelectionMode( SelectionMode.SINGLE );
 				if ( null != toselect ) {
 					accounts.getSelectionModel().select( toselect );
+					accounts.scrollTo( accounts.getRow( toselect ) );
 				}
 
 				double splitterpos = prefs.getDouble( PREF_SPLITTER, 0.25 );

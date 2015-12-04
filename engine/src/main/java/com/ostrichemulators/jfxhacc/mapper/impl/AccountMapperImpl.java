@@ -368,4 +368,31 @@ public class AccountMapperImpl extends SimpleEntityRdfMapper<Account> implements
 				} );
 	}
 
+	@Override
+	public List<Account> getPopularAccounts( int topx ) throws MapperException {
+		return query( "	SELECT ?acct (COUNT(?split) AS ?cnt) WHERE {"
+				+ "  ?split splits:account ?acct ."
+				+ "  ?acct accounts:accountType ?atype . FILTER ( ?atype != jfxhacc:expense ) "
+				+ "} GROUP BY ?acct ORDER BY DESC( ?cnt )",
+				null,
+				new QueryHandler<List<Account>>() {
+					List<Account> list = new ArrayList<>();
+
+					@Override
+					public void handleTuple( BindingSet set, ValueFactory vf ) {
+						URI id = URI.class.cast( set.getValue( "acct" ) );
+						try {
+							list.add( get( id ) );
+						}
+						catch ( MapperException me ) {
+							log.error( me, me );
+						}
+					}
+
+					@Override
+					public List<Account> getResult() {
+						return ( list.size() > topx ? list.subList( 0, topx ) : list );
+					}
+				} );
+	}
 }
