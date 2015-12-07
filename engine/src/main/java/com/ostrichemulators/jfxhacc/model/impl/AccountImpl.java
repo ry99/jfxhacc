@@ -8,7 +8,7 @@ package com.ostrichemulators.jfxhacc.model.impl;
 import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.AccountType;
 import com.ostrichemulators.jfxhacc.model.Money;
-import com.ostrichemulators.jfxhacc.model.vocabulary.JfxHacc;
+import com.ostrichemulators.jfxhacc.model.vocabulary.Accounts;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleObjectProperty;
@@ -29,13 +29,13 @@ public class AccountImpl extends IDableImpl implements Account {
 	private final AccountType type;
 
 	public AccountImpl( AccountType atype, URI id ) {
-		super( JfxHacc.ACCOUNT_TYPE, id );
+		super( Accounts.TYPE, id );
 		type = atype;
 		openingbal.set( new Money( 0 ) );
 	}
 
 	public AccountImpl( AccountType atype ) {
-		super( JfxHacc.ACCOUNT_TYPE );
+		super( Accounts.TYPE );
 		type = atype;
 		openingbal.set( new Money( 0 ) );
 	}

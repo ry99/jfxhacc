@@ -10,10 +10,12 @@ import com.ostrichemulators.jfxhacc.mapper.AccountMapper;
 import com.ostrichemulators.jfxhacc.mapper.DataMapper;
 import com.ostrichemulators.jfxhacc.mapper.JournalMapper;
 import com.ostrichemulators.jfxhacc.mapper.PayeeMapper;
+import com.ostrichemulators.jfxhacc.mapper.RecurrenceMapper;
 import com.ostrichemulators.jfxhacc.mapper.TransactionMapper;
 import com.ostrichemulators.jfxhacc.mapper.impl.AccountMapperImpl;
 import com.ostrichemulators.jfxhacc.mapper.impl.JournalMapperImpl;
 import com.ostrichemulators.jfxhacc.mapper.impl.PayeeMapperImpl;
+import com.ostrichemulators.jfxhacc.mapper.impl.RecurrenceMapperImpl;
 import com.ostrichemulators.jfxhacc.mapper.impl.TransactionMapperImpl;
 import java.io.File;
 import java.io.FileWriter;
@@ -47,6 +49,7 @@ public class RdfDataEngine implements DataEngine {
 	private final JournalMapper jmap;
 	private final PayeeMapper pmap;
 	private final TransactionMapper tmap;
+	private final RecurrenceMapper rmap;
 
 	public RdfDataEngine( RepositoryConnection conn ) {
 		rc = conn;
@@ -54,6 +57,7 @@ public class RdfDataEngine implements DataEngine {
 		jmap = new JournalMapperImpl( rc );
 		pmap = new PayeeMapperImpl( rc );
 		tmap = new TransactionMapperImpl( rc, amap, pmap );
+		rmap = new RecurrenceMapperImpl( rc, tmap );
 	}
 
 	@Override
@@ -74,6 +78,11 @@ public class RdfDataEngine implements DataEngine {
 	@Override
 	public TransactionMapper getTransactionMapper() {
 		return tmap;
+	}
+
+	@Override
+	public RecurrenceMapper getRecurrenceMapper() {
+		return rmap;
 	}
 
 	@Override

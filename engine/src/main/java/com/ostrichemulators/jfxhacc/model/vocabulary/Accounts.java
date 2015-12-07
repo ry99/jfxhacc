@@ -18,8 +18,10 @@ public class Accounts {
 	}
 
 	public static final String PREFIX = "accounts";
-	public static final String BASE = "http://com.ostrich-emulators/jfxhacc/accounts";
+	public static final String BASE = JfxHacc.BASE + "/account";
 	public static final String NAMESPACE = BASE + "/";
+
+	public static final URI TYPE = new URIImpl( BASE );
 
 	public static final URI TYPE_PRED = new URIImpl( NAMESPACE + "accountType" );
 	public static final URI OBAL_PRED = new URIImpl( NAMESPACE + "openingBalance" );

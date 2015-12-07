@@ -20,7 +20,6 @@ import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
 import com.ostrichemulators.jfxhacc.model.Transaction;
 import com.ostrichemulators.jfxhacc.model.impl.SplitImpl;
 import com.ostrichemulators.jfxhacc.model.impl.TransactionImpl;
-import com.ostrichemulators.jfxhacc.model.vocabulary.JfxHacc;
 import com.ostrichemulators.jfxhacc.model.vocabulary.Splits;
 import com.ostrichemulators.jfxhacc.model.vocabulary.Transactions;
 import com.ostrichemulators.jfxhacc.utility.DbUtil;
@@ -62,7 +61,7 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 
 	public TransactionMapperImpl( RepositoryConnection repoc, AccountMapper amap,
 			PayeeMapper pmap ) {
-		this( repoc, amap, pmap, JfxHacc.TRANSACTION_TYPE );
+		this( repoc, amap, pmap, Transactions.TYPE );
 	}
 
 	public TransactionMapperImpl( RepositoryConnection repoc, AccountMapper amap,
@@ -93,10 +92,10 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 		}
 
 		if ( null == id ) {
-			id = UriUtil.randomUri( JfxHacc.SPLIT_TYPE );
+			id = UriUtil.randomUri( Splits.TYPE );
 		}
 		s.setId( id );
-		rc.add( id, RDF.TYPE, JfxHacc.SPLIT_TYPE );
+		rc.add( id, RDF.TYPE, Splits.TYPE );
 		rc.add( id, Splits.ACCOUNT_PRED, s.getAccount().getId() );
 		if ( null != s.getMemo() ) {
 			rc.add( id, Splits.MEMO_PRED, vf.createLiteral( s.getMemo() ) );
@@ -121,19 +120,22 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 	public Transaction create( Date d, Payee p, String number, Collection<Split> splits,
 			Journal journal ) throws MapperException {
 		Transaction transaction = new TransactionImpl();
+		transaction.setJournal( journal );
 		transaction.setDate( d );
 		transaction.setPayee( p );
 		transaction.setNumber( number );
 		transaction.setSplits( new HashSet<>( splits ) );
-		return create( transaction, journal );
+		return create( transaction );
 	}
 
 	@Override
-	public Transaction create( Transaction t, Journal j ) throws MapperException {
+	public Transaction create( Transaction t ) throws MapperException {
 		RepositoryConnection rc = getConnection();
 		ValueFactory vf = rc.getValueFactory();
 		try {
-			rc.begin();
+			if ( !rc.isActive() ) {
+				rc.begin();
+			}
 
 			Map<Split, URI> realsplits = new HashMap<>();
 			for ( Split sp : t.getSplits() ) {
@@ -149,11 +151,14 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 				rc.add( id, Transactions.NUMBER_PRED, vf.createLiteral( t.getNumber() ) );
 			}
 
-			rc.add( id, Transactions.JOURNAL_PRED, j.getId() );
+			rc.add( id, Transactions.JOURNAL_PRED, t.getJournal().getId() );
 			for ( URI splitid : realsplits.values() ) {
 				rc.add( id, Transactions.SPLIT_PRED, splitid );
 			}
-			rc.commit();
+
+			if ( !rc.isActive() ) {
+				rc.commit();
+			}
 
 			TransactionImpl trans
 					= new TransactionImpl( id, t.getDate(), t.getNumber(), t.getPayee() );
@@ -370,8 +375,10 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 		Map<String, Value> bindings = bindmap( "acct", acct.getId() );
 		bindings.put( "jnl", journal.getId() );
 
+		// don't include recurring transactions
 		List<Transaction> transactions = query( "SELECT ?t ?p ?o WHERE {"
-				+ "  ?t trans:entry ?s."
+				+ "  ?t trans:entry ?s . FILTER NOT EXISTS { ?t recur:recurrence ?z } ."
+				+ "  ?t a jfxhacc:transaction ."
 				+ "  ?s splits:account ?acct ."
 				+ "  ?t trans:journal ?jnl ."
 				+ "  ?t ?p ?o "
@@ -437,7 +444,7 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 		bindings.put( "recostate", new LiteralImpl( ReconcileState.RECONCILED.toString() ) );
 
 		List<Transaction> transactions = query( "SELECT ?t ?p ?o WHERE {"
-				+ "  ?t trans:entry ?s."
+				+ "  ?t trans:entry ?s . FILTER NOT EXISTS { ?t recur:recurrence ?z } ."
 				+ "  ?s splits:account ?acct ."
 				+ "  ?t trans:journal ?jnl ."
 				+ "  ?s splits:reconciled ?reco FILTER( ?reco != ?recostate ) ."

@@ -18,8 +18,10 @@ public class Splits {
 	}
 
 	public static final String PREFIX = "splits";
-	public static final String BASE = "http://com.ostrich-emulators/jfxhacc/split";
+	public static final String BASE = JfxHacc.BASE + "/split";
 	public static final String NAMESPACE = BASE + "/";
+
+	public static final URI TYPE = new URIImpl( BASE );
 
 	public static final URI ACCOUNT_PRED = new URIImpl( NAMESPACE + "account" );
 	public static final URI VALUE_PRED = new URIImpl( NAMESPACE + "value" );

@@ -23,13 +23,6 @@ public class JfxHacc {
 
 	public static final URI DATASET_TYPE = new URIImpl( NAMESPACE + "dataset" );
 	//public static final URI VOID_TYPE = new URIImpl( "http://rdfs.org/ns/void#Dataset" );
-	
-	public static final URI ACCOUNT_TYPE = new URIImpl( NAMESPACE + "account" );
-	public static final URI TRANSACTION_TYPE = new URIImpl( NAMESPACE + "transaction" );
-	public static final URI JOURNAL_TYPE = new URIImpl( NAMESPACE + "journal" );
-	public static final URI SPLIT_TYPE = new URIImpl( NAMESPACE + "split" );
-	public static final URI PAYEE_TYPE = new URIImpl( NAMESPACE + "payee" );
-	public static final URI RECURRING_TYPE = new URIImpl( NAMESPACE + "recurring" );
 
 	public static final URI ASSET = new URIImpl( NAMESPACE + "asset" );
 	public static final URI EQUITY = new URIImpl( NAMESPACE + "equity" );

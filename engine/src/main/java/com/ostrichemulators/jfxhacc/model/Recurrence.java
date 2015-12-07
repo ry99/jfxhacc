@@ -7,6 +7,7 @@ package com.ostrichemulators.jfxhacc.model;
 
 import java.util.Date;
 import javafx.beans.property.Property;
+import javafx.beans.property.StringProperty;
 
 /**
  * A transaction is a complex class that brings together splits, accounts, and
@@ -14,11 +15,11 @@ import javafx.beans.property.Property;
  *
  * @author ryan
  */
-public interface Recurring extends Transaction {
+public interface Recurrence extends IDable {
 
 	public static enum Frequency {
 
-		NEVER, DAILY, WEEKLY, BIWEEKLY, SEMIMONTLY, MONTHLY,
+		NEVER, ONCE, DAILY, WEEKLY, BIWEEKLY, SEMIMONTLY, MONTHLY,
 		BIMONTHLY, QUARTERLY, SEMIYEARLY, YEARLY
 	}
 
@@ -33,5 +34,12 @@ public interface Recurring extends Transaction {
 	public Date getNextRun();
 
 	public Property<Date> getNextRunProperty();
+	
+	public String getName();
+	
+	public void setName( String n );
 
+	public StringProperty getNameProperty();
+
+	public boolean isDue( Date d );
 }

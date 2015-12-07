@@ -8,10 +8,9 @@ package com.ostrichemulators.jfxhacc.mapper.impl;
 import com.ostrichemulators.jfxhacc.mapper.MapperException;
 import com.ostrichemulators.jfxhacc.mapper.PayeeMapper;
 import com.ostrichemulators.jfxhacc.mapper.QueryHandler;
-import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.Payee;
 import com.ostrichemulators.jfxhacc.model.impl.PayeeImpl;
-import com.ostrichemulators.jfxhacc.model.vocabulary.JfxHacc;
+import com.ostrichemulators.jfxhacc.model.vocabulary.Payees;
 import java.util.HashMap;
 import java.util.Map;
 import org.openrdf.model.URI;
@@ -29,7 +28,7 @@ import org.openrdf.repository.RepositoryException;
 public class PayeeMapperImpl extends SimpleEntityRdfMapper<Payee> implements PayeeMapper {
 
 	public PayeeMapperImpl( RepositoryConnection rc ) {
-		super( rc, JfxHacc.PAYEE_TYPE );
+		super( rc, Payees.TYPE );
 	}
 
 	@Override
@@ -64,7 +63,7 @@ public class PayeeMapperImpl extends SimpleEntityRdfMapper<Payee> implements Pay
 	@Override
 	public Payee createOrGet( String name ) throws MapperException {
 		Map<String, Value> binds = bindmap( "label", name );
-		binds.put( "payee", JfxHacc.PAYEE_TYPE );
+		binds.put( "payee", Payees.TYPE );
 
 		Value id = oneval( "SELECT ?id WHERE { ?id a ?payee . ?id rdfs:label ?label }",
 				binds );
@@ -74,7 +73,7 @@ public class PayeeMapperImpl extends SimpleEntityRdfMapper<Payee> implements Pay
 	@Override
 	public Map<URI, String> getPayees() throws MapperException {
 		return query( "SELECT ?id ?label WHERE { ?id a ?payee . ?id rdfs:label ?label }",
-				super.bindmap( "payee", JfxHacc.PAYEE_TYPE ),
+				super.bindmap( "payee", Payees.TYPE ),
 				new QueryHandler<Map<URI, String>>() {
 					Map<URI, String> map = new HashMap<>();
 

@@ -6,7 +6,7 @@
 package com.ostrichemulators.jfxhacc.model.impl;
 
 import com.ostrichemulators.jfxhacc.model.Journal;
-import com.ostrichemulators.jfxhacc.model.vocabulary.JfxHacc;
+import com.ostrichemulators.jfxhacc.model.vocabulary.Journals;
 import org.openrdf.model.URI;
 
 /**
@@ -18,11 +18,11 @@ public class JournalImpl extends IDableImpl implements Journal {
 	private String name;
 
 	public JournalImpl( String name ) {
-		super( JfxHacc.JOURNAL_TYPE );
+		super( Journals.TYPE );
 	}
 
 	public JournalImpl( URI id ) {
-		super( JfxHacc.JOURNAL_TYPE, id );
+		super( Journals.TYPE, id );
 	}
 
 	public JournalImpl( URI id, String name ) {

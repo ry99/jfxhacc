@@ -8,7 +8,7 @@ package com.ostrichemulators.jfxhacc.model.impl;
 import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.Split;
-import com.ostrichemulators.jfxhacc.model.vocabulary.JfxHacc;
+import com.ostrichemulators.jfxhacc.model.vocabulary.Splits;
 import java.util.Objects;
 import java.util.concurrent.Callable;
 import javafx.beans.binding.Bindings;
@@ -33,21 +33,21 @@ public class SplitImpl extends IDableImpl implements Split {
 	private final Property<Account> acct = new SimpleObjectProperty<>();
 
 	public SplitImpl() {
-		super( JfxHacc.SPLIT_TYPE );
+		super( Splits.TYPE );
 	}
 
 	public SplitImpl( URI id ) {
-		super( JfxHacc.SPLIT_TYPE, id );
+		super( Splits.TYPE, id );
 	}
 
 	public SplitImpl( Money m ) {
-		super( JfxHacc.SPLIT_TYPE );
+		super( Splits.TYPE );
 		isdebit = m.isNegative();
 		value.setValue( m.abs() );
 	}
 
 	public SplitImpl( URI id, Money m ) {
-		super( JfxHacc.SPLIT_TYPE, id );
+		super( Splits.TYPE, id );
 		isdebit = m.isNegative();
 		value.setValue( m.abs() );
 	}

@@ -9,7 +9,7 @@ import com.ostrichemulators.jfxhacc.mapper.JournalMapper;
 import com.ostrichemulators.jfxhacc.mapper.MapperException;
 import com.ostrichemulators.jfxhacc.model.Journal;
 import com.ostrichemulators.jfxhacc.model.impl.JournalImpl;
-import com.ostrichemulators.jfxhacc.model.vocabulary.JfxHacc;
+import com.ostrichemulators.jfxhacc.model.vocabulary.Journals;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.ValueFactory;
@@ -24,7 +24,7 @@ import org.openrdf.repository.RepositoryException;
 public class JournalMapperImpl extends SimpleEntityRdfMapper<Journal> implements JournalMapper {
 
 	public JournalMapperImpl( RepositoryConnection rc ) {
-		super( rc, JfxHacc.JOURNAL_TYPE );
+		super( rc, Journals.TYPE );
 	}
 
 	@Override

@@ -15,7 +15,6 @@ import com.ostrichemulators.jfxhacc.model.Payee;
 import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
 import com.ostrichemulators.jfxhacc.model.impl.AccountImpl;
 import com.ostrichemulators.jfxhacc.model.vocabulary.Accounts;
-import com.ostrichemulators.jfxhacc.model.vocabulary.JfxHacc;
 import com.ostrichemulators.jfxhacc.model.vocabulary.Splits;
 import com.ostrichemulators.jfxhacc.model.vocabulary.Transactions;
 import com.ostrichemulators.jfxhacc.utility.TreeNode;
@@ -49,7 +48,7 @@ public class AccountMapperImpl extends SimpleEntityRdfMapper<Account> implements
 	private static final Logger log = Logger.getLogger( AccountMapperImpl.class );
 
 	public AccountMapperImpl( RepositoryConnection rc ) {
-		super( rc, JfxHacc.ACCOUNT_TYPE );
+		super( rc, Accounts.TYPE );
 	}
 
 	@Override
@@ -137,7 +136,7 @@ public class AccountMapperImpl extends SimpleEntityRdfMapper<Account> implements
 			rc.begin();
 			URI id = acct.getId();
 			rc.remove( id, null, null );
-			rc.add( id, RDF.TYPE, JfxHacc.ACCOUNT_TYPE );
+			rc.add( id, RDF.TYPE, Accounts.TYPE );
 			rc.add( id, RDFS.LABEL, vf.createLiteral( acct.getName() ) );
 			rc.add( id, Accounts.TYPE_PRED, acct.getAccountType().getUri() );
 			rc.add( id, Accounts.OBAL_PRED, vf.createLiteral( acct.getOpeningBalance().value() ) );
@@ -243,7 +242,8 @@ public class AccountMapperImpl extends SimpleEntityRdfMapper<Account> implements
 		String sparql = "SELECT ( SUM( ?val ) AS ?sum ) WHERE {"
 				+ "  ?split ?sval ?val . "
 				+ "  ?split ?sreco ?reco ."
-				+ "  ?split ?sacct ?accountid "
+				+ "  ?split ?sacct ?accountid ."
+				+ "  ?t trans:entry ?split . FILTER NOT EXISTS { ?t recur:recurrence ?z } "
 				+ "}";
 		Map<String, Value> map = bindmap( "accountid", a.getId() );
 		map.put( "sval", Splits.VALUE_PRED );

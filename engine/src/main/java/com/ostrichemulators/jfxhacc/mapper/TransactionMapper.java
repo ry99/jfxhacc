@@ -47,7 +47,7 @@ public interface TransactionMapper extends DataMapper<Transaction> {
 	public Transaction create( Date d, Payee p, String number, Collection<Split> splits,
 			Journal journal ) throws MapperException;
 
-	public Transaction create( Transaction t, Journal j ) throws MapperException;
+	public Transaction create( Transaction t ) throws MapperException;
 
 	/**
 	 * Sets the persisted state of the given splits to the given reconcile state,

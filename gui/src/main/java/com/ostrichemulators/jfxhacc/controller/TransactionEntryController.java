@@ -178,7 +178,8 @@ public class TransactionEntryController extends AnchorPane {
 			trans.setPayee( payee );
 
 			if ( newtrans ) {
-				tmap.create( trans, journal );
+				trans.setJournal( journal );
+				tmap.create( trans );
 				for ( CloseListener c : listenees ) {
 					c.added( trans );
 				}

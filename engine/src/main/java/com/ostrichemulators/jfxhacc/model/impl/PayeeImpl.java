@@ -6,7 +6,7 @@
 package com.ostrichemulators.jfxhacc.model.impl;
 
 import com.ostrichemulators.jfxhacc.model.Payee;
-import com.ostrichemulators.jfxhacc.model.vocabulary.JfxHacc;
+import com.ostrichemulators.jfxhacc.model.vocabulary.Payees;
 import org.openrdf.model.URI;
 
 /**
@@ -18,12 +18,12 @@ public class PayeeImpl extends IDableImpl implements Payee {
 	private String name;
 
 	public PayeeImpl( String n ) {
-		super( JfxHacc.PAYEE_TYPE );
+		super( Payees.TYPE );
 		name = n;
 	}
 
 	public PayeeImpl( URI id, String name ) {
-		super( JfxHacc.PAYEE_TYPE, id );
+		super( Payees.TYPE, id );
 		this.name = name;
 	}
 

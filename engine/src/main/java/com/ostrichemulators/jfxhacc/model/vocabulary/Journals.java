@@ -12,13 +12,13 @@ import org.openrdf.model.impl.URIImpl;
  *
  * @author ryan
  */
-public class Payees {
+public class Journals {
 
-	private Payees() {
+	private Journals() {
 	}
 
-	public static final String PREFIX = "payees";
-	public static final String BASE = JfxHacc.BASE + "/payee";
+	public static final String PREFIX = "journals";
+	public static final String BASE = JfxHacc.BASE + "/journal";
 	public static final String NAMESPACE = BASE + "/";
 
 	public static final URI TYPE = new URIImpl( BASE );

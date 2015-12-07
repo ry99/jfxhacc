@@ -9,7 +9,6 @@ import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.AccountType;
 import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.vocabulary.Accounts;
-import com.ostrichemulators.jfxhacc.model.vocabulary.JfxHacc;
 import com.ostrichemulators.jfxhacc.utility.DbUtil;
 import com.ostrichemulators.jfxhacc.utility.TreeNode;
 import com.ostrichemulators.jfxhacc.utility.UriUtil;
@@ -28,7 +27,6 @@ import static org.junit.Assert.*;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.impl.LiteralImpl;
-import org.openrdf.model.impl.StatementImpl;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.repository.RepositoryConnection;
@@ -41,7 +39,7 @@ public class AccountMapperImplTest {
 
 	private RepositoryConnection rc;
 	private AccountMapperImpl ami;
-	private static final URI GETID = UriUtil.randomUri( JfxHacc.ACCOUNT_TYPE );
+	private static final URI GETID = UriUtil.randomUri( Accounts.TYPE );
 
 	public AccountMapperImplTest() {
 	}
@@ -60,12 +58,10 @@ public class AccountMapperImplTest {
 		ami = new AccountMapperImpl( rc );
 
 		rc.begin();
-		rc.add( new StatementImpl( GETID, RDF.TYPE, JfxHacc.ACCOUNT_TYPE ) );
-		rc.add( new StatementImpl( GETID, RDFS.LABEL, new LiteralImpl( "tester" ) ) );
-		rc.add( new StatementImpl( GETID, Accounts.TYPE_PRED,
-				AccountType.EQUITY.getUri() ) );
-		rc.add( new StatementImpl( GETID, Accounts.OBAL_PRED,
-				rc.getValueFactory().createLiteral( 1507 ) ) );
+		rc.add( GETID, RDF.TYPE, Accounts.TYPE );
+		rc.add( GETID, RDFS.LABEL, new LiteralImpl( "tester" ) );
+		rc.add( GETID, Accounts.TYPE_PRED, AccountType.EQUITY.getUri() );
+		rc.add( GETID, Accounts.OBAL_PRED,	rc.getValueFactory().createLiteral( 1507 ) );
 		rc.commit();
 	}
 

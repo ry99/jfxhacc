@@ -10,7 +10,7 @@ import com.ostrichemulators.jfxhacc.model.Journal;
 import com.ostrichemulators.jfxhacc.model.Payee;
 import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.Transaction;
-import com.ostrichemulators.jfxhacc.model.vocabulary.JfxHacc;
+import com.ostrichemulators.jfxhacc.model.vocabulary.Transactions;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Set;
@@ -37,11 +37,11 @@ public class TransactionImpl extends IDableImpl implements Transaction {
 	private final Property<Journal> jnl = new SimpleObjectProperty<>();
 
 	public TransactionImpl() {
-		super( JfxHacc.TRANSACTION_TYPE );
+		super( Transactions.TYPE );
 	}
 
 	public TransactionImpl( URI id ) {
-		super( JfxHacc.TRANSACTION_TYPE, id );
+		super( Transactions.TYPE, id );
 	}
 
 	public TransactionImpl( URI id, Payee payee ) {
@@ -49,7 +49,7 @@ public class TransactionImpl extends IDableImpl implements Transaction {
 	}
 
 	public TransactionImpl( URI id, Date date, String num, Payee payee ) {
-		super( JfxHacc.TRANSACTION_TYPE, id );
+		super( Transactions.TYPE, id );
 		this.payee.setValue( payee );
 		this.date.setValue( date );
 		this.number.set( num );

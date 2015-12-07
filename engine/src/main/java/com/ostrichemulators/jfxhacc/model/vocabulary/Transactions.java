@@ -5,6 +5,7 @@
  */
 package com.ostrichemulators.jfxhacc.model.vocabulary;
 
+import static com.ostrichemulators.jfxhacc.model.vocabulary.JfxHacc.NAMESPACE;
 import org.openrdf.model.URI;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.vocabulary.DCTERMS;
@@ -19,8 +20,10 @@ public class Transactions {
 	}
 
 	public static final String PREFIX = "trans";
-	public static final String BASE = "http://com.ostrich-emulators/jfxhacc/transaction";
+	public static final String BASE = JfxHacc.BASE + "/transaction";
 	public static final String NAMESPACE = BASE + "/";
+
+	public static final URI TYPE = new URIImpl( BASE );
 
 	public static final URI DATE_PRED = DCTERMS.CREATED;
 	public static final URI PAYEE_PRED = new URIImpl( NAMESPACE + "payee" );

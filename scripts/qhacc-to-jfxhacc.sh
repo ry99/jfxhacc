@@ -28,20 +28,24 @@ $SQLITE3 $DB "SELECT x.transactionid, x.splitid FROM trans_split x JOIN transent
 $SQLITE3 $DB "SELECT j.id, j.name FROM journal j" > $JOURNALS
 
 cat << END_TEXT
-@prefix a: <http://com.ostrich-emulators/jfxhacc/account#> .
-@prefix splits: <http://com.ostrich-emulators/jfxhacc/split/> .
-@prefix payees: <http://com.ostrich-emulators/jfxhacc/payees/> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
-@prefix j: <http://com.ostrich-emulators/jfxhacc/journal#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
-@prefix p: <http://com.ostrich-emulators/jfxhacc/payee#> .
-@prefix s: <http://com.ostrich-emulators/jfxhacc/split#> .
-@prefix t: <http://com.ostrich-emulators/jfxhacc/transaction#> .
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
-@prefix jfxhacc: <http://com.ostrich-emulators/jfxhacc/> .
-@prefix accounts: <http://com.ostrich-emulators/jfxhacc/accounts/> .
-@prefix trans: <http://com.ostrich-emulators/jfxhacc/transaction/> .
 @prefix dcterms: <http://purl.org/dc/terms/> .
+
+@prefix jfxhacc: <http://com.ostrich-emulators/jfxhacc/> .
+@prefix journals: <http://com.ostrich-emulators/jfxhacc/journal/> .
+@prefix accounts: <http://com.ostrich-emulators/jfxhacc/account/> .
+@prefix payees: <http://com.ostrich-emulators/jfxhacc/payee/> .
+@prefix trans: <http://com.ostrich-emulators/jfxhacc/transaction/> .
+@prefix splits: <http://com.ostrich-emulators/jfxhacc/split/> .
+
+@prefix j: <http://com.ostrich-emulators/jfxhacc/journal#> .
+@prefix a: <http://com.ostrich-emulators/jfxhacc/account#> .
+@prefix p: <http://com.ostrich-emulators/jfxhacc/payee#> .
+@prefix t: <http://com.ostrich-emulators/jfxhacc/transaction#> .
+@prefix s: <http://com.ostrich-emulators/jfxhacc/split#> .
+
 
 <http://com.ostrich-emulators/jfxhacc#qhacc-export-$$> a jfxhacc:dataset .
 END_TEXT
