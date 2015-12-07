@@ -6,6 +6,7 @@
 package com.ostrichemulators.jfxhacc.model.impl;
 
 import com.ostrichemulators.jfxhacc.model.Account;
+import com.ostrichemulators.jfxhacc.model.Journal;
 import com.ostrichemulators.jfxhacc.model.Payee;
 import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.Transaction;
@@ -33,6 +34,7 @@ public class TransactionImpl extends IDableImpl implements Transaction {
 	private final StringProperty number = new SimpleStringProperty();
 	private final SetProperty<Split> splits
 			= new SimpleSetProperty<>( FXCollections.observableSet() );
+	private final Property<Journal> jnl = new SimpleObjectProperty<>();
 
 	public TransactionImpl() {
 		super( JfxHacc.TRANSACTION_TYPE );
@@ -132,5 +134,20 @@ public class TransactionImpl extends IDableImpl implements Transaction {
 	@Override
 	public StringProperty getNumberProperty() {
 		return number;
+	}
+
+	@Override
+	public void setJournal( Journal j ) {
+		jnl.setValue( j );
+	}
+
+	@Override
+	public Journal getJournal() {
+		return jnl.getValue();
+	}
+
+	@Override
+	public Property<Journal> getJournalProperty() {
+		return jnl;
 	}
 }

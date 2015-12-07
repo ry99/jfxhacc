@@ -8,6 +8,7 @@ package com.ostrichemulators.jfxhacc.utility;
 import com.ostrichemulators.jfxhacc.model.vocabulary.Accounts;
 import com.ostrichemulators.jfxhacc.model.vocabulary.JfxHacc;
 import com.ostrichemulators.jfxhacc.model.vocabulary.Payees;
+import com.ostrichemulators.jfxhacc.model.vocabulary.Recurrings;
 import com.ostrichemulators.jfxhacc.model.vocabulary.Splits;
 import com.ostrichemulators.jfxhacc.model.vocabulary.Transactions;
 import info.aduna.iteration.Iterations;
@@ -141,12 +142,14 @@ public class DbUtil {
 		rc.setNamespace( Splits.PREFIX, Splits.NAMESPACE );
 		rc.setNamespace( Transactions.PREFIX, Transactions.NAMESPACE );
 		rc.setNamespace( Payees.PREFIX, Payees.NAMESPACE );
+		rc.setNamespace( Recurrings.PREFIX, Recurrings.NAMESPACE );
 		rc.setNamespace( DCTERMS.PREFIX, DCTERMS.NAMESPACE );
 		rc.setNamespace( "t", "http://com.ostrich-emulators/jfxhacc/transaction#" );
 		rc.setNamespace( "p", "http://com.ostrich-emulators/jfxhacc/payee#" );
 		rc.setNamespace( "a", "http://com.ostrich-emulators/jfxhacc/account#" );
 		rc.setNamespace( "s", "http://com.ostrich-emulators/jfxhacc/split#" );
 		rc.setNamespace( "j", "http://com.ostrich-emulators/jfxhacc/journal#" );
+		rc.setNamespace( "r", "http://com.ostrich-emulators/jfxhacc/recurring#" );
 
 		rc.setNamespace( RDFS.PREFIX, RDFS.NAMESPACE );
 		rc.setNamespace( RDF.PREFIX, RDF.NAMESPACE );

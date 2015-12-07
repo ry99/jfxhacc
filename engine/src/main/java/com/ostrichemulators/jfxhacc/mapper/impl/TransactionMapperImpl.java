@@ -62,7 +62,12 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 
 	public TransactionMapperImpl( RepositoryConnection repoc, AccountMapper amap,
 			PayeeMapper pmap ) {
-		super( repoc, JfxHacc.TRANSACTION_TYPE );
+		this( repoc, amap, pmap, JfxHacc.TRANSACTION_TYPE );
+	}
+
+	public TransactionMapperImpl( RepositoryConnection repoc, AccountMapper amap,
+			PayeeMapper pmap, URI type ) {
+		super( repoc, type );
 		this.pmap = pmap;
 		this.amap = amap;
 	}

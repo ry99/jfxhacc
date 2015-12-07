@@ -29,6 +29,7 @@ public class JfxHacc {
 	public static final URI JOURNAL_TYPE = new URIImpl( NAMESPACE + "journal" );
 	public static final URI SPLIT_TYPE = new URIImpl( NAMESPACE + "split" );
 	public static final URI PAYEE_TYPE = new URIImpl( NAMESPACE + "payee" );
+	public static final URI RECURRING_TYPE = new URIImpl( NAMESPACE + "recurring" );
 
 	public static final URI ASSET = new URIImpl( NAMESPACE + "asset" );
 	public static final URI EQUITY = new URIImpl( NAMESPACE + "equity" );

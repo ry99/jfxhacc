@@ -51,4 +51,10 @@ public interface Transaction extends IDable, Comparable<Transaction> {
 	public void setNumber( String s );
 
 	public StringProperty getNumberProperty();
+
+	public void setJournal( Journal j );
+
+	public Journal getJournal();
+
+	public Property<Journal> getJournalProperty();
 }
