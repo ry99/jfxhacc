@@ -28,6 +28,7 @@ import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonBar;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.TextFieldTableCell;
@@ -55,6 +56,8 @@ public class SplitsWindowController {
 	@FXML
 	private TableColumn<Split, String> memo;
 	@FXML
+	private ButtonBar buttons;
+	@FXML
 	private Button okBtn;
 
 	private final DataEngine engine;
@@ -72,11 +75,22 @@ public class SplitsWindowController {
 
 	@FXML
 	public void buttonPressed( ActionEvent event ) {
-		if ( "OK".equals( okBtn.getText() ) ) {
+		if ( "OK".equals( okBtn.getText() ) && null != okhandler ) {
 			okhandler.handle( event );
 		}
 		else {
 			balance();
+		}
+	}
+
+	public void hideOkWhenBalanced( boolean hide ) {
+		if ( hide ) {
+			buttons.visibleProperty().bind(
+					okBtn.textProperty().isEqualTo( "OK" ).not() );
+		}
+		else {
+			buttons.visibleProperty().unbind();
+			buttons.setVisible( true );
 		}
 	}
 

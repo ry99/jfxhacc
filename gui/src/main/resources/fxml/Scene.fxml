@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.input.*?>
 <?import javafx.scene.text.*?>
 <?import javafx.geometry.*?>
 <?import java.net.*?>
@@ -12,16 +13,6 @@
 <AnchorPane id="AnchorPane" prefHeight="594.0" prefWidth="944.0" xmlns="http://javafx.com/javafx/8.0.40" xmlns:fx="http://javafx.com/fxml/1">
 	<children>
 		<BorderPane prefHeight="604.0" prefWidth="944.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-			<top>
-				<ToolBar prefHeight="40.0" prefWidth="200.0" BorderPane.alignment="CENTER">
-					<items>
-						<Button fx:id="newtransBtn" mnemonicParsing="false" onAction="#newtrans" text="New Transaction" />
-                  <Button fx:id="recoBtn" disable="true" mnemonicParsing="false" onAction="#reconcile" text="Reconcile" />
-                  <Button mnemonicParsing="false" onAction="#newAccount" text="New Account" />
-                  <Button mnemonicParsing="false" onAction="#editAccount" text="Edit Account" />
-					</items>
-				</ToolBar>
-			</top>
 			<center>
 				<SplitPane fx:id="splitter" prefHeight="160.0" prefWidth="200.0" BorderPane.alignment="CENTER">
 					<items>
@@ -88,6 +79,51 @@
                </BorderPane.margin>
             </FlowPane>
          </bottom>
+         <top>
+            <VBox BorderPane.alignment="CENTER">
+               <children>
+                  <MenuBar>
+                    <menus>
+                      <Menu text="_File">
+                        <items>
+                          <MenuItem onAction="#close" text="E_xit">
+                                 <accelerator>
+                                    <KeyCodeCombination alt="UP" code="X" control="UP" meta="UP" shift="UP" shortcut="DOWN" />
+                                 </accelerator></MenuItem>
+                        </items>
+                      </Menu>
+                      <Menu text="_Account">
+                        <items>
+                          <MenuItem onAction="#newAccount" text="_New Account" />
+                              <MenuItem onAction="#editAccount" text="_Edit Account" />
+                              <MenuItem onAction="#reconcile" text="_Reconcile">
+                                 <accelerator>
+                                    <KeyCodeCombination alt="UP" code="R" control="UP" meta="UP" shift="UP" shortcut="DOWN" />
+                                 </accelerator></MenuItem>
+                        </items>
+                      </Menu>
+                        <Menu text="_Dialogs">
+                          <items>
+                            <MenuItem onAction="#showmemtrans" text="_Recurring Transactions">
+                                 <accelerator>
+                                    <KeyCodeCombination alt="UP" code="R" control="UP" meta="UP" shift="UP" shortcut="DOWN" />
+                                 </accelerator>
+                              </MenuItem>
+                          </items>
+                        </Menu>
+                    </menus>
+                  </MenuBar>
+            				<ToolBar prefHeight="40.0" prefWidth="200.0">
+            					<items>
+            						<Button fx:id="newtransBtn" onAction="#newtrans" text="New _Transaction" />
+                        <Button fx:id="recoBtn" disable="true" mnemonicParsing="false" onAction="#reconcile" text="Reconcile" />
+                        <Button mnemonicParsing="false" onAction="#newAccount" text="New Account" />
+                        <Button mnemonicParsing="false" onAction="#editAccount" text="Edit Account" />
+            					</items>
+            				</ToolBar>
+               </children>
+            </VBox>
+         </top>
 		</BorderPane>
 	</children>
 </AnchorPane>

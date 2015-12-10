@@ -243,7 +243,7 @@ public class AccountMapperImpl extends SimpleEntityRdfMapper<Account> implements
 				+ "  ?split ?sval ?val . "
 				+ "  ?split ?sreco ?reco ."
 				+ "  ?split ?sacct ?accountid ."
-				+ "  ?t trans:entry ?split . FILTER NOT EXISTS { ?t recur:recurrence ?z } "
+				+ "  ?t trans:entry ?split . FILTER NOT EXISTS { ?t recurs:recurrence ?z } "
 				+ "}";
 		Map<String, Value> map = bindmap( "accountid", a.getId() );
 		map.put( "sval", Splits.VALUE_PRED );

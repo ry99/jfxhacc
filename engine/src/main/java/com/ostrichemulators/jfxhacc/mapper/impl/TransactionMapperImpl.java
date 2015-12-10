@@ -15,6 +15,7 @@ import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.Journal;
 import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.Payee;
+import com.ostrichemulators.jfxhacc.model.Recurrence;
 import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
 import com.ostrichemulators.jfxhacc.model.Transaction;
@@ -132,8 +133,11 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 	public Transaction create( Transaction t ) throws MapperException {
 		RepositoryConnection rc = getConnection();
 		ValueFactory vf = rc.getValueFactory();
+		boolean active = false;
 		try {
-			if ( !rc.isActive() ) {
+			active = rc.isActive();
+
+			if ( !active ) {
 				rc.begin();
 			}
 
@@ -156,7 +160,7 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 				rc.add( id, Transactions.SPLIT_PRED, splitid );
 			}
 
-			if ( !rc.isActive() ) {
+			if ( !active ) {
 				rc.commit();
 			}
 
@@ -377,7 +381,7 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 
 		// don't include recurring transactions
 		List<Transaction> transactions = query( "SELECT ?t ?p ?o WHERE {"
-				+ "  ?t trans:entry ?s . FILTER NOT EXISTS { ?t recur:recurrence ?z } ."
+				+ "  ?t trans:entry ?s . FILTER NOT EXISTS { ?t jfxhacc:recurrence ?z } ."
 				+ "  ?t a jfxhacc:transaction ."
 				+ "  ?s splits:account ?acct ."
 				+ "  ?t trans:journal ?jnl ."
@@ -444,7 +448,7 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 		bindings.put( "recostate", new LiteralImpl( ReconcileState.RECONCILED.toString() ) );
 
 		List<Transaction> transactions = query( "SELECT ?t ?p ?o WHERE {"
-				+ "  ?t trans:entry ?s . FILTER NOT EXISTS { ?t recur:recurrence ?z } ."
+				+ "  ?t trans:entry ?s . FILTER NOT EXISTS { ?t jfxhacc:recurrence ?z } ."
 				+ "  ?s splits:account ?acct ."
 				+ "  ?t trans:journal ?jnl ."
 				+ "  ?s splits:reconciled ?reco FILTER( ?reco != ?recostate ) ."
@@ -546,5 +550,16 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 		}
 
 		return realsplits;
+	}
+
+	@Override
+	public Transaction get( Recurrence r ) throws MapperException {
+		Value val = oneval( "SELECT ?id WHERE { ?id jfxhacc:recurrence ?rec }",
+				bindmap( "rec", r.getId() ) );
+
+		log.debug( r.getId() + "->" + val );
+		Transaction t = get( URI.class.cast( val ) );
+		t.setSplits( getSplitMap( t.getId() ) );
+		return t;
 	}
 }

@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import java.lang.*?>
+<?import java.net.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8.0.40" xmlns:fx="http://javafx.com/fxml/1">
+   <left>
+      <BorderPane prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+         <bottom>
+            <VBox prefHeight="32.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+               <children>
+                  <Button maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="New Recurrence" />
+                  <Button maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="Delete Recurrence" />
+               </children>
+            </VBox>
+         </bottom>
+         <center>
+            <ListView fx:id="list" prefHeight="347.0" prefWidth="200.0" BorderPane.alignment="CENTER" />
+         </center>
+      </BorderPane>
+   </left>
+   <bottom>
+      <ButtonBar prefHeight="40.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+        <buttons>
+          <Button defaultButton="true" mnemonicParsing="false" onAction="#close" text="Close" />
+        </buttons>
+      </ButtonBar>
+   </bottom>
+   <center>
+      <BorderPane BorderPane.alignment="CENTER">
+         <center>
+            <SplitPane fx:id="splitter" orientation="VERTICAL" prefHeight="200.0" prefWidth="160.0">
+              <items>
+                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="100.0" prefWidth="160.0">
+                     <children>
+                        <GridPane layoutY="6.0" prefHeight="318.0" prefWidth="398.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                           <columnConstraints>
+                              <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" percentWidth="15.0" />
+                              <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" />
+                           </columnConstraints>
+                           <rowConstraints>
+                              <RowConstraints minHeight="10.0" percentHeight="10.0" vgrow="SOMETIMES" />
+                              <RowConstraints minHeight="10.0" percentHeight="10.0" vgrow="SOMETIMES" />
+                              <RowConstraints minHeight="10.0" percentHeight="10.0" vgrow="SOMETIMES" />
+                              <RowConstraints minHeight="10.0" percentHeight="10.0" vgrow="SOMETIMES" />
+                              <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+                           </rowConstraints>
+                           <children>
+                              <Label text="Name" />
+                              <TextField fx:id="label" GridPane.columnIndex="1" />
+                              <Label text="Journal" GridPane.rowIndex="1" />
+                              <ChoiceBox fx:id="journal" maxWidth="1.7976931348623157E308" prefWidth="150.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                              <Label text="Number" GridPane.rowIndex="3" />
+                              <Label text="Payee" GridPane.rowIndex="2" />
+                              <Label text="Splits" GridPane.rowIndex="4" GridPane.valignment="TOP" />
+                              <TextField fx:id="payee" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                              <TextField fx:id="number" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                              <AnchorPane fx:id="splitsarea" prefHeight="154.0" prefWidth="200.0" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+                           </children>
+                        </GridPane>
+                     </children>
+                     <padding>
+                        <Insets left="5.0" right="5.0" />
+                     </padding>
+                  </AnchorPane>
+              </items>
+            </SplitPane>
+         </center>
+         <bottom>
+            <ButtonBar prefHeight="40.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+              <buttons>
+                  <Button mnemonicParsing="false" onAction="#runnow" text="Run Now!" />
+                <Button defaultButton="true" mnemonicParsing="false" onAction="#save" text="Save" />
+              </buttons>
+            </ButtonBar>
+         </bottom>
+      </BorderPane>
+   </center>
+</BorderPane>

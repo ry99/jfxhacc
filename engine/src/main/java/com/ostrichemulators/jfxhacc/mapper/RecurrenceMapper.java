@@ -7,6 +7,7 @@ package com.ostrichemulators.jfxhacc.mapper;
 
 import com.ostrichemulators.jfxhacc.model.Recurrence;
 import com.ostrichemulators.jfxhacc.model.Transaction;
+import org.openrdf.model.URI;
 
 public interface RecurrenceMapper extends DataMapper<Recurrence> {
 
@@ -20,4 +21,5 @@ public interface RecurrenceMapper extends DataMapper<Recurrence> {
 	 */
 	public Recurrence create( Recurrence r, Transaction t ) throws MapperException;
 
+	public URI getObjectType( Recurrence r ) throws MapperException;
 }

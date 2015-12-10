@@ -7,7 +7,7 @@ package com.ostrichemulators.jfxhacc.controller;
 
 import com.ostrichemulators.jfxhacc.AutoCompletePopupHandler;
 import com.ostrichemulators.jfxhacc.cells.AccountListCell;
-import com.ostrichemulators.jfxhacc.cells.MoneyStringConverter;
+import com.ostrichemulators.jfxhacc.converter.MoneyStringConverter;
 import com.ostrichemulators.jfxhacc.engine.DataEngine;
 import com.ostrichemulators.jfxhacc.mapper.AccountMapper;
 import com.ostrichemulators.jfxhacc.mapper.MapperException;

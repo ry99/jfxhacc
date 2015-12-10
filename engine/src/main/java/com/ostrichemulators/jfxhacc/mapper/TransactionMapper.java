@@ -8,6 +8,7 @@ package com.ostrichemulators.jfxhacc.mapper;
 import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.Journal;
 import com.ostrichemulators.jfxhacc.model.Payee;
+import com.ostrichemulators.jfxhacc.model.Recurrence;
 import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
 import com.ostrichemulators.jfxhacc.model.Transaction;
@@ -64,4 +65,6 @@ public interface TransactionMapper extends DataMapper<Transaction> {
 	public void addMapperListener( TransactionListener tl );
 
 	public void removeMapperListener( TransactionListener tl );
+
+	public Transaction get( Recurrence r ) throws MapperException;
 }

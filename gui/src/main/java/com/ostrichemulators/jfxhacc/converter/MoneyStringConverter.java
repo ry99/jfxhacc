@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.ostrichemulators.jfxhacc.cells;
+package com.ostrichemulators.jfxhacc.converter;
 
 import com.ostrichemulators.jfxhacc.model.Money;
 import javafx.util.StringConverter;

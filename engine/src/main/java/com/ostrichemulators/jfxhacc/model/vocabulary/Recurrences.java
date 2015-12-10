@@ -17,12 +17,12 @@ public class Recurrences {
 	private Recurrences() {
 	}
 
-	public static final String PREFIX = "recur";
+	public static final String PREFIX = "recurs";
 	public static final String BASE = JfxHacc.BASE + "/recurrence";
 	public static final String NAMESPACE = BASE + "/";
 
 	public static final URI TYPE = new URIImpl( BASE );
 
 	public static final URI NEXTRUN_PRED = new URIImpl( NAMESPACE + "nextrun" );
-	public static final URI FREQUENCY_PRED = new URIImpl( NAMESPACE + "freq" );
+	public static final URI FREQUENCY_PRED = new URIImpl( NAMESPACE + "frequency" );
 }

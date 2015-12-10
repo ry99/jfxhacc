@@ -133,4 +133,10 @@ public class RecurrenceMapperImpl extends RdfMapper<Recurrence>
 		}
 	}
 
+	@Override
+	public URI getObjectType( Recurrence r ) throws MapperException {
+		Value val = oneval( "SELECT ?type WHERE { ?sub a ?type . ?sub recurs:recurrence ?rec }",
+				bindmap( "rec", r.getId() ) );
+		return URI.class.cast( val );
+	}
 }

@@ -26,7 +26,7 @@ $SQLITE3 $DB "SELECT t.id, t.num, t.date, t.payee, t.journalid FROM transentry t
 
 $SQLITE3 $DB "SELECT x.transactionid, x.splitid FROM trans_split x JOIN transentry t ON x.transactionid=t.id JOIN split s ON x.splitid=s.id WHERE ( t.typeid=1 OR t.typeid=3 )" > $SPLITTRANS
 
-$SQLITE3 $DB "SELECT x.id, x.transactionorloanid, x.name, x.nextrun FROM schedule x" > $MEMTRANS
+$SQLITE3 $DB "SELECT x.id, x.transactionorloanid, x.name, x.nextrun FROM schedule x WHERE x.isLoan=0" > $MEMTRANS
 
 $SQLITE3 $DB "SELECT j.id, j.name FROM journal j" > $JOURNALS
 
@@ -65,7 +65,8 @@ cat $SPLITS | sed -e"s/Reconciled$/RECONCILED/g" \
   -e "s/No$/NOT_RECONCILED/g" \
   -e "s/Cleared$/CLEARED/g" \
   -e 's/"/\\"/g'| \
-  awk --field-separator \| '{printf( "s:qhacc-split-%d a jfxhacc:split ; splits:account a:qhacc-account-%d ; splits:value \"%d\"^^xsd:int ; splits:reconciled \"%s\" ",$1,$2,$3,$5) ; if ( ""!=$4 ){ printf( "; splits:memo \"%s\" ",$4 ) }; printf( ".\n" ) }'
+  awk --field-separator \| '{printf( "s:qhacc-split-%d a jfxhacc:split ; splits:account a:qhacc-account-%d ; splits:value \"%d\"^^xsd:int ; splits:reconciled \"%s\" ",$1,$2,$3,$5) ; \
+  if ( ""!=$4 ){ printf( "; splits:memo \"%s\" ",$4 ) }; printf( ".\n" ) }'
 
 # make payees
 declare -A PAYEES
@@ -76,7 +77,7 @@ while read line; do
 
   PAYEES["$line"]=${#PAYEES[@]}
   name=$(echo $line|sed -e's/"/\\"/g')
-  echo "p:qhacc-payee-${PAYEES[$line]} a jfxhacc:payee ; rdfs:label \"$name\" ."
+  echo " p:qhacc-payee-${PAYEES[$line]} a jfxhacc:payee ; rdfs:label \"$name\" ."
 done < <(cat $TRANS | cut -d\| -f4|sort -u)
 
 #for i in "${!PAYEES[@]}"
@@ -87,7 +88,9 @@ done < <(cat $TRANS | cut -d\| -f4|sort -u)
 # make transactions
 while read line; do
   echo "$line" | awk --field-separator \| \
-  '{printf("t:qhacc-transaction-%d a jfxhacc:transaction ; trans:journal j:qhacc-journal-%s ; dcterms:created \"%sT00:00:00.000\"^^xsd:date ; ", $1,$5,$3); if( ""!=$2 ){ printf("trans:number \"%s\" ; ",$2) } }'
+  '{printf( "t:qhacc-transaction-%d a jfxhacc:transaction ; trans:journal j:qhacc-journal-%s ;", $1, $5 ); \
+    if( ""!=$3 ){ printf( " dcterms:created \"%sT00:00:00.000\"^^xsd:date ;", $3 ) } ;\
+    if( ""!=$2 ){ printf( " trans:number \"%s\" ;", $2 ) } }'
   
   payee=$(echo $line|cut -d\| -f4|sed -e 's/ *$//g'|sed -e 's/^ *//g' )
 	if [ -z "$payee" ]; then
@@ -108,8 +111,8 @@ sed -e"s/\([^|]\+\).\(.*\)/t:qhacc-transaction-\1 trans:entry s:qhacc-split-\2 .
 # mark schedules
 while read line; do
   echo "$line" | awk --field-separator \| \
-  '{printf("r:qhacc-recurrence-%d a jfxhacc:recurrence ; rdfs:label \"%s\" ; recurs:nextrun \"%sT00:00:00.000\" ; recurs:frequency \"MONTHLY\" .\n", $1,$3,$4 ); \
-	 printf( "t:qhacc-transaction-%d jfxhacc:recurrence t:qhacc-recurrence-%d .\n",$2,$1 );}'
+  '{printf("r:qhacc-recurrence-%d a jfxhacc:recurrence ; rdfs:label \"%s\" ; recurs:nextrun \"%sT00:00:00.000\"^^xsd:dateTime ; recurs:frequency \"NEVER\" .\n", $1,$3,$4 ); \
+	 printf( "t:qhacc-transaction-%d jfxhacc:recurrence r:qhacc-recurrence-%d .\n",$2,$1 );}'
 done < $MEMTRANS
 
 rm -rf $TMPDIR

@@ -5,6 +5,7 @@
  */
 package com.ostrichemulators.jfxhacc.cells;
 
+import com.ostrichemulators.jfxhacc.converter.MoneyStringConverter;
 import com.ostrichemulators.jfxhacc.model.Money;
 import javafx.geometry.Pos;
 import javafx.scene.control.TableCell;

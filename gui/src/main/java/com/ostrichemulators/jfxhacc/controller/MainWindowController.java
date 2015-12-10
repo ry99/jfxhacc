@@ -173,10 +173,6 @@ public class MainWindowController implements ShutdownListener {
 			public void run() {
 
 				accounts.getSelectionModel().setSelectionMode( SelectionMode.SINGLE );
-				if ( null != toselect ) {
-					accounts.getSelectionModel().select( toselect );
-					accounts.scrollTo( accounts.getRow( toselect ) );
-				}
 
 				double splitterpos = prefs.getDouble( PREF_SPLITTER, 0.25 );
 				splitter.setDividerPositions( splitterpos );
@@ -203,6 +199,13 @@ public class MainWindowController implements ShutdownListener {
 						accounts.sort();
 					}
 				}
+
+				// select and scroll after the sorting is complete
+				if ( null != toselect ) {
+					accounts.getSelectionModel().select( toselect );
+					accounts.scrollTo( accounts.getRow( toselect ) );
+				}
+
 			}
 		} );
 	}
@@ -373,6 +376,37 @@ public class MainWindowController implements ShutdownListener {
 				prefs.putBoolean( PREF_SORTASC,
 						( null == stype ? true : stype == TreeTableColumn.SortType.ASCENDING ) );
 			}
+		}
+	}
+
+	@FXML
+	public void close() {
+		MainApp.getShutdownNotifier().getStage().close();
+	}
+
+	@FXML
+	public void showmemtrans() {
+		FXMLLoader loader
+				= new FXMLLoader( getClass().getResource( "/fxml/RecurringTransactionWindow.fxml" ) );
+		RecurringTransactionWindowController cnt
+				= new RecurringTransactionWindowController( MainApp.getEngine() );
+		loader.setController( cnt );
+
+		try {
+			Parent root = loader.load();
+			
+			Stage stage = new Stage();
+			stage.setTitle( "Recurring Transactions" );
+			stage.setScene( new Scene( root ) );
+			cnt.setStage( stage );
+
+			StageRememberer mem = new StageRememberer( stage, "memtrans" );
+			mem.restore( stage );
+			stage.setOnHiding( mem );
+			stage.show();
+		}
+		catch ( IOException e ) {
+			log.error( e, e );
 		}
 	}
 
