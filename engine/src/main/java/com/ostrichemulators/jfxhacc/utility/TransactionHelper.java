@@ -68,31 +68,33 @@ public class TransactionHelper {
 
 		for ( Split split : splits ) {
 			Account acct = split.getAccount();
-			AccountType atype = acct.getAccountType();
-			int value = split.getValue().value();
-			boolean credit = split.isCredit();
+			if ( null != acct ) {
+				AccountType atype = acct.getAccountType();
+				int value = split.getValue().value();
+				boolean credit = split.isCredit();
 
-			if ( credit ) {
-				credits += value;
-			}
-			else {
-				debits += value;
-			}
-
-			if ( atype.isDebitPlus() ) {
 				if ( credit ) {
-					lefts -= value;
+					credits += value;
 				}
 				else {
-					lefts += value;
+					debits += value;
 				}
-			}
-			else {
-				if ( credit ) {
-					rights += value;
+
+				if ( atype.isDebitPlus() ) {
+					if ( credit ) {
+						lefts -= value;
+					}
+					else {
+						lefts += value;
+					}
 				}
 				else {
-					rights -= value;
+					if ( credit ) {
+						rights += value;
+					}
+					else {
+						rights -= value;
+					}
 				}
 			}
 		}
@@ -122,15 +124,29 @@ public class TransactionHelper {
 	 */
 	public static Money balancingValue( Collection<Split> splits, Account mainacct ) {
 		int[] bals = calcBalance( splits );
-		int debits = bals[0];
-		int credits = bals[1];
+		int credits = bals[0];
+		int debits = bals[1];
 		int lefts = bals[2];
 		int rights = bals[3];
 
 		int balval = credits - debits;
+		int lrval = rights - lefts;
 
-		if ( !( 0 == balval || mainacct.getAccountType().isDebitPlus() ) ){
-			balval = 0 - balval;
+		boolean needDebits = ( lrval > 0 );
+
+		if ( 0 != balval ) {
+			// more credits than debits...if mainacct is a debit plus, we need to
+			// add this amount; if not, subtract it
+			if ( mainacct.getAccountType().isDebitPlus() ) {
+				if ( !needDebits ) {
+					balval = ( balval > 0 ? 0 - balval : balval );
+				}
+			}
+			else {
+				if ( needDebits ) {
+					balval = ( balval < 0 ? 0 - balval : balval );
+				}
+			}
 		}
 
 		return new Money( balval );

@@ -207,24 +207,12 @@ public class TransactionEntryController extends AnchorPane {
 
 		boolean to = ( "To".equals( tofromBtn.getText() ) );
 		Money money = Money.valueOf( moneystr );
-		boolean posmoney = money.isPositive();
 
-		if ( account.getAccountType().isDebitPlus() ) {
-			if ( to ) {
-				return ( posmoney ? money.opposite() : money );
-			}
-			else {
-				return ( posmoney ? money : money.opposite() );
-			}
+		if ( to ) {
+			money = money.opposite();
 		}
-		else {
-			if ( to ) {
-				return ( posmoney ? money.opposite() : money );
-			}
-			else {
-				return ( posmoney ? money : money.opposite() );
-			}
-		}
+
+		return money;
 	}
 
 	public String getMemo() {
@@ -322,7 +310,7 @@ public class TransactionEntryController extends AnchorPane {
 		setDate( t.getDate() );
 
 		boolean debit = ( mysplit.isDebit() || mysplit.getValue().isZero() );
-		tofromBtn.setText( debit ? "To" : "From" );
+		tofromBtn.setText( debit ? "From" : "To" );
 
 		payeefield.requestFocus();
 	}

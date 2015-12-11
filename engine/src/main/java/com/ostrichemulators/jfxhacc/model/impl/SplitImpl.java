@@ -42,13 +42,13 @@ public class SplitImpl extends IDableImpl implements Split {
 
 	public SplitImpl( Money m ) {
 		super( Splits.TYPE );
-		isdebit = m.isNegative();
+		isdebit = m.isPositive();
 		value.setValue( m.abs() );
 	}
 
 	public SplitImpl( URI id, Money m ) {
 		super( Splits.TYPE, id );
-		isdebit = m.isNegative();
+		isdebit = m.isPositive();
 		value.setValue( m.abs() );
 	}
 
@@ -61,8 +61,7 @@ public class SplitImpl extends IDableImpl implements Split {
 	}
 
 	public SplitImpl( Split s ) {
-		this( s.getAccount(),
-				( s.isCredit() ? s.getValue() : s.getValue().opposite() ),
+		this( s.getAccount(), s.getRawValueProperty().getValue(),
 				s.getMemo(), s.getReconciled() );
 		setId( s.getId() );
 	}
@@ -84,7 +83,7 @@ public class SplitImpl extends IDableImpl implements Split {
 
 	@Override
 	public void setValue( Money m ) {
-		isdebit = m.isNegative();
+		isdebit = m.isPositive();
 		value.setValue( m.abs() );
 	}
 
@@ -170,8 +169,8 @@ public class SplitImpl extends IDableImpl implements Split {
 			@Override
 			public Money call() throws Exception {
 				Money val = getValue();
-				return ( isdebit ? val.opposite() : val );
-	}
+				return ( isdebit ? val : val.opposite() );
+			}
 		}, value ) );
 		return prop;
 	}
@@ -199,7 +198,7 @@ public class SplitImpl extends IDableImpl implements Split {
 	@Override
 	public Money add( Money m ) {
 		Money old = value.getValue();
-		if ( isdebit ) {
+		if ( !isdebit ) {
 			old = old.opposite();
 		}
 

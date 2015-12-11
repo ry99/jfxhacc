@@ -12,6 +12,7 @@
 	<bottom>
 		<ButtonBar fx:id="buttons" prefHeight="40.0" prefWidth="200.0" BorderPane.alignment="CENTER">
 			<buttons>
+            <Button fx:id="addBtn" mnemonicParsing="false" onAction="#addsplit" text="Add Split" />
 				<Button fx:id="okBtn" defaultButton="true" mnemonicParsing="false" onAction="#buttonPressed" prefHeight="26.0" prefWidth="221.0" text="OK" />
 			</buttons>
 		</ButtonBar>

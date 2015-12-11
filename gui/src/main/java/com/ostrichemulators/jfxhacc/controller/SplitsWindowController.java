@@ -13,6 +13,7 @@ import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
+import com.ostrichemulators.jfxhacc.model.impl.SplitImpl;
 import com.ostrichemulators.jfxhacc.utility.TransactionHelper;
 import java.util.HashSet;
 import java.util.Set;
@@ -20,7 +21,6 @@ import java.util.concurrent.Callable;
 import javafx.beans.Observable;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SetProperty;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.SetChangeListener;
@@ -32,7 +32,6 @@ import javafx.scene.control.ButtonBar;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.TextFieldTableCell;
-import javafx.util.Callback;
 import org.apache.log4j.Logger;
 
 /**
@@ -122,8 +121,22 @@ public class SplitsWindowController {
 		splittable.setItems( splits );
 	}
 
+	@FXML
+	public void addsplit() {
+		SplitImpl si = new SplitImpl();
+		si.setAccount( myacct );
+		splits.add( si );
+		makeBalanceBinding();
+	}
+
 	public void setSplits( SetProperty<Split> set ) {
 		okBtn.disableProperty().unbind();
+
+		for ( Split s : set.get() ) {
+			log.debug( "sespls: " + s.getId().getLocalName() + " "
+					+ s.getAccount().getId().getLocalName() + " " + s + " "
+					+ s.getRawValueProperty().getValue().value() );
+		}
 		splits.setAll( set );
 
 		set.addListener( new SetChangeListener<Split>() {
@@ -175,20 +188,6 @@ public class SplitsWindowController {
 			if ( s.getAccount().equals( myacct ) ) {
 				s.add( bal );
 			}
-		}
-	}
-
-	private static class CDValueFactory implements Callback<TableColumn.CellDataFeatures<Split, Money>, ObservableValue<Money>> {
-
-		public static final Logger log = Logger.getLogger( CDValueFactory.class );
-
-		public CDValueFactory() {
-		}
-
-		@Override
-		public ObservableValue<Money> call( TableColumn.CellDataFeatures<Split, Money> p ) {
-			Split s = p.getValue();
-			return s.getRawValueProperty();
 		}
 	}
 }

@@ -54,6 +54,7 @@ public final class Money implements Comparable<Money> {
 		Money money;
 		Matcher m = PATTERN.matcher( val );
 		if ( m.matches() ) {
+			boolean neg = ( null != m.group( 1 ) );
 			String dollarval = m.group( 2 );
 			int dollars = Integer.parseInt( null == dollarval ? "0" : dollarval );
 
@@ -66,6 +67,9 @@ public final class Money implements Comparable<Money> {
 			}
 
 			money = new Money( dollars * ROLLOVER + cents );
+			if( neg ){
+				money = money.opposite();
+			}
 		}
 		else {
 			money = new Money( 0 );
