@@ -14,8 +14,8 @@
          <bottom>
             <VBox prefHeight="32.0" prefWidth="200.0" BorderPane.alignment="CENTER">
                <children>
-                  <Button maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="New Recurrence" />
-                  <Button maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="Delete Recurrence" />
+                  <Button maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#newone" text="New Recurrence" />
+                  <Button maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#remove" text="Delete Recurrence" />
                </children>
             </VBox>
          </bottom>

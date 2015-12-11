@@ -125,7 +125,9 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 		transaction.setDate( d );
 		transaction.setPayee( p );
 		transaction.setNumber( number );
-		transaction.setSplits( new HashSet<>( splits ) );
+		if( null != splits ){
+			transaction.setSplits( new HashSet<>( splits ) );
+		}
 		return create( transaction );
 	}
 
@@ -149,13 +151,18 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 
 			URI id = createBaseEntity();
 
-			rc.add( id, Transactions.PAYEE_PRED, t.getPayee().getId() );
-			rc.add( id, Transactions.DATE_PRED, vf.createLiteral( t.getDate() ) );
+			rc.add( id, Transactions.JOURNAL_PRED, t.getJournal().getId() );
+
+			if ( null != t.getPayee() ) {
+				rc.add( id, Transactions.PAYEE_PRED, t.getPayee().getId() );
+			}
+			if ( null != t.getDate() ) {
+				rc.add( id, Transactions.DATE_PRED, vf.createLiteral( t.getDate() ) );
+			}
 			if ( null != t.getNumber() ) {
 				rc.add( id, Transactions.NUMBER_PRED, vf.createLiteral( t.getNumber() ) );
 			}
 
-			rc.add( id, Transactions.JOURNAL_PRED, t.getJournal().getId() );
 			for ( URI splitid : realsplits.values() ) {
 				rc.add( id, Transactions.SPLIT_PRED, splitid );
 			}
@@ -245,8 +252,12 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 			rc.remove( id, Transactions.NUMBER_PRED, null );
 			rc.remove( id, Transactions.SPLIT_PRED, null );
 
-			rc.add( id, Transactions.PAYEE_PRED, t.getPayee().getId() );
-			rc.add( id, Transactions.DATE_PRED, vf.createLiteral( t.getDate() ) );
+			if( null != t.getPayee() ){
+				rc.add( id, Transactions.PAYEE_PRED, t.getPayee().getId() );
+			}
+			if( null != t.getDate() ){
+				rc.add( id, Transactions.DATE_PRED, vf.createLiteral( t.getDate() ) );
+			}
 			if ( null != t.getNumber() ) {
 				rc.add( id, Transactions.NUMBER_PRED, vf.createLiteral( t.getNumber() ) );
 			}
@@ -557,7 +568,10 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 		Value val = oneval( "SELECT ?id WHERE { ?id jfxhacc:recurrence ?rec }",
 				bindmap( "rec", r.getId() ) );
 
-		log.debug( r.getId() + "->" + val );
+		if ( null == val ) {
+			return null;
+		}
+
 		Transaction t = get( URI.class.cast( val ) );
 		t.setSplits( getSplitMap( t.getId() ) );
 		return t;

@@ -9,10 +9,15 @@ import com.ostrichemulators.jfxhacc.converter.JournalStringConverter;
 import com.ostrichemulators.jfxhacc.engine.DataEngine;
 import com.ostrichemulators.jfxhacc.mapper.MapperException;
 import com.ostrichemulators.jfxhacc.model.Journal;
+import com.ostrichemulators.jfxhacc.model.Payee;
 import com.ostrichemulators.jfxhacc.model.Recurrence;
 import com.ostrichemulators.jfxhacc.model.Transaction;
+import com.ostrichemulators.jfxhacc.model.impl.RecurrenceImpl;
+import com.ostrichemulators.jfxhacc.model.impl.TransactionImpl;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.Collection;
+import java.util.Date;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.fxml.FXML;
@@ -84,6 +89,7 @@ public class RecurringTransactionWindowController {
 
 			Collection<Recurrence> recs = engine.getRecurrenceMapper().getAll();
 			list.getItems().setAll( recs );
+
 			list.setCellFactory( new Callback<ListView<Recurrence>, ListCell<Recurrence>>() {
 
 				@Override
@@ -93,8 +99,12 @@ public class RecurringTransactionWindowController {
 						@Override
 						protected void updateItem( Recurrence item, boolean empty ) {
 							super.updateItem( item, empty );
-							if ( !( null == item || empty ) ) {
-								super.setText( item.getName() );
+							if ( null == item || empty ) {
+								textProperty().unbind();
+								setText( null );
+							}
+							else {
+								textProperty().bind( item.getNameProperty() );
 							}
 						}
 					};
@@ -139,8 +149,16 @@ public class RecurringTransactionWindowController {
 		curr.setFrequency( rec.getFrequency() );
 		curr.setName( label.getText() );
 		curr.setNextRun( rec.getNextRun() );
+
 		try {
+			Transaction trans = engine.getTransactionMapper().get( curr );
+			Payee pay = engine.getPayeeMapper().createOrGet( payee.getText() );
+			trans.setPayee( pay );
+			trans.setNumber( number.getText() );
+			trans.setJournal( journal.getValue() );
+
 			engine.getRecurrenceMapper().update( curr );
+			engine.getTransactionMapper().update( trans );
 		}
 		catch ( MapperException me ) {
 			log.error( me, me );
@@ -149,6 +167,39 @@ public class RecurringTransactionWindowController {
 
 	@FXML
 	public void runnow() {
+	}
+
+	@FXML
+	public void remove() {
+		try {
+			int idx = list.getSelectionModel().getSelectedIndex();
+			engine.getRecurrenceMapper().remove( list.getSelectionModel().getSelectedItem() );
+			list.getItems().remove( idx );
+		}
+		catch ( MapperException me ) {
+			log.error( me, me );
+		}
+	}
+
+	@FXML
+	public void newone() {
+		try {
+			Recurrence rec = new RecurrenceImpl();
+			rec.setName( "New Recurring Transaction "
+					+ new SimpleDateFormat( "MM/dd/yyyy'-'hh:mm:ss" ).format( new Date() ) );
+			rec.setNextRun( new Date() );
+
+			TransactionImpl trans = new TransactionImpl();
+			trans.setJournal( journal.getValue() );
+
+			rec = engine.getRecurrenceMapper().create( rec, trans );
+
+			list.getItems().add( rec );
+			list.getSelectionModel().select( rec );
+		}
+		catch ( MapperException me ) {
+			log.error( me, me );
+		}
 
 	}
 
@@ -157,11 +208,16 @@ public class RecurringTransactionWindowController {
 		label.setText( current.getName() );
 		try {
 			Transaction t = engine.getTransactionMapper().get( current );
-
-			number.textProperty().bindBidirectional( t.getNumberProperty() );
-			payee.setText( t.getPayee().getName() );
-
-			splitdata.setSplits( t.getSplitsProperty() );
+			if ( null == t ) {
+				number.textProperty().unbind();
+				payee.setText( null );
+				splitdata.clear();
+			}
+			else {
+				number.textProperty().bindBidirectional( t.getNumberProperty() );
+				payee.setText( null == t.getPayee() ? null : t.getPayee().getName() );
+				splitdata.setSplits( t.getSplitsProperty() );
+			}
 		}
 		catch ( MapperException n ) {
 			log.error( n, n );

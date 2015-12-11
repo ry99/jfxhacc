@@ -84,7 +84,7 @@
                <children>
                   <MenuBar>
                     <menus>
-                      <Menu text="_File">
+                      <Menu fx:id="fileMenu" text="_File">
                         <items>
                           <MenuItem onAction="#close" text="E_xit">
                                  <accelerator>

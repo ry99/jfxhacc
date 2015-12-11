@@ -55,6 +55,13 @@ public class TransactionImpl extends IDableImpl implements Transaction {
 		this.number.set( num );
 	}
 
+	public TransactionImpl( Date date, String num, Payee payee ) {
+		this();
+		this.payee.setValue( payee );
+		this.date.setValue( date );
+		this.number.set( num );
+	}
+
 	@Override
 	public Date getDate() {
 		return date.getValue();

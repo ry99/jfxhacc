@@ -5,6 +5,7 @@ import com.ostrichemulators.jfxhacc.MainApp.StageRememberer;
 import com.ostrichemulators.jfxhacc.ShutdownListener;
 import com.ostrichemulators.jfxhacc.cells.MoneyTableTreeCellFactory;
 import com.ostrichemulators.jfxhacc.engine.DataEngine;
+import com.ostrichemulators.jfxhacc.engine.impl.RdfDataEngine;
 import com.ostrichemulators.jfxhacc.mapper.AccountMapper;
 import com.ostrichemulators.jfxhacc.mapper.AccountMapper.BalanceType;
 import com.ostrichemulators.jfxhacc.mapper.MapperException;
@@ -19,6 +20,7 @@ import com.ostrichemulators.jfxhacc.model.Transaction;
 import com.ostrichemulators.jfxhacc.utility.AccountBalanceCache;
 import com.ostrichemulators.jfxhacc.utility.AccountBalanceCache.MoneyPair;
 import com.ostrichemulators.jfxhacc.utility.GuiUtils;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Collection;
@@ -42,6 +44,8 @@ import javafx.scene.Scene;
 import javafx.scene.control.Accordion;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TitledPane;
@@ -53,9 +57,11 @@ import javafx.scene.control.TreeTableColumn.CellDataFeatures;
 import javafx.scene.control.TreeTableView;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.openrdf.model.URI;
 import org.openrdf.model.impl.URIImpl;
+import org.openrdf.repository.RepositoryException;
 
 public class MainWindowController implements ShutdownListener {
 
@@ -91,6 +97,8 @@ public class MainWindowController implements ShutdownListener {
 	private Button recoBtn;
 	@FXML
 	private VBox topxbox;
+	@FXML
+	private Menu fileMenu;
 
 	private final TransactionViewController transactions = new TransactionViewController();
 	private AccountBalanceCache acb;
@@ -104,6 +112,20 @@ public class MainWindowController implements ShutdownListener {
 		AccountMapper amap = engine.getAccountMapper();
 
 		acb = new AccountBalanceCache( amap, engine.getTransactionMapper() );
+
+		if ( log.isTraceEnabled() ) {
+			MenuItem mi = new MenuItem( "Dump Database" );
+			mi.setOnAction( event -> {
+				File out = new File( FileUtils.getTempDirectory(), "dump.ttl" );
+				try {
+					RdfDataEngine.class.cast( MainApp.getEngine() ).dump( out );
+				}
+				catch ( RepositoryException | IOException ioe ) {
+					log.error( ioe, ioe );
+				}
+			} );
+			fileMenu.getItems().add( mi );
+		}
 
 		Preferences prefs = Preferences.userNodeForPackage( getClass() );
 		String selidstr = prefs.get( PREF_SELECTED, "" );
@@ -394,7 +416,7 @@ public class MainWindowController implements ShutdownListener {
 
 		try {
 			Parent root = loader.load();
-			
+
 			Stage stage = new Stage();
 			stage.setTitle( "Recurring Transactions" );
 			stage.setScene( new Scene( root ) );

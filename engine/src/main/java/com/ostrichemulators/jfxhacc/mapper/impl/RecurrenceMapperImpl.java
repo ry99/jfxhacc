@@ -73,12 +73,15 @@ public class RecurrenceMapperImpl extends RdfMapper<Recurrence>
 						vf.createLiteral( r.getNextRun() ) );
 			}
 
-			Transaction newt = tmap.create( t );
-			rc.add( newt.getId(), Recurrences.TYPE, id );
-			RecurrenceImpl newr = new RecurrenceImpl( r );
+			if ( null != t ) {
+				Transaction newt = tmap.create( t );
+				rc.add( newt.getId(), Recurrences.TYPE, id );
+			}
 
+			RecurrenceImpl newr = new RecurrenceImpl( id, r.getFrequency(),
+					r.getNextRun(), r.getName() );
 			rc.commit();
-
+			
 			return newr;
 		}
 		catch ( RepositoryException re ) {
