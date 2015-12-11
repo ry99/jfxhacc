@@ -7,6 +7,7 @@ package com.ostrichemulators.jfxhacc.cells;
 
 import com.ostrichemulators.jfxhacc.converter.MoneyStringConverter;
 import com.ostrichemulators.jfxhacc.model.Money;
+import com.ostrichemulators.jfxhacc.model.Split;
 import javafx.geometry.Pos;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
@@ -42,6 +43,20 @@ public class MoneyCellFactory<T> implements Callback<TableColumn<T, Money>, Tabl
 					setText( t.toPositiveString() );
 					this.setAlignment( Pos.TOP_RIGHT );
 				}
+			}
+
+			@Override
+			public void commitEdit( Money t ) {
+				Split split = Split.class.cast( getTableRow().getItem() );
+				Money oldval = split.getRawValueProperty().getValue();
+
+				if ( ( oldval.isNegative() && t.isPositive() )
+						|| ( oldval.isPositive() && t.isNegative() ) ) {
+					t = t.opposite();
+				}
+
+				split.setValue( t );
+				super.cancelEdit();
 			}
 		};
 	}

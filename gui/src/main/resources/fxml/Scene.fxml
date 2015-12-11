@@ -58,26 +58,39 @@
 				</SplitPane>
 			</center>
          <bottom>
-            <FlowPane alignment="CENTER_RIGHT" hgap="5.0">
-               <children>
-                  <Label fx:id="transnum" />
-                  <Label fx:id="acctname">
-                     <font>
-                        <Font name="System Bold" size="13.0" />
-                     </font>
-                  </Label>
-                  <Label fx:id="balcurr" />
-                  <Label text="/" />
-                  <Label fx:id="balrec">
-                     <FlowPane.margin>
-                        <Insets />
-                     </FlowPane.margin></Label>
-                  <Label text="R" />
-               </children>
+            <GridPane>
                <BorderPane.margin>
                   <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                </BorderPane.margin>
-            </FlowPane>
+               <columnConstraints>
+                  <ColumnConstraints hgrow="SOMETIMES" maxWidth="524.0" minWidth="10.0" prefWidth="524.0" />
+                  <ColumnConstraints hgrow="SOMETIMES" maxWidth="610.0" minWidth="10.0" prefWidth="410.0" />
+               </columnConstraints>
+               <rowConstraints>
+                  <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+               </rowConstraints>
+               <children>
+                  <FlowPane alignment="CENTER_RIGHT" hgap="5.0" GridPane.columnIndex="1">
+                     <children>
+                        <Label fx:id="transnum" />
+                        <Label fx:id="acctname">
+                           <font>
+                              <Font name="System Bold" size="13.0" />
+                           </font>
+                        </Label>
+                        <Label fx:id="balcurr" />
+                        <Label text="/" />
+                        <Label fx:id="balrec">
+                           <FlowPane.margin>
+                              <Insets />
+                           </FlowPane.margin>
+                        </Label>
+                        <Label text="R" />
+                     </children>
+                  </FlowPane>
+                  <Label fx:id="messagelabel" />
+               </children>
+            </GridPane>
          </bottom>
          <top>
             <VBox BorderPane.alignment="CENTER">

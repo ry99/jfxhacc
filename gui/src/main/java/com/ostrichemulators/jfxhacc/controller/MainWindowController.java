@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.prefs.Preferences;
+import javafx.animation.AnimationTimer;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -94,6 +95,8 @@ public class MainWindowController implements ShutdownListener {
 	@FXML
 	private Label transnum;
 	@FXML
+	private Label messagelabel;
+	@FXML
 	private Button recoBtn;
 	@FXML
 	private VBox topxbox;
@@ -119,6 +122,7 @@ public class MainWindowController implements ShutdownListener {
 				File out = new File( FileUtils.getTempDirectory(), "dump.ttl" );
 				try {
 					RdfDataEngine.class.cast( MainApp.getEngine() ).dump( out );
+					setMessage( "database dumped to " + out );
 				}
 				catch ( RepositoryException | IOException ioe ) {
 					log.error( ioe, ioe );
@@ -531,5 +535,36 @@ public class MainWindowController implements ShutdownListener {
 
 	private TreeItem<Account> findItem( Account a ) {
 		return findItem( null == a ? null : a.getId() );
+	}
+
+	public void setMessage( String message ) {
+		messagelabel.setOpacity( 1.0d );
+		messagelabel.setText( message );
+
+		new AnimationTimer() {
+			// wait for 4 seconds, fade for 2 seconds (in nanoseconds)
+			private static final long WAITLIMIT = 4 * 1000000000l;
+			private static final long FADELIMIT = 2 * 1000000000l;
+			long start = 0;
+
+			@Override
+			public void handle( long l ) {
+				if ( 0 == start ) {
+					start = l;
+				}
+
+				long diff = l - start;
+				if ( diff < WAITLIMIT ) {
+					return;
+				}
+				diff -= WAITLIMIT;
+
+				double pct = ( (double) diff / (double) FADELIMIT );
+				messagelabel.setOpacity( 1.0 - pct );
+				if ( pct > 1.0d ) {
+					stop();
+				}
+			}
+		}.start();
 	}
 }

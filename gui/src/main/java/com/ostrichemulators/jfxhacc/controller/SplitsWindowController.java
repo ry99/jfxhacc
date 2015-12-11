@@ -181,17 +181,14 @@ public class SplitsWindowController {
 	private static class CDValueFactory implements Callback<TableColumn.CellDataFeatures<Split, Money>, ObservableValue<Money>> {
 
 		public static final Logger log = Logger.getLogger( CDValueFactory.class );
-		private final boolean credit;
 
-		public CDValueFactory( boolean iscredit ) {
-			credit = iscredit;
+		public CDValueFactory() {
 		}
 
 		@Override
 		public ObservableValue<Money> call( TableColumn.CellDataFeatures<Split, Money> p ) {
 			Split s = p.getValue();
-			return ( ( credit && s.isCredit() ) || ( !credit && s.isDebit() )
-					? s.getValueProperty() : null );
+			return s.getRawValueProperty();
 		}
 	}
 }

@@ -27,6 +27,7 @@ public class SplitImpl extends IDableImpl implements Split {
 
 	private final StringProperty memo = new SimpleStringProperty();
 	private final Property<Money> value = new SimpleObjectProperty<>( new Money() );
+	private final Property<Money> rawv = new SimpleObjectProperty<>( new Money() );
 	private boolean isdebit = false;
 	private final Property<ReconcileState> reco
 			= new SimpleObjectProperty<>( ReconcileState.NOT_RECONCILED );
@@ -44,12 +45,14 @@ public class SplitImpl extends IDableImpl implements Split {
 		super( Splits.TYPE );
 		isdebit = m.isNegative();
 		value.setValue( m.abs() );
+		rawv.setValue( m );
 	}
 
 	public SplitImpl( URI id, Money m ) {
 		super( Splits.TYPE, id );
 		isdebit = m.isNegative();
 		value.setValue( m.abs() );
+		rawv.setValue( m );
 	}
 
 	public SplitImpl( Account a, Money m, String memo, ReconcileState rs ) {
@@ -86,6 +89,7 @@ public class SplitImpl extends IDableImpl implements Split {
 	public void setValue( Money m ) {
 		isdebit = m.isNegative();
 		value.setValue( m.abs() );
+		rawv.setValue( m );
 	}
 
 	@Override
@@ -171,7 +175,7 @@ public class SplitImpl extends IDableImpl implements Split {
 			public Money call() throws Exception {
 				Money val = getValue();
 				return ( isdebit ? val.opposite() : val );
-			}
+	}
 		}, value ) );
 		return prop;
 	}
