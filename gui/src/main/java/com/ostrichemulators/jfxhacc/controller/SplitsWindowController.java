@@ -21,9 +21,6 @@ import java.util.concurrent.Callable;
 import javafx.beans.Observable;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SetProperty;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-import javafx.collections.SetChangeListener;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -60,7 +57,7 @@ public class SplitsWindowController {
 	private Button okBtn;
 
 	private final DataEngine engine;
-	private final ObservableList<Split> splits = FXCollections.observableArrayList();
+	//private final ObservableList<Split> splits = FXCollections.observableArrayList();
 	private Account myacct;
 	private EventHandler<ActionEvent> okhandler = null;
 
@@ -83,13 +80,14 @@ public class SplitsWindowController {
 	}
 
 	public void hideOkWhenBalanced( boolean hide ) {
+
 		if ( hide ) {
-			buttons.visibleProperty().bind(
+			okBtn.visibleProperty().bind(
 					okBtn.textProperty().isEqualTo( "OK" ).not() );
 		}
 		else {
-			buttons.visibleProperty().unbind();
-			buttons.setVisible( true );
+			okBtn.visibleProperty().unbind();
+			okBtn.setVisible( true );
 		}
 	}
 
@@ -118,14 +116,16 @@ public class SplitsWindowController {
 				-> p.getValue().getMemoProperty() );
 		memo.setCellFactory( TextFieldTableCell.<Split>forTableColumn() );
 
-		splittable.setItems( splits );
+		makeBalanceBinding();
 	}
 
 	@FXML
 	public void addsplit() {
 		SplitImpl si = new SplitImpl();
-		si.setAccount( myacct );
-		splits.add( si );
+		if ( null != myacct ) {
+			si.setAccount( myacct );
+		}
+		splittable.getItems().add( si );
 		makeBalanceBinding();
 	}
 
@@ -133,39 +133,29 @@ public class SplitsWindowController {
 		okBtn.disableProperty().unbind();
 
 		for ( Split s : set.get() ) {
-			log.debug( "sespls: " + s.getId().getLocalName() + " "
+			log.debug( "setspls: " + s.getId().getLocalName() + " "
 					+ s.getAccount().getId().getLocalName() + " " + s + " "
 					+ s.getRawValueProperty().getValue().value() );
 		}
-		splits.setAll( set );
 
-		set.addListener( new SetChangeListener<Split>() {
-
-			@Override
-			public void onChanged( SetChangeListener.Change<? extends Split> change ) {
-				if ( change.wasAdded() ) {
-					splits.add( change.getElementAdded() );
-				}
-				makeBalanceBinding();
-			}
-		} );
-
+		splittable.getItems().setAll( set );
 		makeBalanceBinding();
 	}
 
 	private void makeBalanceBinding() {
-		Observable amts[] = new Observable[splits.size()];
+		Observable amts[] = new Observable[splittable.getItems().size()];
 		int i = 0;
-		for ( Split s : splits ) {
-			amts[i++] = s.getValueProperty();
+		for ( Split s : splittable.getItems() ) {
+			amts[i++] = s.getRawValueProperty();
 		}
 
 		okBtn.textProperty().unbind();
+
 		okBtn.textProperty().bind( Bindings.createStringBinding( new Callable<String>() {
 
 			@Override
 			public String call() throws Exception {
-				Money bal = TransactionHelper.balancingValue( splits, myacct );
+				Money bal = TransactionHelper.balancingValue( splittable.getItems(), myacct );
 				return ( bal.isZero() ? "OK" : "Unbalanced: " + bal.toString() );
 			}
 
@@ -173,21 +163,30 @@ public class SplitsWindowController {
 	}
 
 	public Set<Split> getSplits() {
-		Set<Split> set = new HashSet<>( splits );
+		Set<Split> set = new HashSet<>( splittable.getItems() );
 		return set;
 	}
 
 	public void clear() {
-		splits.clear();
+		splittable.getItems().clear();
+		makeBalanceBinding();
 	}
 
 	@FXML
 	public void balance() {
-		Money bal = TransactionHelper.balancingValue( splits, myacct );
-		for ( Split s : splits ) {
-			if ( s.getAccount().equals( myacct ) ) {
-				s.add( bal );
-				break;
+		Money bal = TransactionHelper.balancingValue( splittable.getItems(), myacct );
+		if ( null == myacct ) {
+			SplitImpl s = new SplitImpl();
+			splittable.getItems().add( s );
+			makeBalanceBinding();
+			s.setValue( bal );
+		}
+		else {
+			for ( Split s : splittable.getItems() ) {
+				if ( s.getAccount().equals( myacct ) ) {
+					s.add( bal );
+					break;
+				}
 			}
 		}
 	}

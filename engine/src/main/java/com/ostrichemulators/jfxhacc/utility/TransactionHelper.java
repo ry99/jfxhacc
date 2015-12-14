@@ -67,18 +67,18 @@ public class TransactionHelper {
 		int rights = 0;
 
 		for ( Split split : splits ) {
+			int value = split.getValue().value();
+			boolean credit = split.isCredit();
+			if ( credit ) {
+				credits += value;
+			}
+			else {
+				debits += value;
+			}
+
 			Account acct = split.getAccount();
 			if ( null != acct ) {
 				AccountType atype = acct.getAccountType();
-				int value = split.getValue().value();
-				boolean credit = split.isCredit();
-
-				if ( credit ) {
-					credits += value;
-				}
-				else {
-					debits += value;
-				}
 
 				if ( atype.isDebitPlus() ) {
 					if ( credit ) {
@@ -134,7 +134,7 @@ public class TransactionHelper {
 
 		boolean needDebits = ( lrval > 0 );
 
-		if ( 0 != balval ) {
+		if ( !( 0 == balval || null == mainacct ) ) {
 			// more credits than debits...if mainacct is a debit plus, we need to
 			// add this amount; if not, subtract it
 			if ( mainacct.getAccountType().isDebitPlus() ) {

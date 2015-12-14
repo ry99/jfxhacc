@@ -98,6 +98,10 @@ public class AccountCellFactory<T> implements Callback<TableColumn<T, Account>, 
 
 		@Override
 		public String toString( Account t ) {
+			if( null == t ){
+				return null;
+			}
+
 			return ( usefull ? GuiUtils.getFullName( t, amap ) : t.getName() );
 		}
 

@@ -8,6 +8,7 @@ package com.ostrichemulators.jfxhacc.cells;
 import com.ostrichemulators.jfxhacc.converter.MoneyStringConverter;
 import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.Split;
+import javafx.beans.value.ChangeListener;
 import javafx.geometry.Pos;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
@@ -23,9 +24,15 @@ public class MoneyCellFactory<T> implements Callback<TableColumn<T, Money>, Tabl
 
 	public static final Logger log = Logger.getLogger( MoneyCellFactory.class );
 	private final boolean showcredit;
+	private final ChangeListener<Money> handler;
 
 	public MoneyCellFactory( boolean iscredit ) {
+		this( iscredit, null );
+	}
+
+	public MoneyCellFactory( boolean iscredit, ChangeListener<Money> changer ) {
 		showcredit = iscredit;
+		handler = changer;
 	}
 
 	@Override
@@ -48,12 +55,17 @@ public class MoneyCellFactory<T> implements Callback<TableColumn<T, Money>, Tabl
 			@Override
 			public void commitEdit( Money t ) {
 				Split split = Split.class.cast( getTableRow().getItem() );
+				Money old = split.getValue();
 
 				if ( !showcredit ) {
 					t = t.opposite();
 				}
 
 				split.setValue( t );
+				if ( null != handler ) {
+					handler.changed( split.getValueProperty(), old, t );
+				}
+
 				super.cancelEdit();
 			}
 		};
