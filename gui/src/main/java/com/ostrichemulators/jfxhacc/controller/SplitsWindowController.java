@@ -187,6 +187,7 @@ public class SplitsWindowController {
 		for ( Split s : splits ) {
 			if ( s.getAccount().equals( myacct ) ) {
 				s.add( bal );
+				break;
 			}
 		}
 	}

@@ -156,6 +156,7 @@ public class RecurringTransactionWindowController {
 			trans.setPayee( pay );
 			trans.setNumber( number.getText() );
 			trans.setJournal( journal.getValue() );
+			trans.setSplits( splitdata.getSplits() );
 
 			engine.getRecurrenceMapper().update( curr );
 			engine.getTransactionMapper().update( trans );

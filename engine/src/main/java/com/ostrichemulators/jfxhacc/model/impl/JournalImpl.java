@@ -7,6 +7,8 @@ package com.ostrichemulators.jfxhacc.model.impl;
 
 import com.ostrichemulators.jfxhacc.model.Journal;
 import com.ostrichemulators.jfxhacc.model.vocabulary.Journals;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import org.openrdf.model.URI;
 
 /**
@@ -15,7 +17,7 @@ import org.openrdf.model.URI;
  */
 public class JournalImpl extends IDableImpl implements Journal {
 
-	private String name;
+	private final StringProperty name = new SimpleStringProperty();
 
 	public JournalImpl( String name ) {
 		super( Journals.TYPE );
@@ -27,17 +29,22 @@ public class JournalImpl extends IDableImpl implements Journal {
 
 	public JournalImpl( URI id, String name ) {
 		this( id );
-		this.name = name;
+		this.name.set( name );
 	}
 
 	@Override
 	public String getName() {
-		return name;
+		return name.get();
 	}
 
 	@Override
 	public void setName( String name ) {
-		this.name = name;
+		this.name.set( name );
+	}
+
+	@Override
+	public StringProperty getNameProperty() {
+		return name;
 	}
 
 	@Override

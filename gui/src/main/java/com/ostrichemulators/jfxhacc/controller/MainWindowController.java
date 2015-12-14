@@ -29,6 +29,7 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.prefs.Preferences;
 import javafx.animation.AnimationTimer;
 import javafx.application.Platform;
@@ -46,10 +47,14 @@ import javafx.scene.control.Accordion;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
+import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.RadioMenuItem;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.SplitPane;
+import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.TitledPane;
+import javafx.scene.control.Toggle;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.TreeItem;
@@ -72,6 +77,7 @@ public class MainWindowController implements ShutdownListener {
 	private static final String PREF_SORTCOL = "accountviewer.sort.col";
 	private static final String PREF_SORTASC = "accountviewer.sort.asc";
 	private static final String PREF_SPLITTER = "stage.splitter.location";
+	private static final String JNL_SELECTED = "journal.selected";
 
 	private static final Logger log = Logger.getLogger( MainWindowController.class );
 	@FXML
@@ -102,6 +108,10 @@ public class MainWindowController implements ShutdownListener {
 	private VBox topxbox;
 	@FXML
 	private Menu fileMenu;
+	@FXML
+	private MenuButton jchsr;
+
+	private final ToggleGroup journalbtns = new ToggleGroup();
 
 	private final TransactionViewController transactions = new TransactionViewController();
 	private AccountBalanceCache acb;
@@ -140,6 +150,24 @@ public class MainWindowController implements ShutdownListener {
 		accordion.setExpandedPane( accountsPane );
 		TreeItem<Account> toselect1 = null;
 		try {
+			String jidstr = prefs.get( JNL_SELECTED, null );
+			Collection<Journal> js = engine.getJournalMapper().getAll();
+			for ( Journal j : js ) {
+				RadioMenuItem mi = new RadioMenuItem();
+				mi.textProperty().bind( j.getNameProperty() );
+				mi.setToggleGroup( journalbtns );
+				mi.setUserData( j );
+				jchsr.getItems().add( mi );
+
+				if ( j.getId().toString().equals( jidstr ) ) {
+					mi.setSelected( true );
+				}
+
+			}
+			if ( null == journalbtns.getSelectedToggle() ) {
+				journalbtns.selectToggle( journalbtns.getToggles().get( 0 ) );
+			}
+
 			journal = engine.getJournalMapper().getAll().iterator().next();
 			toselect1 = retree( amap, root, selected );
 
@@ -244,12 +272,31 @@ public class MainWindowController implements ShutdownListener {
 			public void changed( ObservableValue<? extends TreeItem<Account>> ov,
 					TreeItem<Account> oldsel, TreeItem<Account> newsel ) {
 				Account acct = newsel.getValue();
-				transactions.setAccount( acct, journal );
+				Journal j = Journal.class.cast( journalbtns.getSelectedToggle().getUserData() );
+				transactions.setAccount( acct, j );
 				String fname = GuiUtils.getFullName( acct, amap );
 				acctname.setText( fname );
-				MainApp.getShutdownNotifier().getStage().setTitle( fname );
+				MainApp.getShutdownNotifier().getStage().setTitle( "JFXHacc - "
+						+ j.getName() + ": " + fname );
 				updateBalancesLabel();
 				recoBtn.setDisable( false );
+			}
+		} );
+
+		journalbtns.selectedToggleProperty().addListener( new ChangeListener<Toggle>() {
+
+			@Override
+			public void changed( ObservableValue<? extends Toggle> ov, Toggle t, Toggle t1 ) {
+				if( null == t1 ){
+					return; // deselection event?
+				}
+				Account acct = accounts.getSelectionModel().getSelectedItem().getValue();
+				Journal j = Journal.class.cast( t1.getUserData() );
+				transactions.setAccount( acct, j );
+				String fname = GuiUtils.getFullName( acct, amap );
+				MainApp.getShutdownNotifier().getStage().setTitle( "JFXHacc - "
+						+ j.getName() + ": " + fname );
+				updateBalancesLabel();
 			}
 		} );
 
@@ -384,6 +431,9 @@ public class MainWindowController implements ShutdownListener {
 		prefs.putDouble( PREF_ASIZE, accounts.getColumns().get( 0 ).getWidth() );
 		prefs.putDouble( PREF_BSIZE, accounts.getColumns().get( 1 ).getWidth() );
 		prefs.putDouble( PREF_SPLITTER, splitter.getDividerPositions()[0] );
+
+		Journal j = Journal.class.cast( journalbtns.getSelectedToggle().getUserData() );
+		prefs.put( JNL_SELECTED, j.getId().toString() );
 
 		ObservableList<TreeTableColumn<Account, ?>> cols = accounts.getColumns();
 		TreeTableColumn<Account, ?> sortcol = null;
@@ -566,5 +616,51 @@ public class MainWindowController implements ShutdownListener {
 				}
 			}
 		}.start();
+	}
+
+	@FXML
+	protected void newjnl() {
+		TextInputDialog dialog = new TextInputDialog( "New Journal" );
+		dialog.setTitle( "Create Journal" );
+		dialog.setHeaderText( "Enter a name to create a new Journal" );
+		dialog.setContentText( "New Journal name:" );
+
+		Optional<String> result = dialog.showAndWait();
+		result.ifPresent( name -> {
+			DataEngine engine = MainApp.getEngine();
+			try {
+				Journal j = engine.getJournalMapper().create( name );
+				RadioMenuItem mi = new RadioMenuItem();
+				mi.textProperty().bind( j.getNameProperty() );
+				mi.setUserData( j );
+				jchsr.getItems().add( mi );
+				mi.setToggleGroup( journalbtns );
+				journalbtns.selectToggle( mi );
+			}
+			catch ( MapperException me ) {
+				log.error( me, me );
+			}
+		} );
+	}
+
+	@FXML
+	protected void editjnl() {
+		Journal j = Journal.class.cast( journalbtns.getSelectedToggle().getUserData() );
+		TextInputDialog dialog = new TextInputDialog( j.getName() );
+		dialog.setTitle( "Rename Journal" );
+		dialog.setHeaderText( "Enter a new name for this Journal" );
+		dialog.setContentText( "New Journal name:" );
+
+		Optional<String> result = dialog.showAndWait();
+		result.ifPresent( name -> {
+			DataEngine engine = MainApp.getEngine();
+			try {
+				j.setName( name );
+				engine.getJournalMapper().update( j );
+			}
+			catch ( MapperException me ) {
+				log.error( me, me );
+			}
+		} );
 	}
 }

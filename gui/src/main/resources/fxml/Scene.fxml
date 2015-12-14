@@ -115,6 +115,12 @@
                                  </accelerator></MenuItem>
                         </items>
                       </Menu>
+                        <Menu text="_Journal">
+                          <items>
+                            <MenuItem onAction="#newjnl" text="_New Journal" />
+                              <MenuItem onAction="#editjnl" text="_Edit Journal" />
+                          </items>
+                        </Menu>
                         <Menu text="_Dialogs">
                           <items>
                             <MenuItem onAction="#showmemtrans" text="_Recurring Transactions">
@@ -126,12 +132,13 @@
                         </Menu>
                     </menus>
                   </MenuBar>
-            				<ToolBar prefHeight="40.0" prefWidth="200.0">
+            				<ToolBar fx:id="toolbar" prefHeight="40.0" prefWidth="200.0">
             					<items>
             						<Button fx:id="newtransBtn" onAction="#newtrans" text="New _Transaction" />
                         <Button fx:id="recoBtn" disable="true" mnemonicParsing="false" onAction="#reconcile" text="Reconcile" />
                         <Button mnemonicParsing="false" onAction="#newAccount" text="New Account" />
                         <Button mnemonicParsing="false" onAction="#editAccount" text="Edit Account" />
+                        <MenuButton fx:id="jchsr" text="_Journal" />
             					</items>
             				</ToolBar>
                </children>
