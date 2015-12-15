@@ -73,6 +73,7 @@ public class TransactionEntry extends StackPane {
 		} );
 
 		swc.setOkButtonOnAction( event -> {
+			trans.setSplits( swc.getSplits() );
 			tec.updateSplitData();
 			gridpane.setVisible( true );
 			splitspane.setVisible( false );
@@ -107,7 +108,7 @@ public class TransactionEntry extends StackPane {
 		}
 
 		tec.setTransaction( trans );
-		swc.setSplits( trans.getSplitsProperty() );
+		swc.setSplits( trans.getSplits() );
 		reset();
 	}
 

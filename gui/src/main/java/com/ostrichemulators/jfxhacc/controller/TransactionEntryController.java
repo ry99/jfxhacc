@@ -418,7 +418,16 @@ public class TransactionEntryController extends AnchorPane {
 			amountfield.setDisable( false );
 			tofromBtn.setDisable( false );
 
-			if ( null != other ) {
+			if ( null == other ) {
+				// > 2 splits, so must use split editor
+				accountfield.getSelectionModel().select( null );
+				accountfield.setValue( null );
+				accountfield.setDisable( true );
+				amountfield.setEditable( false );
+				amountfield.setDisable( true );
+				tofromBtn.setDisable( true );
+			}
+			else {
 				accountfield.getSelectionModel().select( other.getAccount() );
 			}
 		}

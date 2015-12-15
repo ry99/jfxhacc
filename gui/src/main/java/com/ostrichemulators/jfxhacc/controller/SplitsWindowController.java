@@ -16,11 +16,10 @@ import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
 import com.ostrichemulators.jfxhacc.model.impl.SplitImpl;
 import com.ostrichemulators.jfxhacc.utility.TransactionHelper;
 import java.util.HashSet;
+import java.util.ListIterator;
 import java.util.Set;
-import java.util.concurrent.Callable;
-import javafx.beans.Observable;
-import javafx.beans.binding.Bindings;
-import javafx.beans.property.SetProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -103,10 +102,19 @@ public class SplitsWindowController {
 
 		credit.setCellValueFactory( ( TableColumn.CellDataFeatures<Split, Money> p )
 				-> p.getValue().getRawValueProperty() );
-		credit.setCellFactory( new MoneyCellFactory<>( true ) );
+
+		ChangeListener<Money> cl = new ChangeListener<Money>() {
+
+			@Override
+			public void changed( ObservableValue<? extends Money> ov, Money t, Money t1 ) {
+				setBalanceButtonText();
+			}
+		};
+
+		credit.setCellFactory( new MoneyCellFactory<>( true, cl ) );
 		debit.setCellValueFactory( ( TableColumn.CellDataFeatures<Split, Money> p )
 				-> p.getValue().getRawValueProperty() );
-		debit.setCellFactory( new MoneyCellFactory<>( false ) );
+		debit.setCellFactory( new MoneyCellFactory<>( false, cl ) );
 
 		account.setCellValueFactory( ( TableColumn.CellDataFeatures<Split, Account> p )
 				-> p.getValue().getAccountProperty() );
@@ -116,7 +124,7 @@ public class SplitsWindowController {
 				-> p.getValue().getMemoProperty() );
 		memo.setCellFactory( TextFieldTableCell.<Split>forTableColumn() );
 
-		makeBalanceBinding();
+		setBalanceButtonText();
 	}
 
 	@FXML
@@ -126,50 +134,43 @@ public class SplitsWindowController {
 			si.setAccount( myacct );
 		}
 		splittable.getItems().add( si );
-		makeBalanceBinding();
+		setBalanceButtonText();
 	}
 
-	public void setSplits( SetProperty<Split> set ) {
-		okBtn.disableProperty().unbind();
-
-		for ( Split s : set.get() ) {
+	public void setSplits( Set<Split> set ) {
+		for ( Split s : set ) {
 			log.debug( "setspls: " + s.getId().getLocalName() + " "
 					+ s.getAccount().getId().getLocalName() + " " + s + " "
 					+ s.getRawValueProperty().getValue().value() );
 		}
 
 		splittable.getItems().setAll( set );
-		makeBalanceBinding();
+		setBalanceButtonText();
 	}
 
-	private void makeBalanceBinding() {
-		Observable amts[] = new Observable[splittable.getItems().size()];
-		int i = 0;
-		for ( Split s : splittable.getItems() ) {
-			amts[i++] = s.getRawValueProperty();
-		}
-
-		okBtn.textProperty().unbind();
-
-		okBtn.textProperty().bind( Bindings.createStringBinding( new Callable<String>() {
-
-			@Override
-			public String call() throws Exception {
-				Money bal = TransactionHelper.balancingValue( splittable.getItems(), myacct );
-				return ( bal.isZero() ? "OK" : "Unbalanced: " + bal.toString() );
-			}
-
-		}, amts ) );
+	private void setBalanceButtonText() {
+		Money bal = TransactionHelper.balancingValue( splittable.getItems(), myacct );
+		okBtn.setText( bal.isZero() ? "OK" : "Unbalanced: " + bal.toString() );
 	}
 
 	public Set<Split> getSplits() {
-		Set<Split> set = new HashSet<>( splittable.getItems() );
+		Set<Split> set = new HashSet<>();
+		ListIterator<Split> splitit = splittable.getItems().listIterator();
+		while ( splitit.hasNext() ) {
+			Split s = splitit.next();
+			if ( s.getValue().isNonZero() ) {
+				set.add( s );
+			}
+			else{
+				splitit.remove();
+			}
+		}
 		return set;
 	}
 
 	public void clear() {
 		splittable.getItems().clear();
-		makeBalanceBinding();
+		setBalanceButtonText();
 	}
 
 	@FXML
@@ -178,7 +179,6 @@ public class SplitsWindowController {
 		if ( null == myacct ) {
 			SplitImpl s = new SplitImpl();
 			splittable.getItems().add( s );
-			makeBalanceBinding();
 			s.setValue( bal );
 		}
 		else {
@@ -189,5 +189,7 @@ public class SplitsWindowController {
 				}
 			}
 		}
+
+		setBalanceButtonText();
 	}
 }
