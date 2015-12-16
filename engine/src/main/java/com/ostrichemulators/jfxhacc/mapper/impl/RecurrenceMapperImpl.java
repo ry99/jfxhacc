@@ -195,7 +195,7 @@ public class RecurrenceMapperImpl extends RdfMapper<Recurrence>
 		return dues;
 	}
 
-	private static Date getNextRun( Date today, Frequency freq ) {
+	public static Date getNextRun( Date today, Frequency freq ) {
 		Calendar cal = Calendar.getInstance();
 		cal.setTime( today );
 

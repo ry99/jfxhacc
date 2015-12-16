@@ -139,6 +139,7 @@
                         <Button mnemonicParsing="false" onAction="#newAccount" text="New Account" />
                         <Button mnemonicParsing="false" onAction="#editAccount" text="Edit Account" />
                         <MenuButton fx:id="jchsr" text="_Journal" />
+                        <SplitMenuButton fx:id="recurbtn" mnemonicParsing="false" onAction="#runRecurrences" text="Run Recurrences" />
             					</items>
             				</ToolBar>
                </children>

@@ -40,6 +40,7 @@ public class TransactionMapperImplTest {
 	private RepositoryConnection rc;
 	private PayeeMapperImpl pmi;
 	private AccountMapperImpl ami;
+	private JournalMapperImpl jmi;
 	private TransactionMapperImpl tmap;
 	private static final URI ACCTID = UriUtil.randomUri( Accounts.TYPE );
 
@@ -59,7 +60,8 @@ public class TransactionMapperImplTest {
 		rc = DbUtil.createInMemRepository();
 		ami = new AccountMapperImpl( rc );
 		pmi = new PayeeMapperImpl( rc );
-		tmap = new TransactionMapperImpl( rc, ami, pmi );
+		jmi = new JournalMapperImpl( rc );
+		tmap = new TransactionMapperImpl( rc, ami, pmi, jmi );
 
 		rc.begin();
 		rc.add( ACCTID, RDF.TYPE, Accounts.TYPE );

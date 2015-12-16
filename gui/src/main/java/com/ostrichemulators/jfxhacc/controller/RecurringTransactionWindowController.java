@@ -123,10 +123,8 @@ public class RecurringTransactionWindowController {
 			Collection<Journal> journals = engine.getJournalMapper().getAll();
 			journal.getItems().setAll( journals );
 			journal.setConverter( new JournalStringConverter( journals ) );
-			if ( 1 == journals.size() ) {
-				journal.setValue( journal.getItems().get( 0 ) );
-				journal.setDisable( true );
-			}
+			journal.setDisable( 1 == journals.size() );
+			journal.setValue( journal.getItems().get( 0 ) );
 		}
 		catch ( IOException | MapperException e ) {
 			log.error( e, e );
@@ -209,15 +207,19 @@ public class RecurringTransactionWindowController {
 		label.setText( current.getName() );
 		try {
 			Transaction t = engine.getTransactionMapper().get( current );
+			journal.valueProperty().unbind();
+
 			if ( null == t ) {
 				number.textProperty().unbind();
 				payee.setText( null );
 				splitdata.clear();
+				journal.setValue( journal.getItems().get( 0 ) );
 			}
 			else {
 				number.textProperty().bindBidirectional( t.getNumberProperty() );
 				payee.setText( null == t.getPayee() ? null : t.getPayee().getName() );
 				splitdata.setSplits( t.getSplitsProperty() );
+				journal.valueProperty().bindBidirectional( t.getJournalProperty() );
 			}
 		}
 		catch ( MapperException n ) {

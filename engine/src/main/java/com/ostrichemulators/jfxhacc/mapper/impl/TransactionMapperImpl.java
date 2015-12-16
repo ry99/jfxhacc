@@ -6,6 +6,7 @@
 package com.ostrichemulators.jfxhacc.mapper.impl;
 
 import com.ostrichemulators.jfxhacc.mapper.AccountMapper;
+import com.ostrichemulators.jfxhacc.mapper.JournalMapper;
 import com.ostrichemulators.jfxhacc.mapper.MapperException;
 import com.ostrichemulators.jfxhacc.mapper.PayeeMapper;
 import com.ostrichemulators.jfxhacc.mapper.QueryHandler;
@@ -58,18 +59,20 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 	private static final Logger log = Logger.getLogger( TransactionMapperImpl.class );
 	private final PayeeMapper pmap;
 	private final AccountMapper amap;
+	private final JournalMapper jmap;
 	private final List<TransactionListener> listenees = new ArrayList<>();
 
 	public TransactionMapperImpl( RepositoryConnection repoc, AccountMapper amap,
-			PayeeMapper pmap ) {
-		this( repoc, amap, pmap, Transactions.TYPE );
+			PayeeMapper pmap, JournalMapper jmap ) {
+		this( repoc, amap, pmap, jmap, Transactions.TYPE );
 	}
 
 	public TransactionMapperImpl( RepositoryConnection repoc, AccountMapper amap,
-			PayeeMapper pmap, URI type ) {
+			PayeeMapper pmap, JournalMapper jmap, URI type ) {
 		super( repoc, type );
 		this.pmap = pmap;
 		this.amap = amap;
+		this.jmap = jmap;
 	}
 
 	@Override
@@ -125,7 +128,7 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 		transaction.setDate( d );
 		transaction.setPayee( p );
 		transaction.setNumber( number );
-		if( null != splits ){
+		if ( null != splits ) {
 			transaction.setSplits( new HashSet<>( splits ) );
 		}
 		return create( transaction );
@@ -226,6 +229,14 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 						else if ( Transactions.NUMBER_PRED.equals( uri ) ) {
 							trans.setNumber( set.getValue( "o" ).stringValue() );
 						}
+						else if ( Transactions.JOURNAL_PRED.equals( uri ) ) {
+							try {
+								trans.setJournal( jmap.get( URI.class.cast( set.getValue( "o" ) ) ) );
+							}
+							catch ( MapperException me ) {
+								log.error( me, me );
+							}
+						}
 					}
 
 					@Override
@@ -251,11 +262,14 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 			rc.remove( id, Transactions.DATE_PRED, null );
 			rc.remove( id, Transactions.NUMBER_PRED, null );
 			rc.remove( id, Transactions.SPLIT_PRED, null );
+			rc.remove( id, Transactions.JOURNAL_PRED, null );
 
-			if( null != t.getPayee() ){
+			rc.add( id, Transactions.JOURNAL_PRED, t.getJournal().getId() );
+
+			if ( null != t.getPayee() ) {
 				rc.add( id, Transactions.PAYEE_PRED, t.getPayee().getId() );
 			}
-			if( null != t.getDate() ){
+			if ( null != t.getDate() ) {
 				rc.add( id, Transactions.DATE_PRED, vf.createLiteral( t.getDate() ) );
 			}
 			if ( null != t.getNumber() ) {
@@ -421,6 +435,14 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 						}
 						else if ( Transactions.NUMBER_PRED.equals( uri ) ) {
 							last.setNumber( set.getValue( "o" ).stringValue() );
+						}
+						else if ( Transactions.JOURNAL_PRED.equals( uri ) ) {
+							try {
+								last.setJournal( jmap.get( URI.class.cast( set.getValue( "o" ) ) ) );
+							}
+							catch ( MapperException me ) {
+								log.error( me, me );
+							}
 						}
 					}
 

@@ -23,7 +23,9 @@ import com.ostrichemulators.jfxhacc.utility.AccountBalanceCache.MoneyPair;
 import com.ostrichemulators.jfxhacc.utility.GuiUtils;
 import java.io.File;
 import java.io.IOException;
+import java.text.DateFormat;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Deque;
@@ -34,6 +36,7 @@ import java.util.Optional;
 import java.util.prefs.Preferences;
 import javafx.animation.AnimationTimer;
 import javafx.application.Platform;
+import javafx.beans.binding.Bindings;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.MapChangeListener;
@@ -52,6 +55,7 @@ import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.RadioMenuItem;
 import javafx.scene.control.SelectionMode;
+import javafx.scene.control.SplitMenuButton;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.TitledPane;
@@ -111,6 +115,8 @@ public class MainWindowController implements ShutdownListener {
 	private Menu fileMenu;
 	@FXML
 	private MenuButton jchsr;
+	@FXML
+	private SplitMenuButton recurbtn;
 
 	private final ToggleGroup journalbtns = new ToggleGroup();
 
@@ -189,7 +195,8 @@ public class MainWindowController implements ShutdownListener {
 				accounts.getSelectionModel().selectedItemProperty().addListener( new ChangeListener<TreeItem<Account>>() {
 
 					@Override
-					public void changed( ObservableValue<? extends TreeItem<Account>> ov, TreeItem<Account> t, TreeItem<Account> t1 ) {
+					public void changed( ObservableValue<? extends TreeItem<Account>> ov,
+							TreeItem<Account> t, TreeItem<Account> t1 ) {
 						Account treeval = t1.getValue();
 						if ( treeval.equals( a ) ) {
 							btn.setSelected( true );
@@ -199,10 +206,31 @@ public class MainWindowController implements ShutdownListener {
 			}
 
 			List<Recurrence> recs = engine.getRecurrenceMapper().getDue( new Date() );
+
 			for ( Recurrence r : recs ) {
-				Transaction t = engine.getTransactionMapper().get( r );
-				log.debug( "recurrence: " + r + " => " + t );
+				MenuItem mi = new MenuItem( String.format( "%s (%s)", r.getName(),
+						DateFormat.getDateInstance( DateFormat.SHORT ).format( r.getNextRun() ) ) );
+				recurbtn.getItems().add( mi );
+
+				mi.setOnAction( event -> {
+					try {
+						engine.getRecurrenceMapper().execute( r );
+						recurbtn.getItems().remove( mi );
+
+						int sz = recurbtn.getItems().size();
+						recurbtn.setText( String.format( "Run %d Recurrence%s", sz,
+								1 == sz ? "" : "s" ) );
+					}
+					catch ( MapperException mex ) {
+						log.error( mex, mex );
+					}
+				} );
 			}
+
+			int sz = recurbtn.getItems().size();
+			recurbtn.setText( String.format( "Run %d Recurrence%s", sz,
+					1 == sz ? "" : "s" ) );
+			recurbtn.disableProperty().bind( Bindings.isEmpty( recurbtn.getItems() ) );
 		}
 		catch ( MapperException me ) {
 			log.error( me, me );
@@ -669,5 +697,13 @@ public class MainWindowController implements ShutdownListener {
 				log.error( me, me );
 			}
 		} );
+	}
+
+	@FXML
+	public void runRecurrences() {
+		List<MenuItem> items = new ArrayList<>( recurbtn.getItems() );
+		for ( MenuItem mi : items ) {
+			mi.fire();
+		}
 	}
 }
