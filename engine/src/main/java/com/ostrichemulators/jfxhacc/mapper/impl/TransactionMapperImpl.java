@@ -105,11 +105,7 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 			rc.add( id, Splits.MEMO_PRED, vf.createLiteral( s.getMemo() ) );
 		}
 
-		Money m = s.getValue();
-		if ( s.isDebit() ) {
-			m = m.opposite();
-		}
-
+		Money m = s.getRawValueProperty().getValue();
 		rc.add( id, Splits.VALUE_PRED, vf.createLiteral( m.value() ) );
 		rc.add( id, Splits.RECO_PRED, vf.createLiteral( s.getReconciled().toString() ) );
 

@@ -10,6 +10,7 @@ import com.ostrichemulators.jfxhacc.mapper.RecurrenceMapper;
 import com.ostrichemulators.jfxhacc.mapper.TransactionMapper;
 import com.ostrichemulators.jfxhacc.model.Recurrence;
 import com.ostrichemulators.jfxhacc.model.Recurrence.Frequency;
+import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.Transaction;
 import com.ostrichemulators.jfxhacc.model.impl.RecurrenceImpl;
 import com.ostrichemulators.jfxhacc.model.vocabulary.Recurrences;
