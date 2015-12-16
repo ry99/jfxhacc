@@ -19,7 +19,7 @@ public interface Recurrence extends IDable {
 
 	public static enum Frequency {
 
-		NEVER, ONCE, DAILY, WEEKLY, BIWEEKLY, SEMIMONTLY, MONTHLY,
+		NEVER, ONCE, DAILY, WEEKLY, BIWEEKLY, MONTHLY, END_OF_MONTH,
 		BIMONTHLY, QUARTERLY, SEMIYEARLY, YEARLY
 	}
 

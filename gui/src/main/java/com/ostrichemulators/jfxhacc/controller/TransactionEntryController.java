@@ -30,6 +30,7 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -369,8 +370,28 @@ public class TransactionEntryController extends AnchorPane {
 	protected void switchToFrom() {
 		tofromBtn.setText( tofromBtn.getText().equals( "To" ) ? "From" : "To" );
 		for ( Split s : trans.getSplits() ) {
-			s.setValue( s.getValue().opposite() );
+			s.setValue( s.getRawValueProperty().getValue().opposite() );
 		}
+	}
+
+	public Set<Split> getSplits() {
+		Set<Split> set = new HashSet<>();
+		if ( accountfield.isDisabled() ) {
+			set.addAll( trans.getSplits() );
+		}
+		else {
+			Split mysplit = trans.getSplit( account );
+			mysplit.setReconciled( getReco() );
+			Split other = TransactionHelper.getOther( trans, account );
+
+			mysplit.setValue( getSplitAmount() );
+			other.setValue( mysplit.getRawValueProperty().getValue().opposite() );
+
+			set.add( mysplit );
+			set.add( other );
+		}
+
+		return set;
 	}
 
 	@FXML

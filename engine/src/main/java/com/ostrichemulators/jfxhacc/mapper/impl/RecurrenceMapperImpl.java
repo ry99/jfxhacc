@@ -15,6 +15,11 @@ import com.ostrichemulators.jfxhacc.model.impl.RecurrenceImpl;
 import com.ostrichemulators.jfxhacc.model.vocabulary.Recurrences;
 import com.ostrichemulators.jfxhacc.utility.DbUtil;
 import info.aduna.iteration.Iterations;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
 import org.apache.log4j.Logger;
 import org.openrdf.model.Literal;
 import org.openrdf.model.Statement;
@@ -81,7 +86,7 @@ public class RecurrenceMapperImpl extends RdfMapper<Recurrence>
 			RecurrenceImpl newr = new RecurrenceImpl( id, r.getFrequency(),
 					r.getNextRun(), r.getName() );
 			rc.commit();
-			
+
 			return newr;
 		}
 		catch ( RepositoryException re ) {
@@ -141,5 +146,91 @@ public class RecurrenceMapperImpl extends RdfMapper<Recurrence>
 		Value val = oneval( "SELECT ?type WHERE { ?sub a ?type . ?sub recurs:recurrence ?rec }",
 				bindmap( "rec", r.getId() ) );
 		return URI.class.cast( val );
+	}
+
+	@Override
+	public void execute( Recurrence r ) throws MapperException {
+		Calendar cal = Calendar.getInstance();
+		cal.setTime( r.getNextRun() );
+
+		Transaction t = tmap.get( r );
+		t.setDate( r.getNextRun() );
+		tmap.create( t );
+
+		r.setNextRun( getNextRun( r.getNextRun(), r.getFrequency() ) );
+
+		if ( Frequency.ONCE == r.getFrequency() ) {
+			remove( r );
+		}
+		else if ( Frequency.NEVER != r.getFrequency() ) {
+			update( r );
+		}
+	}
+
+	@Override
+	public List<Recurrence> getDue( Date d ) throws MapperException {
+		List<Recurrence> dues = new ArrayList<>();
+		Collection<Recurrence> recs = getAll();
+		for ( Recurrence r : recs ) {
+			Date next = r.getNextRun();
+			Calendar cal = Calendar.getInstance();
+			cal.setTime( next );
+
+			while ( !next.after( d ) ) {
+				Frequency freq = r.getFrequency();
+				if ( Frequency.NEVER != freq ) {
+					Recurrence newr = new RecurrenceImpl( r );
+					newr.setNextRun( next );
+					dues.add( newr );
+				}
+
+				if ( Frequency.ONCE == freq || Frequency.NEVER == freq ) {
+					break;
+				}
+
+				next = getNextRun( next, freq );
+			}
+		}
+
+		return dues;
+	}
+
+	private static Date getNextRun( Date today, Frequency freq ) {
+		Calendar cal = Calendar.getInstance();
+		cal.setTime( today );
+
+		switch ( freq ) {
+			case DAILY:
+				cal.add( Calendar.DAY_OF_YEAR, 1 );
+				break;
+			case WEEKLY:
+				cal.add( Calendar.WEEK_OF_YEAR, 1 );
+				break;
+			case BIWEEKLY:
+				cal.add( Calendar.WEEK_OF_YEAR, 2 );
+				break;
+			case END_OF_MONTH:
+				cal.add( Calendar.MONTH, 1 );
+				cal.set( Calendar.DAY_OF_MONTH,
+						cal.getActualMaximum( Calendar.DAY_OF_MONTH ) );
+				break;
+			case MONTHLY:
+				cal.add( Calendar.MONTH, 1 );
+				break;
+			case BIMONTHLY:
+				cal.add( Calendar.MONTH, 2 );
+				break;
+			case QUARTERLY:
+				cal.add( Calendar.MONTH, 3 );
+				break;
+			case SEMIYEARLY:
+				cal.add( Calendar.MONTH, 6 );
+				break;
+			case YEARLY:
+				cal.add( Calendar.YEAR, 1 );
+				break;
+		}
+
+		return cal.getTime();
 	}
 }

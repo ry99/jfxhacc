@@ -14,6 +14,7 @@ import com.ostrichemulators.jfxhacc.mapper.TransactionListener;
 import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.Journal;
 import com.ostrichemulators.jfxhacc.model.Money;
+import com.ostrichemulators.jfxhacc.model.Recurrence;
 import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
 import com.ostrichemulators.jfxhacc.model.Transaction;
@@ -196,6 +197,12 @@ public class MainWindowController implements ShutdownListener {
 					}
 				} );
 			}
+
+			List<Recurrence> recs = engine.getRecurrenceMapper().getDue( new Date() );
+			for ( Recurrence r : recs ) {
+				Transaction t = engine.getTransactionMapper().get( r );
+				log.debug( "recurrence: " + r + " => " + t );
+			}
 		}
 		catch ( MapperException me ) {
 			log.error( me, me );
@@ -287,7 +294,7 @@ public class MainWindowController implements ShutdownListener {
 
 			@Override
 			public void changed( ObservableValue<? extends Toggle> ov, Toggle t, Toggle t1 ) {
-				if( null == t1 ){
+				if ( null == t1 ) {
 					return; // deselection event?
 				}
 				Account acct = accounts.getSelectionModel().getSelectedItem().getValue();

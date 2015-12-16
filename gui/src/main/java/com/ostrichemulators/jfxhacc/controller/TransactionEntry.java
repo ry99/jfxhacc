@@ -8,6 +8,7 @@ package com.ostrichemulators.jfxhacc.controller;
 import com.ostrichemulators.jfxhacc.engine.DataEngine;
 import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.Journal;
+import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.Transaction;
 import com.ostrichemulators.jfxhacc.model.impl.SplitImpl;
@@ -61,12 +62,7 @@ public class TransactionEntry extends StackPane {
 		splitspane.setVisible( false );
 
 		tec.setSplitsButtonOnAction( event -> {
-			trans.getSplit( acct ).setReconciled( tec.getReco() );
-			Split other = TransactionHelper.getOther( trans, acct );
-			if ( null != other ) {
-				other.setValue( tec.getSplitAmount().opposite() );
-				other.setAccount( tec.getSelectedAccount() );
-			}
+			swc.setSplits( tec.getSplits() );
 
 			gridpane.setVisible( false );
 			splitspane.setVisible( true );

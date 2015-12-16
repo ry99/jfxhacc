@@ -94,6 +94,11 @@ public class RecurrenceImpl extends IDableImpl implements Recurrence {
 
 	@Override
 	public boolean isDue( Date d ) {
-		return next.get().before( d );
+		return ( !( Frequency.NEVER == getFrequency() || getNextRun().after( d ) ) );
+	}
+
+	@Override
+	public String toString() {
+		return name.get() + " due: " + next.getValue();
 	}
 }
