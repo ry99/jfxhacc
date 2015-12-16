@@ -10,7 +10,6 @@ import com.ostrichemulators.jfxhacc.mapper.RecurrenceMapper;
 import com.ostrichemulators.jfxhacc.mapper.TransactionMapper;
 import com.ostrichemulators.jfxhacc.model.Recurrence;
 import com.ostrichemulators.jfxhacc.model.Recurrence.Frequency;
-import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.Transaction;
 import com.ostrichemulators.jfxhacc.model.impl.RecurrenceImpl;
 import com.ostrichemulators.jfxhacc.model.vocabulary.Recurrences;
@@ -164,7 +163,11 @@ public class RecurrenceMapperImpl extends RdfMapper<Recurrence>
 			remove( r );
 		}
 		else if ( Frequency.NEVER != r.getFrequency() ) {
-			update( r );
+			// check to make sure this recurrence hasn't already been run
+			Recurrence dbr = get( r.getId() );
+			if ( r.getNextRun().after( dbr.getNextRun() ) ) {
+				update( r );
+			}
 		}
 	}
 
