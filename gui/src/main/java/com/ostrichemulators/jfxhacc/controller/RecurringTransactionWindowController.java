@@ -139,7 +139,7 @@ public class RecurringTransactionWindowController {
 			log.error( e, e );
 		}
 
-		GuiUtils.makeAnimatedLabel( feedback, 2, 2 );
+		GuiUtils.makeAnimatedLabel( feedback, 2, 1 );
 	}
 
 	public void setStage( Stage s ) {

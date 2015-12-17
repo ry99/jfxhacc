@@ -83,39 +83,48 @@ public class GuiUtils {
 	}
 
 	public static void makeAnimatedLabel( Label lbl, int waitsec, int fadesec ) {
+
+		AnimationTimer at = new AnimationTimer() {
+			// wait and fade times (in nanoseconds)
+			private final long WAITLIMIT = waitsec * 1000000000l;
+			private final long FADELIMIT = fadesec * 1000000000l;
+			long start = 0;
+
+			@Override
+			public void handle( long l ) {
+				if ( 0 == start ) {
+					start = l;
+				}
+
+				long diff = l - start;
+				if ( diff < WAITLIMIT ) {
+					return;
+				}
+				diff -= WAITLIMIT;
+
+				double pct = ( (double) diff / (double) FADELIMIT );
+				lbl.setOpacity( 1.0 - pct );
+				if ( pct > 1.0d ) {
+					stop();
+					lbl.setText( null );
+				}
+			}
+
+			@Override
+			public void start() {
+				start = 0;
+				super.start();
+			}
+		};
+
 		lbl.textProperty().addListener( new ChangeListener<String>() {
 
 			@Override
 			public void changed( ObservableValue<? extends String> ov, String t, String t1 ) {
 				lbl.setOpacity( 1.0 );
-				
-
-				new AnimationTimer() {
-					// wait and fade times (in nanoseconds)
-					private final long WAITLIMIT = waitsec * 1000000000l;
-					private final long FADELIMIT = fadesec * 1000000000l;
-					long start = 0;
-
-					@Override
-					public void handle( long l ) {
-						if ( 0 == start ) {
-							start = l;
-						}
-
-						long diff = l - start;
-						if ( diff < WAITLIMIT ) {
-							return;
-						}
-						diff -= WAITLIMIT;
-
-						double pct = ( (double) diff / (double) FADELIMIT );
-						lbl.setOpacity( 1.0 - pct );
-						if ( pct > 1.0d ) {
-							stop();
-							lbl.setText( null );
-						}
-					}
-				}.start();
+				if ( null != t1 ) {
+					at.start();
+				}
 			}
 		} );
 
