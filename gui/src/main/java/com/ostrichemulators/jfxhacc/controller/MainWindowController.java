@@ -34,7 +34,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.prefs.Preferences;
-import javafx.animation.AnimationTimer;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.value.ChangeListener;
@@ -128,9 +127,11 @@ public class MainWindowController implements ShutdownListener {
 	public void initialize() {
 		MainApp.getShutdownNotifier().addShutdownListener( this );
 
+		GuiUtils.makeAnimatedLabel( messagelabel, 4, 2 );
+
 		DataEngine engine = MainApp.getEngine();
 		AccountMapper amap = engine.getAccountMapper();
-
+		
 		acb = new AccountBalanceCache( amap, engine.getTransactionMapper() );
 
 		if ( log.isTraceEnabled() ) {
@@ -623,34 +624,7 @@ public class MainWindowController implements ShutdownListener {
 	}
 
 	public void setMessage( String message ) {
-		messagelabel.setOpacity( 1.0d );
 		messagelabel.setText( message );
-
-		new AnimationTimer() {
-			// wait for 4 seconds, fade for 2 seconds (in nanoseconds)
-			private static final long WAITLIMIT = 4 * 1000000000l;
-			private static final long FADELIMIT = 2 * 1000000000l;
-			long start = 0;
-
-			@Override
-			public void handle( long l ) {
-				if ( 0 == start ) {
-					start = l;
-				}
-
-				long diff = l - start;
-				if ( diff < WAITLIMIT ) {
-					return;
-				}
-				diff -= WAITLIMIT;
-
-				double pct = ( (double) diff / (double) FADELIMIT );
-				messagelabel.setOpacity( 1.0 - pct );
-				if ( pct > 1.0d ) {
-					stop();
-				}
-			}
-		}.start();
 	}
 
 	@FXML

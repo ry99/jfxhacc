@@ -237,4 +237,8 @@ public class RecurrenceMapperImpl extends RdfMapper<Recurrence>
 
 		return cal.getTime();
 	}
+
+	public static Date getNextRun( Recurrence rec ) {
+		return getNextRun( rec.getNextRun(), rec.getFrequency() );
+	}
 }

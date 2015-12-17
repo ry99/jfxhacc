@@ -310,8 +310,7 @@ public class TransactionEntryController extends AnchorPane {
 
 		setDate( t.getDate() );
 
-		boolean debit = ( mysplit.isDebit() || mysplit.getValue().isZero() );
-		tofromBtn.setText( debit ? "From" : "To" );
+		tofromBtn.setText( mysplit.isDebit() ? "From" : "To" );
 
 		payeefield.requestFocus();
 	}

@@ -72,12 +72,19 @@
             </SplitPane>
          </center>
          <bottom>
-            <ButtonBar prefHeight="40.0" prefWidth="200.0" BorderPane.alignment="CENTER">
-              <buttons>
-                  <Button mnemonicParsing="false" onAction="#runnow" text="Run Now!" />
-                <Button defaultButton="true" mnemonicParsing="false" onAction="#save" text="Save" />
-              </buttons>
-            </ButtonBar>
+            <BorderPane BorderPane.alignment="CENTER">
+               <right>
+                  <ButtonBar prefHeight="40.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+                    <buttons>
+                        <Button mnemonicParsing="false" onAction="#runnow" text="Run Now!" />
+                      <Button defaultButton="true" mnemonicParsing="false" onAction="#save" text="Save" />
+                    </buttons>
+                  </ButtonBar>
+               </right>
+               <center>
+                  <Label fx:id="feedback" BorderPane.alignment="CENTER_RIGHT" />
+               </center>
+            </BorderPane>
          </bottom>
       </BorderPane>
    </center>

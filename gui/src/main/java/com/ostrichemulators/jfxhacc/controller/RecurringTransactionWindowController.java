@@ -8,12 +8,14 @@ package com.ostrichemulators.jfxhacc.controller;
 import com.ostrichemulators.jfxhacc.converter.JournalStringConverter;
 import com.ostrichemulators.jfxhacc.engine.DataEngine;
 import com.ostrichemulators.jfxhacc.mapper.MapperException;
+import com.ostrichemulators.jfxhacc.mapper.impl.RecurrenceMapperImpl;
 import com.ostrichemulators.jfxhacc.model.Journal;
 import com.ostrichemulators.jfxhacc.model.Payee;
 import com.ostrichemulators.jfxhacc.model.Recurrence;
 import com.ostrichemulators.jfxhacc.model.Transaction;
 import com.ostrichemulators.jfxhacc.model.impl.RecurrenceImpl;
 import com.ostrichemulators.jfxhacc.model.impl.TransactionImpl;
+import com.ostrichemulators.jfxhacc.utility.GuiUtils;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
@@ -24,6 +26,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.SplitPane;
@@ -55,6 +58,8 @@ public class RecurringTransactionWindowController {
 	private TextField number;
 	@FXML
 	private AnchorPane splitsarea;
+	@FXML
+	private Label feedback;
 
 	private Stage stage;
 	private final DataEngine engine;
@@ -120,6 +125,10 @@ public class RecurringTransactionWindowController {
 				}
 			} );
 
+			if ( !recs.isEmpty() ) {
+				list.getSelectionModel().clearAndSelect( 0 );
+			}
+
 			Collection<Journal> journals = engine.getJournalMapper().getAll();
 			journal.getItems().setAll( journals );
 			journal.setConverter( new JournalStringConverter( journals ) );
@@ -129,6 +138,8 @@ public class RecurringTransactionWindowController {
 		catch ( IOException | MapperException e ) {
 			log.error( e, e );
 		}
+
+		GuiUtils.makeAnimatedLabel( feedback, 2, 2 );
 	}
 
 	public void setStage( Stage s ) {
@@ -158,14 +169,34 @@ public class RecurringTransactionWindowController {
 
 			engine.getRecurrenceMapper().update( curr );
 			engine.getTransactionMapper().update( trans );
+			feedback.setText( "Saved" );
 		}
 		catch ( MapperException me ) {
 			log.error( me, me );
+			feedback.setText( me.getLocalizedMessage() );
 		}
 	}
 
 	@FXML
 	public void runnow() {
+		try {
+			Recurrence rec = scheduledata.getRecurrence();
+
+			Transaction ti = new TransactionImpl( rec.getNextRun(), number.getText(),
+					engine.getPayeeMapper().createOrGet( payee.getText() ) );
+			ti.setSplits( splitdata.getSplits() );
+			ti.setJournal( journal.getValue() );
+			engine.getTransactionMapper().create( ti );
+
+			rec.setNextRun( RecurrenceMapperImpl.getNextRun( rec ) );
+			scheduledata.setRecurrence( rec );
+			feedback.setText( "Transaction Added" );
+		}
+		catch ( MapperException me ) {
+			log.error( me, me );
+			feedback.setText( me.getLocalizedMessage() );
+		}
+
 	}
 
 	@FXML
@@ -216,6 +247,10 @@ public class RecurringTransactionWindowController {
 				journal.setValue( journal.getItems().get( 0 ) );
 			}
 			else {
+				if ( null == t.getJournal() ) {
+					t.setJournal( journal.getItems().get( 0 ) );
+				}
+
 				number.textProperty().bindBidirectional( t.getNumberProperty() );
 				payee.setText( null == t.getPayee() ? null : t.getPayee().getName() );
 				splitdata.setSplits( t.getSplitsProperty() );
