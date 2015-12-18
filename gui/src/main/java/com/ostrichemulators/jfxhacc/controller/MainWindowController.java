@@ -131,7 +131,7 @@ public class MainWindowController implements ShutdownListener {
 
 		DataEngine engine = MainApp.getEngine();
 		AccountMapper amap = engine.getAccountMapper();
-		
+
 		acb = new AccountBalanceCache( amap, engine.getTransactionMapper() );
 
 		if ( log.isTraceEnabled() ) {
@@ -513,6 +513,30 @@ public class MainWindowController implements ShutdownListener {
 			cnt.setStage( stage );
 
 			StageRememberer mem = new StageRememberer( stage, "memtrans" );
+			mem.restore( stage );
+			stage.setOnHiding( mem );
+			stage.show();
+		}
+		catch ( IOException e ) {
+			log.error( e, e );
+		}
+	}
+
+	@FXML
+	public void openloans() {
+		FXMLLoader loader
+				= new FXMLLoader( getClass().getResource( "/fxml/LoanWindow.fxml" ) );
+		LoanWindowController cnt = new LoanWindowController( MainApp.getEngine() );
+		loader.setController( cnt );
+
+		try {
+			Parent root = loader.load();
+
+			Stage stage = new Stage();
+			stage.setTitle( "Loans" );
+			stage.setScene( new Scene( root ) );
+
+			StageRememberer mem = new StageRememberer( stage, "loan" );
 			mem.restore( stage );
 			stage.setOnHiding( mem );
 			stage.show();
