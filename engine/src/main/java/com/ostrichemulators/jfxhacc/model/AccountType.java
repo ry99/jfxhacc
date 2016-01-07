@@ -14,9 +14,9 @@ import org.openrdf.model.URI;
  */
 public enum AccountType {
 
-	ASSET( true, JfxHacc.ASSET ), EXPENSE( false, JfxHacc.EXPENSE ),
+	ASSET( true, JfxHacc.ASSET ), EXPENSE( true, JfxHacc.EXPENSE ),
 	LIABILITY( false, JfxHacc.LIABILITY ), EQUITY( false, JfxHacc.EQUITY ),
-	REVENUE( true, JfxHacc.REVENUE );
+	REVENUE( false, JfxHacc.REVENUE );
 
 	private final boolean debitPlus;
 	private final URI uri;

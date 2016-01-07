@@ -535,6 +535,7 @@ public class MainWindowController implements ShutdownListener {
 			Stage stage = new Stage();
 			stage.setTitle( "Loans" );
 			stage.setScene( new Scene( root ) );
+			cnt.setStage( stage );
 
 			StageRememberer mem = new StageRememberer( stage, "loan" );
 			mem.restore( stage );

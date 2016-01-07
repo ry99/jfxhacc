@@ -5,6 +5,7 @@
  */
 package com.ostrichemulators.jfxhacc.controller;
 
+import com.ostrichemulators.jfxhacc.cells.RecurrenceListViewCellFactory;
 import com.ostrichemulators.jfxhacc.converter.JournalStringConverter;
 import com.ostrichemulators.jfxhacc.engine.DataEngine;
 import com.ostrichemulators.jfxhacc.mapper.MapperException;
@@ -15,6 +16,7 @@ import com.ostrichemulators.jfxhacc.model.Recurrence;
 import com.ostrichemulators.jfxhacc.model.Transaction;
 import com.ostrichemulators.jfxhacc.model.impl.RecurrenceImpl;
 import com.ostrichemulators.jfxhacc.model.impl.TransactionImpl;
+import com.ostrichemulators.jfxhacc.model.vocabulary.Transactions;
 import com.ostrichemulators.jfxhacc.utility.GuiUtils;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -27,13 +29,11 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
-import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
-import javafx.util.Callback;
 import org.apache.log4j.Logger;
 
 /**
@@ -92,30 +92,10 @@ public class RecurringTransactionWindowController {
 			AnchorPane.setRightAnchor( spls, 0d );
 			AnchorPane.setLeftAnchor( spls, 0d );
 
-			Collection<Recurrence> recs = engine.getRecurrenceMapper().getAll();
+			Collection<Recurrence> recs = engine.getRecurrenceMapper().getAll( Transactions.TYPE );
 			list.getItems().setAll( recs );
 
-			list.setCellFactory( new Callback<ListView<Recurrence>, ListCell<Recurrence>>() {
-
-				@Override
-				public ListCell<Recurrence> call( ListView<Recurrence> p ) {
-					return new ListCell<Recurrence>() {
-
-						@Override
-						protected void updateItem( Recurrence item, boolean empty ) {
-							super.updateItem( item, empty );
-							if ( null == item || empty ) {
-								textProperty().unbind();
-								setText( null );
-							}
-							else {
-								textProperty().bind( item.getNameProperty() );
-							}
-						}
-					};
-				}
-			} );
-
+			list.setCellFactory( new RecurrenceListViewCellFactory() );
 			list.getSelectionModel().selectedItemProperty().addListener( new ChangeListener<Recurrence>() {
 
 				@Override

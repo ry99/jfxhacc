@@ -23,7 +23,7 @@
             </VBox>
          </bottom>
          <center>
-            <ListView prefHeight="337.0" prefWidth="200.0" BorderPane.alignment="CENTER" />
+            <ListView fx:id="list" prefHeight="337.0" prefWidth="200.0" BorderPane.alignment="CENTER" />
          </center>
       </BorderPane>
    </left>
@@ -67,14 +67,30 @@
             </GridPane>
          </center>
          <bottom>
-            <AnchorPane fx:id="schedarea" prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+            <VBox BorderPane.alignment="CENTER">
                <BorderPane.margin>
                   <Insets />
-               </BorderPane.margin></AnchorPane>
+               </BorderPane.margin>
+               <children>
+                  <AnchorPane fx:id="schedarea" prefHeight="200.0" prefWidth="200.0" />
+                  <ButtonBar prefHeight="40.0" prefWidth="200.0">
+                    <buttons>
+                      <Button defaultButton="true" mnemonicParsing="false" onAction="#save" text="Save" />
+                    </buttons>
+                  </ButtonBar>
+               </children>
+            </VBox>
          </bottom>
          <padding>
             <Insets left="5.0" />
          </padding>
       </BorderPane>
    </center>
+   <bottom>
+      <ButtonBar prefHeight="40.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+        <buttons>
+          <Button defaultButton="true" mnemonicParsing="false" onAction="#close" text="OK" />
+        </buttons>
+      </ButtonBar>
+   </bottom>
 </BorderPane>

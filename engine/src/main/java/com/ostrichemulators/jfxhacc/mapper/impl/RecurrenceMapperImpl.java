@@ -5,14 +5,18 @@
  */
 package com.ostrichemulators.jfxhacc.mapper.impl;
 
+import com.ostrichemulators.jfxhacc.mapper.LoanMapper;
 import com.ostrichemulators.jfxhacc.mapper.MapperException;
 import com.ostrichemulators.jfxhacc.mapper.RecurrenceMapper;
 import com.ostrichemulators.jfxhacc.mapper.TransactionMapper;
+import com.ostrichemulators.jfxhacc.model.Loan;
 import com.ostrichemulators.jfxhacc.model.Recurrence;
 import com.ostrichemulators.jfxhacc.model.Recurrence.Frequency;
 import com.ostrichemulators.jfxhacc.model.Transaction;
 import com.ostrichemulators.jfxhacc.model.impl.RecurrenceImpl;
+import com.ostrichemulators.jfxhacc.model.vocabulary.Loans;
 import com.ostrichemulators.jfxhacc.model.vocabulary.Recurrences;
+import com.ostrichemulators.jfxhacc.model.vocabulary.Transactions;
 import com.ostrichemulators.jfxhacc.utility.DbUtil;
 import info.aduna.iteration.Iterations;
 import java.util.ArrayList;
@@ -39,10 +43,13 @@ public class RecurrenceMapperImpl extends RdfMapper<Recurrence>
 
 	private static final Logger log = Logger.getLogger( RecurrenceMapperImpl.class );
 	private final TransactionMapper tmap;
+	private final LoanMapper lmap;
 
-	public RecurrenceMapperImpl( RepositoryConnection repoc, TransactionMapper t ) {
+	public RecurrenceMapperImpl( RepositoryConnection repoc, TransactionMapper t,
+			LoanMapper l ) {
 		super( repoc, Recurrences.TYPE );
 		tmap = t;
+		lmap = l;
 	}
 
 	@Override
@@ -53,6 +60,7 @@ public class RecurrenceMapperImpl extends RdfMapper<Recurrence>
 			// get rid of the "model" transaction as well
 			for ( Statement s : Iterations.asList( rc.getStatements( null, null, id, false ) ) ) {
 				tmap.remove( URI.class.cast( s.getSubject() ) );
+				lmap.remove( URI.class.cast( s.getSubject() ) );
 			}
 		}
 		catch ( RepositoryException re ) {
@@ -80,6 +88,40 @@ public class RecurrenceMapperImpl extends RdfMapper<Recurrence>
 
 			if ( null != t ) {
 				Transaction newt = tmap.create( t );
+				rc.add( newt.getId(), Recurrences.TYPE, id );
+			}
+
+			RecurrenceImpl newr = new RecurrenceImpl( id, r.getFrequency(),
+					r.getNextRun(), r.getName() );
+			rc.commit();
+
+			return newr;
+		}
+		catch ( RepositoryException re ) {
+			rollback( rc );
+			throw new MapperException( re );
+		}
+	}
+
+	@Override
+	public Recurrence create( Recurrence r, Loan l ) throws MapperException {
+		RepositoryConnection rc = getConnection();
+		ValueFactory vf = rc.getValueFactory();
+		try {
+			rc.begin();
+
+			URI id = createBaseEntity();
+
+			rc.add( id, Recurrences.FREQUENCY_PRED,
+					vf.createLiteral( r.getFrequency().toString() ) );
+			rc.add( id, RDFS.LABEL, vf.createLiteral( r.getName() ) );
+			if ( null != r.getNextRun() ) {
+				rc.add( id, Recurrences.NEXTRUN_PRED,
+						vf.createLiteral( r.getNextRun() ) );
+			}
+
+			if ( null != l ) {
+				Loan newt = lmap.create( l );
 				rc.add( newt.getId(), Recurrences.TYPE, id );
 			}
 
@@ -153,9 +195,15 @@ public class RecurrenceMapperImpl extends RdfMapper<Recurrence>
 		Calendar cal = Calendar.getInstance();
 		cal.setTime( r.getNextRun() );
 
-		Transaction t = tmap.get( r );
-		t.setDate( r.getNextRun() );
-		tmap.create( t );
+		URI type = getObjectType( r );
+		if ( Transactions.TYPE.equals( type ) ) {
+			Transaction t = tmap.get( r );
+			t.setDate( r.getNextRun() );
+			tmap.create( t );
+		}
+		else if ( Loans.TYPE.equals( type ) ) {
+			Loan l = lmap.get( r );
+		}
 
 		r.setNextRun( getNextRun( r.getNextRun(), r.getFrequency() ) );
 
@@ -236,6 +284,19 @@ public class RecurrenceMapperImpl extends RdfMapper<Recurrence>
 		}
 
 		return cal.getTime();
+	}
+
+	@Override
+	public Collection<Recurrence> getAll( URI type ) throws MapperException {
+		List<Recurrence> list = new ArrayList<>();
+		for ( Recurrence r : getAll() ) {
+			URI u = getObjectType( r );
+			if ( u.equals( type ) ) {
+				list.add( r );
+			}
+		}
+
+		return list;
 	}
 
 	public static Date getNextRun( Recurrence rec ) {

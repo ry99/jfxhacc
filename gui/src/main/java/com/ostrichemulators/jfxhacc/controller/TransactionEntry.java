@@ -8,12 +8,10 @@ package com.ostrichemulators.jfxhacc.controller;
 import com.ostrichemulators.jfxhacc.engine.DataEngine;
 import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.Journal;
-import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.Transaction;
 import com.ostrichemulators.jfxhacc.model.impl.SplitImpl;
 import com.ostrichemulators.jfxhacc.model.impl.TransactionImpl;
-import com.ostrichemulators.jfxhacc.utility.TransactionHelper;
 import java.io.IOException;
 import java.util.Date;
 import javafx.fxml.FXMLLoader;
@@ -34,6 +32,7 @@ public class TransactionEntry extends StackPane {
 	private final SplitsWindowController swc;
 	private TransactionImpl trans;
 	private Account acct;
+	private Journal journal;
 
 	public TransactionEntry( DataEngine eng ) {
 		setMinHeight( 0d );
@@ -80,6 +79,7 @@ public class TransactionEntry extends StackPane {
 		tec.setAccount( acct, jnl );
 		swc.setAccount( acct );
 		this.acct = acct;
+		this.journal = jnl;
 	}
 
 	public void addCloseListener( TransactionEntryController.CloseListener cc ) {
@@ -92,13 +92,15 @@ public class TransactionEntry extends StackPane {
 
 	public void setTransaction( Date d, Split s ) {
 		Transaction t = new TransactionImpl( null, d, null, null );
+		t.setJournal( journal );
 		t.addSplit( s );
 		setTransaction( t );
 	}
 
 	public void setTransaction( Transaction t ) {
 		trans = new TransactionImpl( t.getId(), t.getDate(), t.getNumber(), t.getPayee() );
-
+		trans.setJournal( t.getJournal() );
+		
 		for ( Split s : t.getSplits() ) {
 			trans.addSplit( new SplitImpl( s ) );
 		}

@@ -508,6 +508,14 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 						else if ( Transactions.NUMBER_PRED.equals( uri ) ) {
 							last.setNumber( set.getValue( "o" ).stringValue() );
 						}
+						else if ( Transactions.JOURNAL_PRED.equals( uri ) ) {
+							try {
+								last.setJournal( jmap.get( URI.class.cast( set.getValue( "o" ) ) ) );
+							}
+							catch ( MapperException me ) {
+								log.error( me, me );
+							}
+						}
 					}
 
 					@Override

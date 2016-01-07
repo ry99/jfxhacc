@@ -5,8 +5,10 @@
  */
 package com.ostrichemulators.jfxhacc.mapper;
 
+import com.ostrichemulators.jfxhacc.model.Loan;
 import com.ostrichemulators.jfxhacc.model.Recurrence;
 import com.ostrichemulators.jfxhacc.model.Transaction;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import org.openrdf.model.URI;
@@ -17,11 +19,21 @@ public interface RecurrenceMapper extends DataMapper<Recurrence> {
 	 * Creates a new recurring transaction based on the given transaction
 	 *
 	 * @param r
-	 * @param t A pre-existing transaction
+	 * @param t A transaction (data will be copied)
 	 * @return
 	 * @throws MapperException
 	 */
 	public Recurrence create( Recurrence r, Transaction t ) throws MapperException;
+
+	/**
+	 * Creates a new recurring transaction based on the given transaction
+	 *
+	 * @param r
+	 * @param l A loan (data will be copied)
+	 * @return
+	 * @throws MapperException
+	 */
+	public Recurrence create( Recurrence r, Loan l ) throws MapperException;
 
 	public URI getObjectType( Recurrence r ) throws MapperException;
 
@@ -45,4 +57,6 @@ public interface RecurrenceMapper extends DataMapper<Recurrence> {
 	 * @throws MapperException
 	 */
 	public List<Recurrence> getDue( Date d ) throws MapperException;
+
+	public Collection<Recurrence> getAll( URI type ) throws MapperException;
 }
