@@ -198,6 +198,10 @@ public class MainWindowController implements ShutdownListener {
 					@Override
 					public void changed( ObservableValue<? extends TreeItem<Account>> ov,
 							TreeItem<Account> t, TreeItem<Account> t1 ) {
+						if ( null == t1 ) {
+							return;
+						}
+
 						Account treeval = t1.getValue();
 						if ( treeval.equals( a ) ) {
 							btn.setSelected( true );
@@ -307,6 +311,9 @@ public class MainWindowController implements ShutdownListener {
 			@Override
 			public void changed( ObservableValue<? extends TreeItem<Account>> ov,
 					TreeItem<Account> oldsel, TreeItem<Account> newsel ) {
+				if ( null == newsel ) {
+					return;
+				}
 				Account acct = newsel.getValue();
 				Journal j = Journal.class.cast( journalbtns.getSelectedToggle().getUserData() );
 				transactions.setAccount( acct, j );
@@ -408,8 +415,17 @@ public class MainWindowController implements ShutdownListener {
 
 	public void select( Account acct ) {
 		TreeItem<Account> ti = findItem( acct );
+		TreeItem parent = ti.getParent();
+		while ( null != parent ) {
+			parent.setExpanded( true );
+			parent = parent.getParent();
+		}
+
 		if ( !accounts.getRoot().equals( ti ) ) {
+			int row = accounts.getRow( ti );
 			accounts.getSelectionModel().select( ti );
+			//accounts.getFocusModel().focus( row );
+			accounts.scrollTo( row );
 		}
 	}
 
