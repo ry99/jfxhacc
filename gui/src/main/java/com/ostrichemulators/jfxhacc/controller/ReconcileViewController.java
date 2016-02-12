@@ -93,14 +93,12 @@ public class ReconcileViewController extends TransactionViewController {
 
 	@Override
 	protected void mouseClick( Transaction t ) {
-		toggle( t );
+		if( null != t ){
+			toggle( t );
+		}
 	}
 
 	private void toggle( Transaction t ) {
-		if ( null == t ) {
-			t = transtable.getSelectionModel().getSelectedItem();
-		}
-
 		Split s = t.getSplit( account );
 		ReconcileState newrec = ( ReconcileState.CLEARED == s.getReconciled()
 				? ReconcileState.NOT_RECONCILED

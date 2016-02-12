@@ -173,6 +173,7 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 			TransactionImpl trans
 					= new TransactionImpl( id, t.getDate(), t.getNumber(), t.getPayee() );
 			trans.setSplits( realsplits.keySet() );
+			trans.setJournal( t.getJournal() );
 			notifyAdded( trans );
 			return trans;
 		}
