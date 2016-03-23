@@ -29,5 +29,4 @@ public class JfxHacc {
 	public static final URI LIABILITY = new URIImpl( NAMESPACE + "liability" );
 	public static final URI REVENUE = new URIImpl( NAMESPACE + "revenue" );
 	public static final URI EXPENSE = new URIImpl( NAMESPACE + "expense" );
-
 }

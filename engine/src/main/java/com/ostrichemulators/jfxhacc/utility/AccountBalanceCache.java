@@ -140,6 +140,8 @@ public class AccountBalanceCache {
 			MoneyPair mp = balances.get( a );
 			mp.current.setValue( amap.getBalance( a, BalanceType.CURRENT ) );
 			mp.reco.setValue( amap.getBalance( a, BalanceType.RECONCILED ) );
+			// now force a change notification
+			balances.put( a, mp );
 		}
 		else {
 			Money c = amap.getBalance( a, BalanceType.CURRENT );

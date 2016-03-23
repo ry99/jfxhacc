@@ -19,16 +19,19 @@ public class AccountListCell extends ListCell<Account> {
 
 	private static final Logger log = Logger.getLogger( AccountListCell.class );
 	private final AccountMapper amap;
+	private final boolean useSplit;
 
-	public AccountListCell( AccountMapper amap ) {
+	public AccountListCell( AccountMapper amap, boolean saySplitOnEmpty ) {
 		this.amap = amap;
+		useSplit = saySplitOnEmpty;
+
 	}
 
 	@Override
 	protected void updateItem( Account acct, boolean empty ) {
 		super.updateItem( acct, empty );
 		if ( null == acct || empty ) {
-			setText( "Split" );
+			setText( useSplit ? "Split" : null );
 		}
 		else {
 			setText( GuiUtils.getFullName( acct, amap ) );

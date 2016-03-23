@@ -6,7 +6,6 @@
 package com.ostrichemulators.jfxhacc.controller;
 
 import com.ostrichemulators.jfxhacc.model.Account;
-import com.ostrichemulators.jfxhacc.model.Journal;
 import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.impl.SplitImpl;
@@ -16,8 +15,11 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.concurrent.Callable;
+import javafx.beans.InvalidationListener;
+import javafx.beans.Observable;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.ObjectProperty;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -47,9 +49,9 @@ public class ReconcileWindowController {
 	@FXML
 	private Label diff;
 	@FXML
-	private Label stmtdiff;
+	private Label deposits;
 	@FXML
-	private Label recodiff;
+	private Label withdrawals;
 	@FXML
 	private Button balanceBtn;
 	@FXML
@@ -57,7 +59,6 @@ public class ReconcileWindowController {
 
 	private Stage stage;
 	private Account account;
-	private Journal journal;
 	private final ReconcileViewController transviewer = new ReconcileViewController();
 	private final ObjectProperty<Money> areco;
 
@@ -85,7 +86,32 @@ public class ReconcileWindowController {
 
 		openbal.textProperty().bind( areco.asString() );
 		stmtbal.setText( new Money().toString() );
-		recodiff.textProperty().bind( transviewer.getClearedValueProperty().asString() );
+
+		ObservableList<Split> minuses = transviewer.getWithdrawals();
+		minuses.addListener( new InvalidationListener() {
+
+			@Override
+			public void invalidated( Observable o ) {
+				int val = 0;
+				for ( Split s : minuses ) {
+					val += s.getValue().value();
+				}
+				withdrawals.setText( new Money( val ).toString() );
+			}
+		} );
+
+		ObservableList<Split> pluses = transviewer.getDeposits();
+		pluses.addListener( new InvalidationListener() {
+
+			@Override
+			public void invalidated( Observable o ) {
+				int val = 0;
+				for ( Split s : pluses ) {
+					val += s.getValue().value();
+				}
+				deposits.setText( new Money( val ).toString() );
+			}
+		} );
 
 		balanceBtn.disableProperty().bind( Bindings.createBooleanBinding( new Callable<Boolean>() {
 
@@ -100,21 +126,20 @@ public class ReconcileWindowController {
 			@Override
 			public String call() throws Exception {
 				Money opening = Money.valueOf( openbal.getText() );
-				Money ending = Money.valueOf( stmtbal.getText() );
+				Money minuses = Money.valueOf( withdrawals.getText() );
+				Money pluses = Money.valueOf(  deposits.getText() );
+				Money recbal = opening.minus( minuses ).add( pluses );
 
-				Money sdiff = ending.minus( opening );
-				Money rdiff = transviewer.getClearedValueProperty().get();
-				stmtdiff.setText( sdiff.toString() );
-				return sdiff.minus( rdiff ).toString();
+				Money stmt = Money.valueOf( stmtbal.getText() );
+				return stmt.minus( recbal ).toString();
 			}
 		},
 				openbal.textProperty(), stmtbal.textProperty(),
 				transviewer.getClearedValueProperty() ) );
 	}
 
-	public void setAccount( Account a, Journal j ) {
+	public void setAccount( Account a ) {
 		account = a;
-		journal = j;
 		updateParams();
 	}
 
@@ -125,7 +150,7 @@ public class ReconcileWindowController {
 		Date lastdate = transviewer.getDate();
 
 		if ( !d.equals( lastdate ) ) {
-			transviewer.setAccount( account, journal, d );
+			transviewer.setAccount( account, d );
 		}
 	}
 

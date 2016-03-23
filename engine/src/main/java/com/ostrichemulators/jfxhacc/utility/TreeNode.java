@@ -121,6 +121,14 @@ public class TreeNode<T> {
 		return list;
 	}
 
+	public List<T> asList() {
+		List<T> list = getAllChildren();
+		if ( null != node ) {
+			list.add( 0, node);
+		}
+		return list;
+	}
+
 	/**
 	 * Creates a tree from a child-parent mapping. The returned tree will always
 	 * have a null root node

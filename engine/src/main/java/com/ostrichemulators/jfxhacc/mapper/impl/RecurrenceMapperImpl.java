@@ -5,15 +5,22 @@
  */
 package com.ostrichemulators.jfxhacc.mapper.impl;
 
+import com.ostrichemulators.jfxhacc.mapper.AccountMapper;
+import com.ostrichemulators.jfxhacc.mapper.AccountMapper.BalanceType;
 import com.ostrichemulators.jfxhacc.mapper.LoanMapper;
 import com.ostrichemulators.jfxhacc.mapper.MapperException;
+import com.ostrichemulators.jfxhacc.mapper.PayeeMapper;
 import com.ostrichemulators.jfxhacc.mapper.RecurrenceMapper;
 import com.ostrichemulators.jfxhacc.mapper.TransactionMapper;
 import com.ostrichemulators.jfxhacc.model.Loan;
+import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.Recurrence;
 import com.ostrichemulators.jfxhacc.model.Recurrence.Frequency;
+import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.Transaction;
 import com.ostrichemulators.jfxhacc.model.impl.RecurrenceImpl;
+import com.ostrichemulators.jfxhacc.model.impl.SplitImpl;
+import com.ostrichemulators.jfxhacc.model.impl.TransactionImpl;
 import com.ostrichemulators.jfxhacc.model.vocabulary.Loans;
 import com.ostrichemulators.jfxhacc.model.vocabulary.Recurrences;
 import com.ostrichemulators.jfxhacc.model.vocabulary.Transactions;
@@ -44,12 +51,16 @@ public class RecurrenceMapperImpl extends RdfMapper<Recurrence>
 	private static final Logger log = Logger.getLogger( RecurrenceMapperImpl.class );
 	private final TransactionMapper tmap;
 	private final LoanMapper lmap;
+	private final AccountMapper amap;
+	private final PayeeMapper pmap;
 
 	public RecurrenceMapperImpl( RepositoryConnection repoc, TransactionMapper t,
-			LoanMapper l ) {
+			LoanMapper l, AccountMapper a, PayeeMapper p ) {
 		super( repoc, Recurrences.TYPE );
 		tmap = t;
 		lmap = l;
+		amap = a;
+		pmap = p;
 	}
 
 	@Override
@@ -195,15 +206,46 @@ public class RecurrenceMapperImpl extends RdfMapper<Recurrence>
 		Calendar cal = Calendar.getInstance();
 		cal.setTime( r.getNextRun() );
 
+		Transaction trans = null;
 		URI type = getObjectType( r );
 		if ( Transactions.TYPE.equals( type ) ) {
-			Transaction t = tmap.get( r );
-			t.setDate( r.getNextRun() );
-			tmap.create( t );
+			trans = tmap.get( r );
 		}
 		else if ( Loans.TYPE.equals( type ) ) {
 			Loan l = lmap.get( r );
+			
+			Money loanbalance = amap.getBalance( l.getPrincipalAccount(),
+					BalanceType.CURRENT, r.getNextRun() );
+			trans = new TransactionImpl();
+			trans.setJournal( l.getJournal() );
+			trans.setPayee( pmap.createOrGet( r.getName() ) );
+
+			Split payee = new SplitImpl();
+			Split princ = new SplitImpl();
+			Split inter = new SplitImpl();
+
+			Money payment = l.getPaymentAmount().getValue();
+			Money intpay = Money.valueOf( loanbalance.toDouble() * l.getApr() / 12 );
+			Money princpay = payment.minus( intpay );
+
+			payee.setValue( payment.opposite() );
+			princ.setValue( princpay );
+			inter.setValue( intpay );
+
+			payee.setAccount( l.getSourceAccount() );
+			princ.setAccount( l.getPrincipalAccount() );
+			inter.setAccount( l.getInterestAccount() );
+			
+			trans.addSplit( payee );
+			trans.addSplit( inter );
+			trans.addSplit( princ );
 		}
+		else {
+			throw new MapperException( "Cannot create transaction of type: " + type );
+		}
+
+		trans.setDate( r.getNextRun() );
+		tmap.create( trans );
 
 		r.setNextRun( getNextRun( r.getNextRun(), r.getFrequency() ) );
 

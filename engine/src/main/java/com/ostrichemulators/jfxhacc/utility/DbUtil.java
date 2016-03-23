@@ -7,6 +7,7 @@ package com.ostrichemulators.jfxhacc.utility;
 
 import com.ostrichemulators.jfxhacc.model.vocabulary.Accounts;
 import com.ostrichemulators.jfxhacc.model.vocabulary.JfxHacc;
+import com.ostrichemulators.jfxhacc.model.vocabulary.Loans;
 import com.ostrichemulators.jfxhacc.model.vocabulary.Payees;
 import com.ostrichemulators.jfxhacc.model.vocabulary.Recurrences;
 import com.ostrichemulators.jfxhacc.model.vocabulary.Splits;
@@ -142,7 +143,8 @@ public class DbUtil {
 		rc.setNamespace( Splits.PREFIX, Splits.NAMESPACE );
 		rc.setNamespace( Transactions.PREFIX, Transactions.NAMESPACE );
 		rc.setNamespace( Payees.PREFIX, Payees.NAMESPACE );
-		rc.setNamespace(Recurrences.PREFIX, Recurrences.NAMESPACE );
+		rc.setNamespace( Recurrences.PREFIX, Recurrences.NAMESPACE );
+		rc.setNamespace( Loans.PREFIX, Loans.NAMESPACE );
 		rc.setNamespace( DCTERMS.PREFIX, DCTERMS.NAMESPACE );
 		rc.setNamespace( "t", "http://com.ostrich-emulators/jfxhacc/transaction#" );
 		rc.setNamespace( "p", "http://com.ostrich-emulators/jfxhacc/payee#" );
@@ -150,6 +152,7 @@ public class DbUtil {
 		rc.setNamespace( "s", "http://com.ostrich-emulators/jfxhacc/split#" );
 		rc.setNamespace( "j", "http://com.ostrich-emulators/jfxhacc/journal#" );
 		rc.setNamespace( "r", "http://com.ostrich-emulators/jfxhacc/recurrence#" );
+		rc.setNamespace( "l", "http://com.ostrich-emulators/jfxhacc/loan#" );
 
 		rc.setNamespace( RDFS.PREFIX, RDFS.NAMESPACE );
 		rc.setNamespace( RDF.PREFIX, RDF.NAMESPACE );

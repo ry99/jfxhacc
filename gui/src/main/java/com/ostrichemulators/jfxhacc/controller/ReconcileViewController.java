@@ -8,7 +8,6 @@ package com.ostrichemulators.jfxhacc.controller;
 import com.ostrichemulators.jfxhacc.cells.PayeeAccountMemoCellFactory;
 import com.ostrichemulators.jfxhacc.mapper.MapperException;
 import com.ostrichemulators.jfxhacc.model.Account;
-import com.ostrichemulators.jfxhacc.model.Journal;
 import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
@@ -21,6 +20,8 @@ import java.util.ListIterator;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.input.KeyEvent;
 import org.apache.log4j.Logger;
@@ -36,11 +37,13 @@ public class ReconcileViewController extends TransactionViewController {
 	private static final Logger log = Logger.getLogger( ReconcileViewController.class );
 	private Date date;
 	private final ObjectProperty<Money> reco = new SimpleObjectProperty<>( new Money() );
+	private final ObservableList<Split> deposits = FXCollections.observableArrayList();
+	private final ObservableList<Split> withdrawals = FXCollections.observableArrayList();
 
 	@Override
 	protected List<Transaction> getTransactions() {
 		try {
-			List<Transaction> list = tmap.getUnreconciled( account, journal, date );
+			List<Transaction> list = tmap.getUnreconciled( account, date );
 			return list;
 		}
 		catch ( MapperException ioe ) {
@@ -50,9 +53,12 @@ public class ReconcileViewController extends TransactionViewController {
 		return new ArrayList<>();
 	}
 
-	public void setAccount( Account acct, Journal j, Date d ) {
+	public void setAccount( Account acct, Date d ) {
+		reco.setValue( new Money() );
+		deposits.clear();
+		withdrawals.clear();
 		date = d;
-		super.setAccount( acct, j );
+		super.setAccount( acct );
 	}
 
 	public Date getDate() {
@@ -69,6 +75,14 @@ public class ReconcileViewController extends TransactionViewController {
 			splits.add( t.getSplit( account ) );
 		}
 		return splits;
+	}
+
+	public ObservableList<Split> getWithdrawals() {
+		return withdrawals;
+	}
+
+	public ObservableList<Split> getDeposits() {
+		return deposits;
 	}
 
 	@Override
@@ -93,18 +107,31 @@ public class ReconcileViewController extends TransactionViewController {
 
 	@Override
 	protected void mouseClick( Transaction t ) {
-		if( null != t ){
+		if ( null != t ) {
 			toggle( t );
 		}
 	}
 
 	private void toggle( Transaction t ) {
 		Split s = t.getSplit( account );
+		deposits.remove( s );
+		withdrawals.remove( s );
+
 		ReconcileState newrec = ( ReconcileState.CLEARED == s.getReconciled()
 				? ReconcileState.NOT_RECONCILED
 				: ReconcileState.CLEARED );
 
 		s.setReconciled( newrec );
+
+		if ( ReconcileState.NOT_RECONCILED != newrec ) {
+
+			if ( this.account.getAccountType().isDebitPlus() == s.isDebit() ) {
+				deposits.add( s );
+			}
+			else {
+				withdrawals.add( s );
+			}
+		}
 
 		int idx = transtable.getSelectionModel().getSelectedIndex();
 		if ( ReconcileState.CLEARED == newrec ) {
@@ -233,11 +260,5 @@ public class ReconcileViewController extends TransactionViewController {
 		catch ( MapperException me ) {
 			log.error( me, me );
 		}
-	}
-
-
-	@Override
-	public void reconciled( Account acct, Collection<Split> splits ) {
-		super.reconciled( acct, splits );
 	}
 }

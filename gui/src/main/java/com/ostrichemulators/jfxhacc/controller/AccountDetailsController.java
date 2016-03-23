@@ -51,8 +51,10 @@ public class AccountDetailsController {
 	private EventHandler<ActionEvent> okhandler;
 	private final Account acct;
 	private final DataEngine engine;
+	private final Account original;
 
 	public AccountDetailsController( Account acct, DataEngine eng ) {
+		this.original = acct;
 		this.acct = ( null == acct ? null : new AccountImpl( acct ) );
 		this.engine = eng;
 	}
@@ -124,6 +126,11 @@ public class AccountDetailsController {
 						parentacct.getValue() );
 			}
 			else {
+				this.original.setOpeningBalance( Money.valueOf( balance.getText() ) );
+				this.original.setName( name.getText() );
+				this.original.setNotes( notes.getText() );
+				this.original.setNumber( number.getText() );
+
 				engine.getAccountMapper().update( acct );
 			}
 

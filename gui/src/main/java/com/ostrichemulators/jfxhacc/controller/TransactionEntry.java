@@ -7,7 +7,6 @@ package com.ostrichemulators.jfxhacc.controller;
 
 import com.ostrichemulators.jfxhacc.engine.DataEngine;
 import com.ostrichemulators.jfxhacc.model.Account;
-import com.ostrichemulators.jfxhacc.model.Journal;
 import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.Transaction;
 import com.ostrichemulators.jfxhacc.model.impl.SplitImpl;
@@ -31,8 +30,6 @@ public class TransactionEntry extends StackPane {
 	private final TransactionEntryController tec;
 	private final SplitsWindowController swc;
 	private TransactionImpl trans;
-	private Account acct;
-	private Journal journal;
 
 	public TransactionEntry( DataEngine eng ) {
 		setMinHeight( 0d );
@@ -75,11 +72,9 @@ public class TransactionEntry extends StackPane {
 		} );
 	}
 
-	public void setAccount( Account acct, Journal jnl ) {
-		tec.setAccount( acct, jnl );
+	public void setAccount( Account acct ) {
+		tec.setAccount( acct );
 		swc.setAccount( acct );
-		this.acct = acct;
-		this.journal = jnl;
 	}
 
 	public void addCloseListener( TransactionEntryController.CloseListener cc ) {
@@ -92,7 +87,6 @@ public class TransactionEntry extends StackPane {
 
 	public void setTransaction( Date d, Split s ) {
 		Transaction t = new TransactionImpl( null, d, null, null );
-		t.setJournal( journal );
 		t.addSplit( s );
 		setTransaction( t );
 	}

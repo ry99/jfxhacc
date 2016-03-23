@@ -26,4 +26,8 @@ public class Loans {
 	public static final URI PCT_PRED = new URIImpl( NAMESPACE + "apr" );
 	public static final URI NUMPAYMENTS_PRED = new URIImpl( NAMESPACE + "numberOfPayments" );
 	public static final URI VALUE_PRED = new URIImpl( NAMESPACE + "amount" );
+	public static final URI PRINCIPAL_PRED = new URIImpl( NAMESPACE + "principal" );
+	public static final URI INTEREST_PRED = new URIImpl( NAMESPACE + "interest" );
+	public static final URI FROM_PRED = new URIImpl( NAMESPACE + "from" );
+	public static final URI JOURNAL_PRED = new URIImpl( NAMESPACE + "journal" );
 }

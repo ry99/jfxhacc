@@ -34,15 +34,16 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.prefs.Preferences;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.ListCell;
@@ -62,6 +63,7 @@ import org.apache.log4j.Logger;
 public class TransactionEntryController extends AnchorPane {
 
 	private static final Logger log = Logger.getLogger( TransactionEntryController.class );
+	private static final String JNL_SELECTED = "journal.selected";
 	@FXML
 	private Button tofromBtn;
 	@FXML
@@ -79,11 +81,13 @@ public class TransactionEntryController extends AnchorPane {
 	@FXML
 	private TextField payeefield;
 	@FXML
+	private ChoiceBox<Journal> journalchsr;
+	@FXML
 	private Button splitsBtn;
 
 	private TransactionImpl trans;
 	private Account account;
-	private Journal journal;
+	private Journal defaultjournal;
 	private boolean newtrans;
 	private AccountMapper amap;
 	private PayeeMapper pmap;
@@ -93,8 +97,8 @@ public class TransactionEntryController extends AnchorPane {
 
 	private final Map<String, Payee> payeemap = new HashMap<>();
 	private final List<Account> allaccounts = new ArrayList<>();
-	private final ObservableList<Account> accounts
-			= FXCollections.observableArrayList();
+	//private final ObservableList<Account> accounts
+	//		= FXCollections.observableArrayList();
 	private final DataEngine engine;
 
 	public TransactionEntryController( DataEngine en ) {
@@ -109,45 +113,11 @@ public class TransactionEntryController extends AnchorPane {
 		listenees.remove( cc );
 	}
 
-	public void setAccount( Account a, Journal j ) {
+	public void setAccount( Account a ) {
 		account = a;
-		journal = j;
 
 		try {
-			accounts.setAll( GuiUtils.makeAccountCombo( accountfield, amap.getAll(),
-					amap ) );
-
-			accountfield.setOnKeyTyped( new EventHandler<KeyEvent>() {
-				@Override
-				public void handle( KeyEvent t ) {
-					t.consume();
-					String charo = t.getCharacter().toUpperCase();
-					Account selected = null;
-					for ( Account acct : accountfield.getItems() ) {
-						String fullname = GuiUtils.getFullName( acct, amap ).toUpperCase();
-						if ( fullname.startsWith( charo ) ) {
-							selected = acct;
-							break;
-						}
-					}
-
-					if ( null == selected ) {
-						// didn't find a match with full names, so check regular names
-						for ( Account acct : accountfield.getItems() ) {
-							String fullname = acct.getName().toUpperCase();
-							if ( fullname.startsWith( charo ) ) {
-								selected = acct;
-								break;
-							}
-						}
-					}
-
-					if ( null != selected ) {
-						accountfield.getSelectionModel().select( selected );
-						accountfield.setValue( selected );
-					}
-				}
-			} );
+			GuiUtils.makeAccountCombo( accountfield, amap.getAll(), amap );
 		}
 		catch ( MapperException me ) {
 			log.error( me, me );
@@ -175,11 +145,15 @@ public class TransactionEntryController extends AnchorPane {
 				}
 			}
 
+			defaultjournal = journalchsr.getValue();
 			trans.setDate( tdate );
 			trans.setPayee( payee );
+			trans.setJournal( defaultjournal );
+
+			Preferences prefs = Preferences.userNodeForPackage( getClass() );
+			prefs.put( JNL_SELECTED, defaultjournal.getId().stringValue() );
 
 			if ( newtrans ) {
-				trans.setJournal( journal );
 				tmap.create( trans );
 				for ( CloseListener c : listenees ) {
 					c.added( trans );
@@ -262,6 +236,24 @@ public class TransactionEntryController extends AnchorPane {
 			allaccounts.addAll( amap.getAll() );
 			tmap = engine.getTransactionMapper();
 
+			journalchsr.setItems( engine.getJournalMapper().getObservable() );
+
+			Preferences prefs = Preferences.userNodeForPackage( getClass() );
+			String jid = prefs.get( JNL_SELECTED, "" );
+			if ( jid.isEmpty() ) {
+				defaultjournal = journalchsr.getItems().get( 0 );
+			}
+			else {
+				for ( Journal j : journalchsr.getItems() ) {
+					if ( j.getId().stringValue().equals( jid ) ) {
+						defaultjournal = j;
+					}
+				}
+			}
+
+			journalchsr.setValue( defaultjournal );
+
+
 			for ( Payee p : pmap.getAll() ) {
 				payeemap.put( p.getName(), p );
 			}
@@ -294,6 +286,9 @@ public class TransactionEntryController extends AnchorPane {
 
 		memofield.textProperty().bindBidirectional( mysplit.getMemoProperty() );
 
+		journalchsr.setItems( engine.getJournalMapper().getObservable() );
+		journalchsr.setValue( null == t.getJournal() ? defaultjournal : t.getJournal() );
+
 		if ( null != t.getPayee() ) {
 			payeefield.setText( t.getPayee().getName() );
 		}
@@ -324,6 +319,7 @@ public class TransactionEntryController extends AnchorPane {
 		recofield.setIndeterminate( false );
 		datefield.setValue( LocalDate.now() );
 		accountfield.setValue( accountfield.getItems().get( 0 ) );
+		journalchsr.setItems( FXCollections.emptyObservableList() );
 
 		memofield.textProperty().unbind();
 		amountfield.textProperty().unbind();
@@ -410,7 +406,7 @@ public class TransactionEntryController extends AnchorPane {
 	}
 
 	private ListCell<Account> makeAccountCell() {
-		return new AccountListCell( amap );
+		return new AccountListCell( amap, true );
 	}
 
 	@FXML

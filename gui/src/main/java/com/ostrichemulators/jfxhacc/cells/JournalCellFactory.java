@@ -5,9 +5,8 @@
  */
 package com.ostrichemulators.jfxhacc.cells;
 
+import com.ostrichemulators.jfxhacc.model.Journal;
 import com.ostrichemulators.jfxhacc.model.Transaction;
-import java.text.DateFormat;
-import java.util.Date;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.util.Callback;
@@ -17,23 +16,21 @@ import org.apache.log4j.Logger;
  *
  * @author ryan
  */
-public class DateCellFactory implements Callback<TableColumn<Transaction, Date>, TableCell<Transaction, Date>> {
+public class JournalCellFactory implements Callback<TableColumn<Transaction, Journal>, TableCell<Transaction, Journal>> {
 
-	public static final Logger log = Logger.getLogger( DateCellFactory.class );
-
-	private final DateFormat SDF = DateFormat.getDateInstance( DateFormat.MEDIUM );
+	public static final Logger log = Logger.getLogger(JournalCellFactory.class );
 
 	@Override
-	public TableCell<Transaction, Date> call( TableColumn<Transaction, Date> p ) {
-		return new TableCell<Transaction, Date>() {
+	public TableCell<Transaction, Journal> call( TableColumn<Transaction, Journal> p ) {
+		return new TableCell<Transaction, Journal>() {
 			@Override
-			protected void updateItem( Date t, boolean empty ) {
+			protected void updateItem( Journal t, boolean empty ) {
 				super.updateItem( t, empty );
 				if ( ( empty || null == t ) ) {
 					setText( null );
 				}
 				else {
-					setText( SDF.format( t ) );
+					setText( t.getName() );
 				}
 			}
 		};

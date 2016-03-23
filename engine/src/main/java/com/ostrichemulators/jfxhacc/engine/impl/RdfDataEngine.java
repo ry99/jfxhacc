@@ -60,8 +60,8 @@ public class RdfDataEngine implements DataEngine {
 		jmap = new JournalMapperImpl( rc );
 		pmap = new PayeeMapperImpl( rc );
 		tmap = new TransactionMapperImpl( rc, amap, pmap, jmap );
-		lmap = new LoanMapperImpl( rc );
-		rmap = new RecurrenceMapperImpl( rc, tmap, lmap );
+		lmap = new LoanMapperImpl( rc, amap, jmap );
+		rmap = new RecurrenceMapperImpl( rc, tmap, lmap, amap, pmap );
 	}
 
 	@Override

@@ -11,25 +11,35 @@ import com.ostrichemulators.jfxhacc.engine.DataEngine;
 import com.ostrichemulators.jfxhacc.mapper.AccountMapper;
 import com.ostrichemulators.jfxhacc.mapper.MapperException;
 import com.ostrichemulators.jfxhacc.model.Account;
+import com.ostrichemulators.jfxhacc.model.AccountType;
+import com.ostrichemulators.jfxhacc.model.Journal;
 import com.ostrichemulators.jfxhacc.model.Loan;
+import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.Recurrence;
 import com.ostrichemulators.jfxhacc.model.impl.LoanImpl;
 import com.ostrichemulators.jfxhacc.model.vocabulary.Loans;
 import com.ostrichemulators.jfxhacc.utility.GuiUtils;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.Collection;
+import java.util.Date;
+import javafx.beans.property.Property;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
+import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TextFormatter;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
+import javafx.util.StringConverter;
 import javafx.util.converter.NumberStringConverter;
 import org.apache.log4j.Logger;
 
@@ -57,6 +67,8 @@ public class LoanWindowController {
 	@FXML
 	private ComboBox<Account> intacct;
 	@FXML
+	private ChoiceBox<Journal> journalchsr;
+	@FXML
 	private AnchorPane schedarea;
 	@FXML
 	private ListView<Recurrence> list;
@@ -66,6 +78,14 @@ public class LoanWindowController {
 	private Stage stage;
 	private Recurrence recurrence;
 	private Loan loan;
+	private final RateFormatter ratefmt = new RateFormatter();
+	private final ChangeListener<String> changer = new ChangeListener<String>(){
+
+		@Override
+		public void changed( ObservableValue<? extends String> ov, String t, String t1 ) {
+			loan.setApr( ratefmt.getValue() );
+		}
+	};
 
 	public LoanWindowController( DataEngine eng ) {
 		engine = eng;
@@ -95,6 +115,9 @@ public class LoanWindowController {
 			GuiUtils.makeAccountCombo( prinacct, accts, amap );
 			GuiUtils.makeAccountCombo( intacct, accts, amap );
 
+			journalchsr.setItems( engine.getJournalMapper().getObservable() );
+			journalchsr.getSelectionModel().clearAndSelect( 0 );
+
 			Collection<Recurrence> recs = engine.getRecurrenceMapper().getAll( Loans.TYPE );
 			list.getItems().setAll( recs );
 			list.setCellFactory( new RecurrenceListViewCellFactory() );
@@ -107,6 +130,11 @@ public class LoanWindowController {
 				}
 			} );
 
+			prinacct.setValue( amap.getAccounts( AccountType.LIABILITY ).asList().get( 0 ) );
+			intacct.setValue( amap.getAccounts( AccountType.EXPENSE ).asList().get( 0 ) );
+			payacct.setValue( amap.getAccounts( AccountType.ASSET ).asList().get( 0 ) );
+
+			rate.setTextFormatter( ratefmt );
 		}
 		catch ( IOException | MapperException ioe ) {
 			log.error( ioe, ioe );
@@ -116,8 +144,23 @@ public class LoanWindowController {
 	@FXML
 	void newLoan( ActionEvent event ) {
 		try {
-			Recurrence r = engine.getRecurrenceMapper().create( scheduledata.getRecurrence(),
-					new LoanImpl() );
+			loan = new LoanImpl();
+			loan.setApr( null == ratefmt.getValue() ? 0d : ratefmt.getValue() );
+			loan.setNumberOfPayments( Integer.valueOf( numpayments.getText().isEmpty()
+					? "36" : numpayments.getText() ) );
+			loan.setInitialValue( Money.valueOf( amount.getText().isEmpty() ? "1000.00"
+					: amount.getText() ) );
+
+			loan.setSourceAccount( payacct.getValue() );
+			loan.setPrincipalAccount( prinacct.getValue() );
+			loan.setInterestAccount( intacct.getValue() );
+			loan.setJournal( journalchsr.getValue() );
+
+			Recurrence r = scheduledata.getRecurrence();
+			r.setName( String.format( "New Loan %s",
+					new SimpleDateFormat( "MM/dd/yyyy'-'hh:mm:ss" ).format( new Date() ) ) );
+			r = engine.getRecurrenceMapper().create( r, loan );
+			list.getItems().add( r );
 			setCurrent( r );
 		}
 		catch ( MapperException me ) {
@@ -145,27 +188,47 @@ public class LoanWindowController {
 		}
 
 		amount.textProperty().unbind();
-		amount.textProperty().bindBidirectional( loan.getValueProperty(),
+		amount.textProperty().bindBidirectional( loan.getInitialValueProperty(),
 				new MoneyStringConverter() );
 
 		numpayments.textProperty().unbind();
 		numpayments.textProperty().bindBidirectional( loan.getNumberOfPaymentsProperty(),
 				new NumberStringConverter() );
 
-		rate.textProperty().unbind();
-		rate.textProperty().bindBidirectional( loan.getAprProperty(),
-				new NumberStringConverter() );
+		ratefmt.setValue( loan.getApr() );
+		rate.textProperty().addListener( changer );
 
 		name.textProperty().unbind();
 		name.textProperty().bindBidirectional( r.getNameProperty() );
+
+		Property<Money> valprp = new SimpleObjectProperty<>();
+		valprp.bind( loan.getPaymentAmount() );
+		payment.textProperty().unbind();
+		payment.textProperty().bindBidirectional( valprp, new MoneyStringConverter() );
+
 		scheduledata.setRecurrence( r );
+
+		journalchsr.valueProperty().unbind();
+		journalchsr.valueProperty().bindBidirectional( loan.getJournalProperty() );
+
+		prinacct.valueProperty().unbind();
+		prinacct.valueProperty().bindBidirectional( loan.getPrincipalAccountProperty() );
+
+		intacct.valueProperty().unbind();
+		intacct.valueProperty().bindBidirectional( loan.getInterestAccountProperty() );
+
+		payacct.valueProperty().unbind();
+		payacct.valueProperty().bindBidirectional( loan.getSourceAccountProperty() );
 	}
 
 	@FXML
 	public void save() {
 		try {
+			loan.setApr( ratefmt.getValue() );
+
 			engine.getLoanMapper().update( loan );
 			Recurrence rec = scheduledata.getRecurrence();
+			rec.setName( name.getText() );
 			rec.setId( recurrence.getId() );
 			engine.getRecurrenceMapper().update( rec );
 		}
@@ -177,5 +240,30 @@ public class LoanWindowController {
 	@FXML
 	public void close() {
 		stage.close();
+	}
+
+	private class RateFormatter extends TextFormatter<Double> {
+
+		public RateFormatter() {
+			super( new StringConverter<Double>() {
+
+				@Override
+				public String toString( Double t ) {
+					if ( null == t ) {
+						t = 0d;
+					}
+					return String.format( "%1.4f%%", t * 100 );
+				}
+
+				@Override
+				public Double fromString( String string ) {
+					if ( null == string || string.isEmpty() ) {
+						return 0d;
+					}
+
+					return Double.parseDouble( string.replaceAll( "%", "" ) )/100;
+				}
+			} );
+		}
 	}
 }

@@ -72,6 +72,9 @@ public class ScheduleDataWindowController {
 		r.setFrequency( Frequency.class.cast( group.getSelectedToggle().getUserData() ) );
 
 		LocalDate localDate = datepicker.getValue();
+		if ( null == localDate ) {
+			localDate = LocalDate.now( ZoneId.systemDefault() );
+		}
 		Instant instant = Instant.from( localDate.atStartOfDay( ZoneId.systemDefault() ) );
 		r.setNextRun( Date.from( instant ) );
 

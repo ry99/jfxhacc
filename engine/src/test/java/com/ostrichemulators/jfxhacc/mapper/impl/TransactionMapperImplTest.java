@@ -12,7 +12,6 @@ import com.ostrichemulators.jfxhacc.model.Journal;
 import com.ostrichemulators.jfxhacc.model.Payee;
 import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.Transaction;
-import com.ostrichemulators.jfxhacc.model.impl.JournalImpl;
 import com.ostrichemulators.jfxhacc.model.vocabulary.Accounts;
 import com.ostrichemulators.jfxhacc.utility.DbUtil;
 import com.ostrichemulators.jfxhacc.utility.UriUtil;
@@ -185,10 +184,9 @@ public class TransactionMapperImplTest {
 	// @Test
 	public void testGetAll() throws Exception {
 		Account acct = ami.get( ACCTID );
-		Journal journal = new JournalImpl( "test" );
 
 		List<Transaction> expResult = null;
-		List<Transaction> result = tmap.getAll( acct, journal );
+		List<Transaction> result = tmap.getAll( acct );
 		assertEquals( expResult, result );
 		fail( "The test case is a prototype." );
 	}
@@ -197,11 +195,10 @@ public class TransactionMapperImplTest {
 	public void testGetUnreconciled() throws Exception {
 		System.out.println( "getUnreconciled" );
 		Account acct = null;
-		Journal journal = null;
 		Date asof = null;
 		TransactionMapperImpl instance = null;
 		List<Transaction> expResult = null;
-		List<Transaction> result = instance.getUnreconciled( acct, journal, asof );
+		List<Transaction> result = instance.getUnreconciled( acct, asof );
 		assertEquals( expResult, result );
 		fail( "The test case is a prototype." );
 	}

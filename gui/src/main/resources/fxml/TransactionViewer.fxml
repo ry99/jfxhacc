@@ -1,18 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.*?>
-<?import java.lang.*?>
-<?import java.net.*?>
-<?import java.util.*?>
-<?import javafx.scene.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.AnchorPane?>
 
-<SplitPane fx:id="splitter" orientation="VERTICAL" prefHeight="400.0" prefWidth="600.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" xmlns="http://javafx.com/javafx/8.0.40" xmlns:fx="http://javafx.com/fxml/1">
+<SplitPane fx:id="splitter" orientation="VERTICAL" prefHeight="400.0" prefWidth="692.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" xmlns="http://javafx.com/javafx/8.0.65" xmlns:fx="http://javafx.com/fxml/1">
 	<items>
-		<AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="100.0" prefWidth="160.0">
+		<AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="398.0" prefWidth="746.0">
 			<children>
-				<TableView fx:id="transtable" prefHeight="252.0" prefWidth="598.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+				<TableView fx:id="transtable" prefHeight="398.0" prefWidth="639.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="-41.0" AnchorPane.topAnchor="0.0">
 					<columns>
 						<TableColumn fx:id="date" prefWidth="75.0" text="Date" />
 						<TableColumn fx:id="number" prefWidth="75.0" text="Number" />
@@ -20,6 +17,7 @@
 						<TableColumn fx:id="credit" minWidth="0.0" prefWidth="67.0" text="Deposit" />
 						<TableColumn fx:id="debit" minWidth="5.0" prefWidth="73.0" text="Withdrawal" />
 						<TableColumn fx:id="reco" editable="false" prefWidth="52.0" text="Rec" />
+                  <TableColumn fx:id="jcol" prefWidth="75.0" text="Journal" />
 					</columns>
 				</TableView>
 			</children>

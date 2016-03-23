@@ -396,10 +396,9 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 	}
 
 	@Override
-	public List<Transaction> getAll( Account acct, Journal journal ) throws MapperException {
+	public List<Transaction> getAll( Account acct ) throws MapperException {
 
 		Map<String, Value> bindings = bindmap( "acct", acct.getId() );
-		bindings.put( "jnl", journal.getId() );
 
 		// don't include recurring transactions
 		List<Transaction> transactions = query( "SELECT ?t ?p ?o WHERE {"
@@ -469,11 +468,10 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 	}
 
 	@Override
-	public List<Transaction> getUnreconciled( Account acct, Journal journal, Date asof )
+	public List<Transaction> getUnreconciled( Account acct, Date asof )
 			throws MapperException {
 
 		Map<String, Value> bindings = bindmap( "acct", acct.getId() );
-		bindings.put( "jnl", journal.getId() );
 		bindings.put( "asof", new ValueFactoryImpl().createLiteral( asof ) );
 		bindings.put( "recostate", new LiteralImpl( ReconcileState.RECONCILED.toString() ) );
 

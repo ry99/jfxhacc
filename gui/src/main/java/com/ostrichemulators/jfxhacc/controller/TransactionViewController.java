@@ -9,6 +9,7 @@ import com.ostrichemulators.jfxhacc.MainApp;
 import com.ostrichemulators.jfxhacc.ShutdownListener;
 import com.ostrichemulators.jfxhacc.controller.TransactionEntryController.CloseListener;
 import com.ostrichemulators.jfxhacc.cells.DateCellFactory;
+import com.ostrichemulators.jfxhacc.cells.JournalCellFactory;
 import com.ostrichemulators.jfxhacc.cells.MoneyCellFactory;
 import com.ostrichemulators.jfxhacc.cells.PayeeAccountMemoCellFactory;
 import com.ostrichemulators.jfxhacc.cells.PayeeAccountMemoValueFactory;
@@ -66,6 +67,8 @@ public class TransactionViewController implements ShutdownListener, TransactionL
 	@FXML
 	protected TableView<Transaction> transtable;
 	@FXML
+	private TableColumn<Transaction, Journal> jcol;
+	@FXML
 	private TableColumn<Transaction, Date> date;
 	@FXML
 	private TableColumn<Transaction, String> number;
@@ -81,7 +84,6 @@ public class TransactionViewController implements ShutdownListener, TransactionL
 	private final TransactionEntry dataentry = new TransactionEntry( MainApp.getEngine() );
 
 	protected Account account;
-	protected Journal journal;
 	private final PayeeAccountMemoValueFactory payeefac = new PayeeAccountMemoValueFactory();
 	private final RecoValueFactory recofac = new RecoValueFactory();
 	private boolean firstload = true;
@@ -91,12 +93,11 @@ public class TransactionViewController implements ShutdownListener, TransactionL
 	protected final ObservableList<Transaction> transactions
 			= FXCollections.observableArrayList();
 
-	public void setAccount( Account acct, Journal j ) {
+	public void setAccount( Account acct ) {
 		account = acct;
-		journal = j;
 		payeefac.setAccount( acct );
 		recofac.setAccount( acct );
-		dataentry.setAccount( acct, journal );
+		dataentry.setAccount( acct );
 		refresh();
 		transtable.scrollTo( transactions.size() - 1 );
 		splitter.setDividerPositions( 1.0 );
@@ -112,8 +113,8 @@ public class TransactionViewController implements ShutdownListener, TransactionL
 
 	protected List<Transaction> getTransactions() {
 		try {
-			log.debug( "fetching transactions for " + account + " in journal " + journal );
-			return tmap.getAll( account, journal );
+			log.debug( "fetching transactions for " + account );
+			return tmap.getAll( account );
 		}
 		catch ( MapperException me ) {
 			log.error( me, me );
@@ -174,6 +175,10 @@ public class TransactionViewController implements ShutdownListener, TransactionL
 
 		transtable.setFixedCellSize( getRowHeight() );
 		transtable.setItems( transactions );
+
+		jcol.setCellValueFactory( ( TableColumn.CellDataFeatures<Transaction, Journal> p )
+				-> p.getValue().getJournalProperty() );
+		jcol.setCellFactory( new JournalCellFactory() );
 
 		date.setCellValueFactory( ( TableColumn.CellDataFeatures<Transaction, Date> p )
 				-> p.getValue().getDateProperty() );

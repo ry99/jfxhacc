@@ -31,19 +31,18 @@ public interface TransactionMapper extends DataMapper<Transaction> {
 	 * @return
 	 * @throws MapperException
 	 */
-	public List<Transaction> getAll( Account acct, Journal jnl ) throws MapperException;
+	public List<Transaction> getAll( Account acct ) throws MapperException;
 
 	/**
 	 * Gets all transactions for the given account who have a split that is
 	 * {@link ReconcileState#CLEARED} or {@link ReconcileState#NOT_RECONCILED}
 	 *
 	 * @param acct
-	 * @param jnl
 	 * @param asof the cut-off dates
 	 * @return
 	 * @throws MapperException
 	 */
-	public List<Transaction> getUnreconciled( Account acct, Journal jnl, Date asof ) throws MapperException;
+	public List<Transaction> getUnreconciled( Account acct, Date asof ) throws MapperException;
 
 	public Transaction create( Date d, Payee p, String number, Collection<Split> splits,
 			Journal journal ) throws MapperException;

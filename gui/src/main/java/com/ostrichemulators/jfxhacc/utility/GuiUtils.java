@@ -12,17 +12,24 @@ import com.ostrichemulators.jfxhacc.model.Account;
 import java.text.Collator;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import javafx.animation.AnimationTimer;
+import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
+import javafx.event.EventHandler;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.util.Callback;
 import org.apache.log4j.Logger;
 
@@ -58,24 +65,72 @@ public class GuiUtils {
 			Collection<Account> accts, AccountMapper amap ) {
 		ObservableList<Account> accounts = FXCollections.observableArrayList( accts );
 
+		Map<Account, String> fullnames = new HashMap<>();
+		for ( Account a : accounts ) {
+			fullnames.put( a, GuiUtils.getFullName( a, amap ) );
+		}
+
 		SortedList<Account> sorted = new SortedList<>( accounts );
 		sorted.setComparator( new Comparator<Account>() {
 
 			@Override
 			public int compare( Account o1, Account o2 ) {
-				return Collator.getInstance().compare( GuiUtils.getFullName( o1, amap ),
-						GuiUtils.getFullName( o2, amap ) );
+				return Collator.getInstance().compare( fullnames.get( o1 ), fullnames.get( o2 ) );
 			}
 		} );
 
-		field.setItems( sorted );
+		FilteredList<Account> filtered = new FilteredList<>( sorted );
+		field.setItems( filtered );
 
-		field.setButtonCell( new AccountListCell( amap ) );
+		field.setOnKeyPressed( new EventHandler<KeyEvent>() {
+			private final StringBuilder current = new StringBuilder();
+
+			@Override
+			public void handle( KeyEvent t ) {
+				KeyCode code = t.getCode();
+				t.consume();
+				boolean refilter = false;
+				if ( KeyCode.UP == code || KeyCode.DOWN == code || KeyCode.DELETE == code ) {
+					current.delete( 0, current.length() );
+					filtered.setPredicate( null );
+				}
+				else if ( KeyCode.BACK_SPACE == code ) {
+					if ( current.length() > 0 ) {
+						current.delete( current.length() - 1, current.length() );
+					}
+					refilter = true;
+				}
+				else if ( KeyCode.RIGHT == code ) {
+					current.replace( 0, current.length(), fullnames.get( field.getValue() ) );
+					refilter = true;
+				}
+				else if ( code.isLetterKey() ) {
+					refilter = true;
+					current.append( t.getText() );
+				}
+
+				log.debug( "account filter text is: " + current );
+
+				if ( refilter ) {
+					String upper = current.toString().toUpperCase();
+					filtered.setPredicate( ( Account item ) -> {
+						return fullnames.get( item ).toUpperCase().contains( upper );
+					} );
+
+					if ( !filtered.isEmpty() ) {
+						field.setValue( filtered.get( 0 ) );
+					}
+				}
+				field.show();
+			}
+		} );
+
+		field.setButtonCell( new AccountListCell( amap, false ) );
 		field.setCellFactory( new Callback<ListView<Account>, ListCell<Account>>() {
 
 			@Override
 			public ListCell<Account> call( ListView<Account> p ) {
-				return new AccountListCell( amap );
+				return new AccountListCell( amap, false );
 			}
 		} );
 

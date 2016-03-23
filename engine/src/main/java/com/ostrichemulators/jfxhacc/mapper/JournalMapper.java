@@ -6,6 +6,7 @@
 package com.ostrichemulators.jfxhacc.mapper;
 
 import com.ostrichemulators.jfxhacc.model.Journal;
+import javafx.collections.ObservableList;
 
 /**
  *
@@ -14,4 +15,6 @@ import com.ostrichemulators.jfxhacc.model.Journal;
 public interface JournalMapper extends DataMapper<Journal> {
 
 	public Journal create( String name ) throws MapperException;
+
+	public ObservableList<Journal> getObservable();
 }
