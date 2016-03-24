@@ -5,10 +5,9 @@
  */
 package com.ostrichemulators.jfxhacc;
 
+import java.text.Collator;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
+import java.util.Collection;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
@@ -20,75 +19,52 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 
 import java.util.List;
-import java.util.Map;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.function.Predicate;
+import javafx.application.Platform;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
+import javafx.collections.transformation.SortedList;
 
 /**
  * This class is a TextField which implements an "autocomplete" functionality,
  * based on a supplied list of entries.
  *
- * @author Caleb Brinkman (from
- * https://gist.githubusercontent.com/floralvikings/10290131/raw/d36def081abebee4e6afb8773f68fc9dd5d66f77/AutoCompleteTextBox.java)
- *
  * @author ryan
  */
 public class AutoCompletePopupHandler {
 
-	/**
-	 * The existing autocomplete entries.
-	 */
-	private final SortedSet<String> entries;
-	/**
-	 * The popup used to select an entry.
-	 */
-	private ContextMenu entriesPopup;
+	private static final int maxShownEntries = 12;
+	private ContextMenu entriesPopup = new ContextMenu();
 	private final TextField text;
+	private final SortedList<String> completions;
 
 	/**
 	 * Construct a new AutoCompleteTextField.
 	 */
-	public AutoCompletePopupHandler( TextField text ) {
+	public AutoCompletePopupHandler( TextField text, Collection<String> completions ) {
 		super();
 		this.text = text;
-		entries = new TreeSet<>( String.CASE_INSENSITIVE_ORDER );
-		entriesPopup = new ContextMenu();
+		Collator col = Collator.getInstance();
+		col.setStrength( Collator.SECONDARY ); // approximately case-insensitive
+		this.completions
+				= new SortedList<>( FXCollections.observableArrayList( completions ), col );
+		FilteredList<String> filter = new FilteredList<>( this.completions );
+
 		text.textProperty().addListener( new ChangeListener<String>() {
 			@Override
-			public void changed( ObservableValue<? extends String> observableValue, String s, String s2 ) {
-				if ( text.getText().length() < 2 ) {
-					entriesPopup.hide();
-				}
-				else {
-					Map<String, Integer> searchResult = new HashMap<>();
-					String upper = text.getText().toUpperCase();
-					for ( String needle : entries ) {
-						String uneedle = needle.toUpperCase();
-						if ( uneedle.contains( upper ) ) {
-							searchResult.put( needle, uneedle.indexOf( upper ) );
-						}
+			public void changed( ObservableValue<? extends String> observableValue, String oldtext, String newtext ) {
+				entriesPopup.hide();
+				filter.setPredicate( new Predicate<String>() {
+					@Override
+					public boolean test( String t ) {
+						return ( t.toUpperCase().contains( newtext.toUpperCase() ) );
 					}
+				} );
 
-					// searchResult.addAll( entries.subSet( text.getText(),
-					//		text.getText() + Character.MAX_VALUE ) );
-					entriesPopup.hide();
-					if ( entries.size() > 0 ) {
-						List<String> results = new ArrayList<>( searchResult.keySet() );
-						Collections.sort( results, new Comparator<String>() {
-
-							@Override
-							public int compare( String o1, String o2 ) {
-								int diff = searchResult.get( o1 ) - searchResult.get( o2 );
-								if ( 0 == diff ) {
-									diff = o1.compareTo( o2 );
-								}
-								return diff;
-							}
-						} );
-
-						populatePopup( results );
-						entriesPopup.show( text, Side.BOTTOM, 0, 0 );
-					}
+				if ( !filter.isEmpty() ) {
+					populatePopup( filter, 0 );
+					entriesPopup.show( text, Side.BOTTOM, 0, 0 );
 				}
 			}
 		} );
@@ -103,23 +79,36 @@ public class AutoCompletePopupHandler {
 	 *
 	 * @return The existing autocomplete entries.
 	 */
-	public SortedSet<String> getEntries() {
-		return entries;
+	public ObservableList<String> getCompletions() {
+		return completions;
 	}
 
 	/**
-	 * Populate the entry set with the given search results. Display is limited to
-	 * 10 entries, for performance.
+	 * Populate the entry set with the given search results.
 	 *
-	 * @param searchResult The set of matching strings.
+	 * @param choices The set of matching strings.
 	 */
-	private void populatePopup( List<String> searchResult ) {
+	private void populatePopup( ObservableList<String> choices, int start ) {
 		List<CustomMenuItem> menuItems = new ArrayList<>();
-		// If you'd like more entries, modify this line.
-		int maxEntries = 30;
-		int count = Math.min( searchResult.size(), maxEntries );
-		for ( int i = 0; i < count; i++ ) {
-			final String result = searchResult.get( i );
+
+		int end = Math.min( choices.size(), start + maxShownEntries );
+
+		List<String> showables = new ArrayList<>( choices.subList( start, end ) );
+
+		if ( start > 0 ) {
+			Label moveup = new Label( "..." );
+			CustomMenuItem item = new CustomMenuItem( moveup, true );
+
+			menuItems.add( item );
+			moveup.setOnMouseEntered( event -> {
+				repopulateEntries( choices, start - 1 );
+			} );
+			item.setOnAction( event -> {
+				repopulateEntries( choices, start - 1 );
+			} );
+		}
+
+		for ( String result : showables ) {
 			Label entryLabel = new Label( result );
 			CustomMenuItem item = new CustomMenuItem( entryLabel, true );
 			item.setOnAction( new EventHandler<ActionEvent>() {
@@ -132,7 +121,30 @@ public class AutoCompletePopupHandler {
 			} );
 			menuItems.add( item );
 		}
-		entriesPopup.getItems().clear();
-		entriesPopup.getItems().addAll( menuItems );
+
+		if ( choices.size() > ( start + maxShownEntries ) ) {
+			Label movedown = new Label( "..." );
+			CustomMenuItem item = new CustomMenuItem( movedown, true );
+
+			menuItems.add( item );
+			movedown.setOnMouseEntered( event -> {
+				repopulateEntries( choices, start + 1 );
+			} );
+			item.setOnAction( event -> {
+				repopulateEntries( choices, start + 1 );
+			} );
+		}
+
+		entriesPopup.getItems().setAll( menuItems );
+	}
+
+	private void repopulateEntries( ObservableList<String> choices, int start ) {
+		Platform.runLater( new Runnable() {
+
+			@Override
+			public void run() {
+				populatePopup( choices, start );
+			}
+		} );
 	}
 }

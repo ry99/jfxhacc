@@ -16,7 +16,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javafx.animation.AnimationTimer;
-import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -70,9 +69,7 @@ public class GuiUtils {
 			fullnames.put( a, GuiUtils.getFullName( a, amap ) );
 		}
 
-		SortedList<Account> sorted = new SortedList<>( accounts );
-		sorted.setComparator( new Comparator<Account>() {
-
+		SortedList<Account> sorted = new SortedList<>( accounts, new Comparator<Account>() {
 			@Override
 			public int compare( Account o1, Account o2 ) {
 				return Collator.getInstance().compare( fullnames.get( o1 ), fullnames.get( o2 ) );
@@ -122,6 +119,16 @@ public class GuiUtils {
 					}
 				}
 				field.show();
+			}
+		} );
+
+		field.valueProperty().addListener( new ChangeListener<Account>(){
+
+			@Override
+			public void changed( ObservableValue<? extends Account> ov, Account t, Account t1 ) {
+				if( null == t1 ){
+					filtered.setPredicate( null );
+				}
 			}
 		} );
 

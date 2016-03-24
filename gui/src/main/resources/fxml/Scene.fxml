@@ -145,6 +145,11 @@
                                  <accelerator>
                                     <KeyCodeCombination alt="UP" code="L" control="UP" meta="UP" shift="UP" shortcut="DOWN" />
                                  </accelerator></MenuItem>
+                              <Menu text="_Charts">
+                                 <items>
+                                    <MenuItem onAction="#openBar" text="_Balance" />
+                                 </items>
+                              </Menu>
                           </items>
                         </Menu>
                     </menus>

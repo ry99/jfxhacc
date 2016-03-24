@@ -200,8 +200,6 @@ public class TransactionEntryController extends AnchorPane {
 	@FXML
 	public void initialize() {
 		payeefield.setEditable( true );
-		autocomplete = new AutoCompletePopupHandler( payeefield );
-
 		payeefield.textProperty().addListener( new ChangeListener<String>() {
 
 			@Override
@@ -262,8 +260,7 @@ public class TransactionEntryController extends AnchorPane {
 			log.warn( x, x );
 		}
 
-		autocomplete.getEntries().addAll( payeemap.keySet() );
-
+		autocomplete = new AutoCompletePopupHandler( payeefield, payeemap.keySet() );
 		accountfield.setButtonCell( makeAccountCell() );
 		accountfield.setCellFactory( new Callback<ListView<Account>, ListCell<Account>>() {
 

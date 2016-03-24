@@ -4,6 +4,9 @@ import com.ostrichemulators.jfxhacc.MainApp;
 import com.ostrichemulators.jfxhacc.MainApp.StageRememberer;
 import com.ostrichemulators.jfxhacc.ShutdownListener;
 import com.ostrichemulators.jfxhacc.cells.MoneyTableTreeCellFactory;
+import com.ostrichemulators.jfxhacc.charting.AccountBalanceMaker;
+import com.ostrichemulators.jfxhacc.charting.SeriesMaker;
+import com.ostrichemulators.jfxhacc.controller.ChartController.ChartType;
 import com.ostrichemulators.jfxhacc.engine.DataEngine;
 import com.ostrichemulators.jfxhacc.engine.impl.RdfDataEngine;
 import com.ostrichemulators.jfxhacc.mapper.AccountMapper;
@@ -661,6 +664,32 @@ public class MainWindowController implements ShutdownListener {
 		List<MenuItem> items = new ArrayList<>( recurbtn.getItems() );
 		for ( MenuItem mi : items ) {
 			mi.fire();
+		}
+	}
+
+	@FXML
+	public void openBar() {
+		openChart( new AccountBalanceMaker( MainApp.getEngine().getAccountMapper() ),
+				ChartType.AREA );
+	}
+
+	private void openChart( SeriesMaker maker, ChartType type ) {
+		ChartController controller
+				= new ChartController( MainApp.getEngine(), type, maker );
+
+		FXMLLoader loader
+				= new FXMLLoader( getClass().getResource( "/fxml/ChartWindow.fxml" ) );
+		loader.setController( controller );
+		try {
+			Scene scene = new Scene( loader.load() );
+			Stage stage = new Stage();
+			stage.setTitle( "Bar Chart" );
+			stage.setScene( scene );
+			controller.setStage( stage );
+			stage.show();
+		}
+		catch ( IOException ioe ) {
+			log.error( ioe, ioe );
 		}
 	}
 }
