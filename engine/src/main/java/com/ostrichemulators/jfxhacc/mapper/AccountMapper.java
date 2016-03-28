@@ -27,6 +27,13 @@ public interface AccountMapper extends DataMapper<Account> {
 
 	public Money getBalance( Account a, BalanceType type );
 
+	/**
+	 * Gets the balance for this account as of the given date
+	 * @param a the account
+	 * @param type what to account towards the balance
+	 * @param asOf counted transactions must be before this date
+	 * @return
+	 */
 	public Money getBalance( Account a, BalanceType type, Date asOf );
 
 	public Account getParent( Account a ) throws MapperException;

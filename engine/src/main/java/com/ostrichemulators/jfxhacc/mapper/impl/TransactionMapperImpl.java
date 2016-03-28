@@ -27,12 +27,17 @@ import com.ostrichemulators.jfxhacc.model.vocabulary.Transactions;
 import com.ostrichemulators.jfxhacc.utility.DbUtil;
 import com.ostrichemulators.jfxhacc.utility.UriUtil;
 import info.aduna.iteration.Iterations;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -317,10 +322,10 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 		return query( "SELECT ?s ?memo ?reco ?val ?aid WHERE {"
 				+ "  ?t trans:entry ?s."
 				+ "  ?s splits:account ?aid ."
-				+ "  OPTIONAL { ?s splits:memo ?memo } ."
 				+ "  ?s splits:value ?val ."
+				+ "  OPTIONAL { ?s splits:memo ?memo } ."
 				+ "  OPTIONAL { ?s splits:reconciled ?reco } ."
-				+ "} ORDER BY ?t", bindmap( "t", transid ), new QueryHandler<Map<Split, URI>>() {
+				+ "} ORDER BY ?s", bindmap( "t", transid ), new QueryHandler<Map<Split, URI>>() {
 					Map<Split, URI> lkp = new HashMap<>();
 
 					@Override
@@ -396,6 +401,76 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 	}
 
 	@Override
+	public Map<LocalDate, List<Split>> getSplits( Account acct, Date since,
+			Date until ) throws MapperException {
+		if ( null == since ) {
+			since = new Date( Long.MIN_VALUE );
+		}
+		if ( null == until ) {
+			until = new Date( Long.MAX_VALUE );
+		}
+
+		Map<String, Value> binds = this.bindmap( "aid", acct.getId() );
+		ValueFactory vf = getConnection().getValueFactory();
+		binds.put( "since", vf.createLiteral( since ) );
+		binds.put( "until", vf.createLiteral( until ) );
+
+		String sparql = "SELECT ?s ?memo ?reco ?val ?aid ?date WHERE {"
+				+ "  ?s splits:account ?aid ."
+				+ "  ?s splits:value ?val ."
+				+ "  ?t trans:entry ?s . FILTER NOT EXISTS { ?t jfxhacc:recurrence ?z } ."
+				+ "  ?t dcterms:created ?date . "
+				+ "  FILTER( ?date >= ?since && ?date < ?until ) ."
+				+ "  OPTIONAL { ?s splits:memo ?memo } ."
+				+ "  OPTIONAL { ?s splits:reconciled ?reco } ."
+				+ "} ORDER BY ?date";
+
+		return query( sparql, binds, new QueryHandler<Map<LocalDate, List<Split>>>() {
+
+			private final Map<LocalDate, List<Split>> data = new LinkedHashMap<>();
+
+			@Override
+			public void handleTuple( BindingSet set, ValueFactory vf ) {
+				URI splitid = URI.class.cast( set.getValue( "s" ) );
+
+				Value val = set.getValue( "memo" );
+				String memo = ( null == val ? "" : val.stringValue() );
+
+				val = set.getValue( "reco" );
+				ReconcileState rs = ( null == val
+						? ReconcileState.NOT_RECONCILED
+						: ReconcileState.valueOf( val.stringValue() ) );
+
+				val = set.getValue( "val" );
+				int value = ( null == val ? 0
+						: Literal.class.cast( val ).intValue() );
+
+				Split split = new SplitImpl( splitid, new Money( value ) );
+				split.setMemo( memo );
+				split.setReconciled( rs );
+				split.setAccount( acct );
+
+				final Literal literal = Literal.class.cast( set.getValue( "date" ) );
+				Instant instant = Instant.ofEpochMilli( DbUtil.toDate( literal ).getTime() );
+				LocalDate date = LocalDateTime.ofInstant( instant,
+						ZoneId.systemDefault() ).toLocalDate();
+
+				if ( !data.containsKey( date ) ) {
+					data.put( date, new ArrayList<>() );
+				}
+
+				data.get( date ).add( split );
+			}
+
+			@Override
+			public Map<LocalDate, List<Split>> getResult() {
+				return data;
+			}
+		} );
+	}
+
+	@Override
+
 	public List<Transaction> getAll( Account acct ) throws MapperException {
 
 		Map<String, Value> bindings = bindmap( "acct", acct.getId() );
@@ -480,7 +555,7 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 				+ "  ?s splits:account ?acct ."
 				+ "  ?t trans:journal ?jnl ."
 				+ "  ?s splits:reconciled ?reco FILTER( ?reco != ?recostate ) ."
-				+ "  ?t dcterms:created ?date FILTER( xsd:dateTime( ?date ) < ?asof ) ."
+				+ "  ?t dcterms:created ?date FILTER( ?date < ?asof ) ."
 				+ "  ?t ?p ?o "
 				+ "} ORDER BY ?t",
 				bindings, new QueryHandler<List<Transaction>>() {

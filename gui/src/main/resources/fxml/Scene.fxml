@@ -147,7 +147,8 @@
                                  </accelerator></MenuItem>
                               <Menu text="_Charts">
                                  <items>
-                                    <MenuItem onAction="#openBar" text="_Balance" />
+                                    <MenuItem onAction="#openBalance" text="_Balance" />
+                                    <MenuItem onAction="#openDelta" text="_Delta" />
                                  </items>
                               </Menu>
                           </items>

@@ -12,9 +12,11 @@ import com.ostrichemulators.jfxhacc.model.Recurrence;
 import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
 import com.ostrichemulators.jfxhacc.model.Transaction;
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -25,13 +27,28 @@ public interface TransactionMapper extends DataMapper<Transaction> {
 	public Transaction getTransaction( Split s ) throws MapperException;
 
 	/**
-	 * Gets all transactions that have a split belonging to the given account
+	 * Gets transactions that have a split belonging to the given account.
+	 * Transactions that are not included in balance calculations are not included
+	 * in this list
 	 *
 	 * @param acct
 	 * @return
 	 * @throws MapperException
 	 */
 	public List<Transaction> getAll( Account acct ) throws MapperException;
+
+	/**
+	 * Gets splits belonging to the given account between from(inclusive) and
+	 * to(exclusive). Splits that are not included in balance calculations are not
+	 * included in this list.
+	 *
+	 * @param acct
+	 * @param from date of the earliest possible split. if null, get all splits
+	 * @param to date of the first split to exclude. if null, there is no upper limit
+	 * @return
+	 * @throws MapperException
+	 */
+	public Map<LocalDate, List<Split>> getSplits( Account acct, Date from, Date to ) throws MapperException;
 
 	/**
 	 * Gets all transactions for the given account who have a split that is

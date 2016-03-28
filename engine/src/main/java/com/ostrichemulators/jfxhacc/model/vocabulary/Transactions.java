@@ -5,7 +5,6 @@
  */
 package com.ostrichemulators.jfxhacc.model.vocabulary;
 
-import static com.ostrichemulators.jfxhacc.model.vocabulary.JfxHacc.NAMESPACE;
 import org.openrdf.model.URI;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.vocabulary.DCTERMS;

@@ -20,6 +20,8 @@ import javafx.scene.chart.AreaChart;
 import javafx.scene.chart.BarChart;
 import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.NumberAxis;
+import javafx.scene.chart.StackedAreaChart;
+import javafx.scene.chart.StackedBarChart;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
@@ -37,7 +39,7 @@ public class ChartController {
 
 	public static enum ChartType {
 
-		BAR, LINE, AREA
+		BAR, LINE, AREA, STACKEDAREA, STACKEDBAR
 	};
 
 	@FXML
@@ -86,6 +88,7 @@ public class ChartController {
 		NumberAxis yaxis = new NumberAxis();
 		xaxis.setLabel( seriesmaker.getYLabel() );
 		xaxis.setTickLabelsVisible( true );
+		this.type = t;
 
 		switch ( t ) {
 			case BAR:
@@ -94,9 +97,18 @@ public class ChartController {
 				bchart.setCategoryGap( 20 );
 				chart = bchart;
 				break;
+			case STACKEDBAR:
+				StackedBarChart<String, Number> sbchart = new StackedBarChart<>( xaxis, yaxis );
+				sbchart.setCategoryGap( 20 );
+				chart = sbchart;
+				break;
 			case AREA:
 				AreaChart<String, Number> achart = new AreaChart<>( xaxis, yaxis );
 				chart = achart;
+				break;
+			case STACKEDAREA:
+				StackedAreaChart<String, Number> sachart = new StackedAreaChart<>( xaxis, yaxis );
+				chart = sachart;
 				break;
 			case LINE:
 				AreaChart<String, Number> lchart = new AreaChart<>( xaxis, yaxis );
@@ -114,7 +126,6 @@ public class ChartController {
 
 		chart.setTitle( seriesmaker.getTitle() );
 		replot();
-		// xaxis.invalidateRange( xaxis.getCategories() );
 	}
 
 	@FXML
@@ -137,8 +148,10 @@ public class ChartController {
 	}
 
 	private void plotSeries( Account acct ) {
-		chart.getData().add( seriesmaker.createSeries( acct, startdate.getValue(),
-				enddate.getValue() ) );
+		if ( startdate.getValue().isBefore( enddate.getValue() ) ) {
+			chart.getData().addAll( seriesmaker.createSeries( acct,
+					startdate.getValue(), enddate.getValue() ) );
+		}
 	}
 
 	public void setStage( Stage s ) {

@@ -5,7 +5,6 @@
  */
 package com.ostrichemulators.jfxhacc.charting;
 
-import com.ostrichemulators.jfxhacc.mapper.AccountMapper;
 import com.ostrichemulators.jfxhacc.mapper.MapperException;
 import com.ostrichemulators.jfxhacc.mapper.TransactionMapper;
 import com.ostrichemulators.jfxhacc.model.Account;
@@ -17,7 +16,6 @@ import java.time.LocalDate;
 import java.time.Period;
 import java.time.ZoneId;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -30,14 +28,12 @@ import org.apache.log4j.Logger;
  *
  * @author ryan
  */
-public class AccountBalanceMaker extends AbstractSeriesMakerBase {
+public class AccountDeltaMaker extends AbstractSeriesMakerBase {
 
-	private static final Logger log = Logger.getLogger( AccountBalanceMaker.class );
-	private final AccountMapper amap;
+	private static final Logger log = Logger.getLogger( AccountDeltaMaker.class );
 	private final TransactionMapper tmap;
 
-	public AccountBalanceMaker( AccountMapper amap, TransactionMapper tmap ) {
-		this.amap = amap;
+	public AccountDeltaMaker( TransactionMapper tmap ) {
 		this.tmap = tmap;
 	}
 
@@ -54,10 +50,12 @@ public class AccountBalanceMaker extends AbstractSeriesMakerBase {
 	@Override
 	public Collection<XYChart.Series<String, Number>> createSeries( Account acct,
 			final LocalDate start, final LocalDate end ) {
-		XYChart.Series<String, Number> series = new XYChart.Series<>();
-		series.setName( acct.getName() );
-		//XYChart.Series<String, Number> amapseries = new XYChart.Series<>();
-		//amapseries.setName( acct.getName() + " amap" );
+		XYChart.Series<String, Number> adds = new XYChart.Series<>();
+		XYChart.Series<String, Number> subs = new XYChart.Series<>();
+		XYChart.Series<String, Number> deltas = new XYChart.Series<>();
+		adds.setName( acct.getName() + " Additions" );
+		subs.setName( acct.getName() + " Withdrawals" );
+		deltas.setName( acct.getName() + " Delta" );
 
 		LocalDate pfirst = start;
 		Instant instant = pfirst.atStartOfDay( ZoneId.systemDefault() ).toInstant();
@@ -74,34 +72,40 @@ public class AccountBalanceMaker extends AbstractSeriesMakerBase {
 			log.error( me, me );
 		}
 
-		Money value = amap.getBalance( acct, AccountMapper.BalanceType.CURRENT, starttime );
-		// Money value2 = new Money( value.value() );
 		while ( pfirst.isBefore( end ) ) {
-			instant = pfirst.atStartOfDay( ZoneId.systemDefault() ).toInstant();
-			Calendar cal = Calendar.getInstance();
-			Date startdate = Date.from( instant );
-			cal.setTime( startdate );
-			String label = getLabel( pfirst );
-			series.getData().add( new XYChart.Data<>( label, value.toDouble() ) );
-
-			log.debug( "calculated balance at " + startdate + ": " + value );
-			//if ( !value2.equals( value ) ) {
-			//	value2 = amap.getBalance( acct,
-			//			AccountMapper.BalanceType.CURRENT, startdate );
-			//}
-			//log.debug( "amap balance at " + startdate + " is " + value2 );
-			//amapseries.getData().add( new XYChart.Data<>( label, value2.toDouble() ) );
+			Money creds = new Money();
+			Money debs = new Money();
+			Money delta = new Money();
 
 			LocalDate plast = pfirst.plusMonths( 1l );
-			//  don't overshoot our end date
 			if ( plast.isAfter( end ) ) {
 				plast = end;
 			}
 
 			for ( Split s : getSplits( splits, pfirst, plast ) ) {
+				if ( s.isCredit() ) {
+					//log.debug( "credit: " + s.getId() + " " + s.getValue() );
+					creds = creds.add( s.getValue() );
+				}
+				else {
+					//log.debug( "debit: " + s.getId() + " " + s.getValue() );
+					debs = debs.add( s.getValue() );
+				}
 				Money change = AccountBalanceCache.getSplitValueForAccount( s, acct );
-				//log.debug( "  " + running + " split: " + s.getId() + " -> " + s.getValue() );
-				value = value.add( change );
+				delta = delta.add( change );
+			}
+
+			String label = getLabel( pfirst );
+			log.debug( label + " credits: " + creds + "; debits: " + debs + "; delta: " + delta );
+
+			deltas.getData().add( new XYChart.Data<>( label, delta.toDouble() ) );
+			if ( acct.getAccountType().isDebitPlus() ) {
+				adds.getData().add( new XYChart.Data<>( label, debs.toDouble() ) );
+				subs.getData().add( new XYChart.Data<>( label, creds.opposite().toDouble() ) );
+			}
+			else {
+				adds.getData().add( new XYChart.Data<>( label, creds.toDouble() ) );
+				subs.getData().add( new XYChart.Data<>( label, debs.opposite().toDouble() ) );
 			}
 
 			// see if we have any "leftover" days in the next month to worry about
@@ -119,7 +123,6 @@ public class AccountBalanceMaker extends AbstractSeriesMakerBase {
 			}
 		}
 
-		//return Arrays.asList( series, amapseries );
-		return Arrays.asList( series );
+		return Arrays.asList( adds, subs, deltas );
 	}
 }

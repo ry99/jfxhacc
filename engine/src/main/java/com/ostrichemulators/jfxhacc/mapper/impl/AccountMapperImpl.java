@@ -16,7 +16,6 @@ import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
 import com.ostrichemulators.jfxhacc.model.impl.AccountImpl;
 import com.ostrichemulators.jfxhacc.model.vocabulary.Accounts;
 import com.ostrichemulators.jfxhacc.model.vocabulary.Splits;
-import com.ostrichemulators.jfxhacc.model.vocabulary.Transactions;
 import com.ostrichemulators.jfxhacc.utility.TreeNode;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -277,20 +276,15 @@ public class AccountMapperImpl extends SimpleEntityRdfMapper<Account> implements
 		}
 
 		String sparql = "SELECT ( SUM( ?val ) AS ?sum ) WHERE {"
-				+ "  ?split ?sval ?val . "
-				+ "  ?split ?sreco ?reco ."
-				+ "  ?split ?sacct ?accountid ."
-				+ "  ?trans ?entry ?split ."
-				+ "  ?trans ?tdate ?date ."
+				+ "  ?split splits:value ?val . "
+				+ "  ?split splits:account ?accountid ."
+				+ "  ?trans trans:entry ?split ."
+				+ "  ?trans dcterms:created ?date ."
 				+ "  FILTER NOT EXISTS { ?trans jfxhacc:recurrence ?z } ."
-				+ "  FILTER ( xsd:dateTime( ?date ) < ?asof )"
+				+ "  FILTER ( ?date < ?asof )"
+				+ "  OPTIONAL { ?split splits:reconciled ?reco } ."
 				+ "}";
 		Map<String, Value> map = bindmap( "accountid", a.getId() );
-		map.put( "sval", Splits.VALUE_PRED );
-		map.put( "sreco", Splits.RECO_PRED );
-		map.put( "sacct", Splits.ACCOUNT_PRED );
-		map.put( "entry", Transactions.SPLIT_PRED );
-		map.put( "tdate", Transactions.DATE_PRED );
 		map.put( "asof", new ValueFactoryImpl().createLiteral( asof ) );
 		if ( BalanceType.RECONCILED == type ) {
 			map.put( "reco", new LiteralImpl( ReconcileState.RECONCILED.toString() ) );

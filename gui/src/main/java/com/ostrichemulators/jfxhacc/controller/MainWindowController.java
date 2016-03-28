@@ -5,6 +5,7 @@ import com.ostrichemulators.jfxhacc.MainApp.StageRememberer;
 import com.ostrichemulators.jfxhacc.ShutdownListener;
 import com.ostrichemulators.jfxhacc.cells.MoneyTableTreeCellFactory;
 import com.ostrichemulators.jfxhacc.charting.AccountBalanceMaker;
+import com.ostrichemulators.jfxhacc.charting.AccountDeltaMaker;
 import com.ostrichemulators.jfxhacc.charting.SeriesMaker;
 import com.ostrichemulators.jfxhacc.controller.ChartController.ChartType;
 import com.ostrichemulators.jfxhacc.engine.DataEngine;
@@ -668,8 +669,14 @@ public class MainWindowController implements ShutdownListener {
 	}
 
 	@FXML
-	public void openBar() {
-		openChart( new AccountBalanceMaker( MainApp.getEngine().getAccountMapper() ),
+	public void openBalance() {
+		openChart( new AccountBalanceMaker( MainApp.getEngine().getAccountMapper(),
+				MainApp.getEngine().getTransactionMapper() ), ChartType.AREA );
+	}
+
+	@FXML
+	public void openDelta() {
+		openChart( new AccountDeltaMaker( MainApp.getEngine().getTransactionMapper() ),
 				ChartType.AREA );
 	}
 

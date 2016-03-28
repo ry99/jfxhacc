@@ -89,7 +89,7 @@ done < <(cat $TRANS | cut -d\| -f4|sort -u)
 while read line; do
   echo "$line" | awk --field-separator \| \
   '{printf( "t:qhacc-transaction-%d a jfxhacc:transaction ; trans:journal j:qhacc-journal-%s ;", $1, $5 ); \
-    if( ""!=$3 ){ printf( " dcterms:created \"%sT00:00:00.000\"^^xsd:date ;", $3 ) } ;\
+    if( ""!=$3 ){ printf( " dcterms:created \"%sT00:00:00.000\"^^xsd:dateTime ;", $3 ) } ;\
     if( ""!=$2 ){ printf( " trans:number \"%s\" ;", $2 ) } }'
   
   payee=$(echo $line|cut -d\| -f4|sed -e 's/ *$//g'|sed -e 's/^ *//g' )
