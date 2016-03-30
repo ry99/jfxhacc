@@ -19,7 +19,9 @@ import javafx.fxml.FXML;
 import javafx.scene.chart.AreaChart;
 import javafx.scene.chart.BarChart;
 import javafx.scene.chart.CategoryAxis;
+import javafx.scene.chart.Chart;
 import javafx.scene.chart.NumberAxis;
+import javafx.scene.chart.PieChart;
 import javafx.scene.chart.StackedAreaChart;
 import javafx.scene.chart.StackedBarChart;
 import javafx.scene.chart.XYChart;
@@ -39,7 +41,7 @@ public class ChartController {
 
 	public static enum ChartType {
 
-		BAR, LINE, AREA, STACKEDAREA, STACKEDBAR
+		BAR, LINE, AREA, STACKEDAREA, STACKEDBAR, PIE
 	};
 
 	@FXML
@@ -55,7 +57,8 @@ public class ChartController {
 	private final DataEngine engine;
 	private final Set<Account> selecteds = new LinkedHashSet<>();
 	private final AccountMapper amap;
-	private XYChart<String, Number> chart;
+	private XYChart<String, Number> xychart;
+	private PieChart piechart;
 	private ChartType type;
 	private Stage stage;
 
@@ -90,47 +93,60 @@ public class ChartController {
 		xaxis.setTickLabelsVisible( true );
 		this.type = t;
 
+		xychart = null;
+		piechart = null;
+
 		switch ( t ) {
 			case BAR:
 				BarChart<String, Number> bchart = new BarChart<>( xaxis, yaxis );
 				bchart.setBarGap( 3 );
 				bchart.setCategoryGap( 20 );
-				chart = bchart;
+				xychart = bchart;
 				break;
 			case STACKEDBAR:
 				StackedBarChart<String, Number> sbchart = new StackedBarChart<>( xaxis, yaxis );
 				sbchart.setCategoryGap( 20 );
-				chart = sbchart;
+				xychart = sbchart;
 				break;
 			case AREA:
 				AreaChart<String, Number> achart = new AreaChart<>( xaxis, yaxis );
-				chart = achart;
+				xychart = achart;
 				break;
 			case STACKEDAREA:
 				StackedAreaChart<String, Number> sachart = new StackedAreaChart<>( xaxis, yaxis );
-				chart = sachart;
+				xychart = sachart;
 				break;
 			case LINE:
 				AreaChart<String, Number> lchart = new AreaChart<>( xaxis, yaxis );
-				chart = lchart;
+				xychart = lchart;
+				break;
+			case PIE:
+				piechart = new PieChart();
 				break;
 			default:
 				throw new IllegalArgumentException( "unhandled chart type: " + t );
 		}
 
+		Chart chart = ( null == xychart ? piechart : xychart );
 		grapharea.getChildren().add( chart );
 		AnchorPane.setBottomAnchor( chart, 0d );
 		AnchorPane.setTopAnchor( chart, 0d );
 		AnchorPane.setRightAnchor( chart, 0d );
 		AnchorPane.setLeftAnchor( chart, 0d );
-
 		chart.setTitle( seriesmaker.getTitle() );
+
 		replot();
 	}
 
 	@FXML
 	public void replot() {
-		chart.getData().clear();
+		if ( null == piechart ) {
+			xychart.getData().clear();
+		}
+		else {
+			piechart.getData().clear();
+		}
+		
 		for ( Account a : selecteds ) {
 			plotSeries( a );
 		}
@@ -149,8 +165,14 @@ public class ChartController {
 
 	private void plotSeries( Account acct ) {
 		if ( startdate.getValue().isBefore( enddate.getValue() ) ) {
-			chart.getData().addAll( seriesmaker.createSeries( acct,
-					startdate.getValue(), enddate.getValue() ) );
+			if ( null == piechart ) {
+				seriesmaker.createSeries( acct,
+						startdate.getValue(), enddate.getValue(), xychart );
+			}
+			else {
+				seriesmaker.createPieData( acct, startdate.getValue(),
+						enddate.getValue(), piechart );
+			}
 		}
 	}
 

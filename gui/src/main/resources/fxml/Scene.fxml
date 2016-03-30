@@ -149,6 +149,8 @@
                                  <items>
                                     <MenuItem onAction="#openBalance" text="_Balance" />
                                     <MenuItem onAction="#openDelta" text="_Delta" />
+                                    <MenuItem onAction="#openCreditsPie" text="_Credits Pie" />
+                                    <MenuItem onAction="#openDebitsPie" text="_Debits Pie" />
                                  </items>
                               </Menu>
                           </items>

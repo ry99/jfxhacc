@@ -10,7 +10,9 @@ import com.ostrichemulators.jfxhacc.model.AccountType;
 import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.Transaction;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import org.apache.log4j.Logger;
 
 /**
@@ -49,6 +51,35 @@ public class TransactionHelper {
 		}
 
 		return ( toomany ? null : other );
+	}
+
+	/**
+	 * Gets the split for this account
+	 *
+	 * @param t
+	 * @param a
+	 * @return the other split, or null
+	 */
+	public static Split getSplit( Transaction t, Account a ) {
+		for ( Split s : t.getSplits() ) {
+			if ( a.equals( s.getAccount() ) ) {
+				return s;
+			}
+		}
+
+		return null;
+	}
+
+	public static Collection<Split> getOthers( Transaction t, Account a ) {
+		List<Split> splits = new ArrayList<>();
+
+		for ( Split s : t.getSplits() ) {
+			if ( !a.equals( s.getAccount() ) ) {
+				splits.add( s );
+			}
+		}
+
+		return splits;
 	}
 
 	/**

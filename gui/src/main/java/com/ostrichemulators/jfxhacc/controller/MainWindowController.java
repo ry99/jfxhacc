@@ -6,6 +6,7 @@ import com.ostrichemulators.jfxhacc.ShutdownListener;
 import com.ostrichemulators.jfxhacc.cells.MoneyTableTreeCellFactory;
 import com.ostrichemulators.jfxhacc.charting.AccountBalanceMaker;
 import com.ostrichemulators.jfxhacc.charting.AccountDeltaMaker;
+import com.ostrichemulators.jfxhacc.charting.PieMaker;
 import com.ostrichemulators.jfxhacc.charting.SeriesMaker;
 import com.ostrichemulators.jfxhacc.controller.ChartController.ChartType;
 import com.ostrichemulators.jfxhacc.engine.DataEngine;
@@ -680,6 +681,18 @@ public class MainWindowController implements ShutdownListener {
 				ChartType.AREA );
 	}
 
+	@FXML
+	public void openCreditsPie() {
+		openChart( new PieMaker( true, MainApp.getEngine().getAccountMapper(),
+				MainApp.getEngine().getTransactionMapper() ), ChartType.PIE );
+	}
+
+	@FXML
+	public void openDebitsPie() {
+		openChart( new PieMaker( false, MainApp.getEngine().getAccountMapper(),
+				MainApp.getEngine().getTransactionMapper() ), ChartType.PIE );
+	}
+
 	private void openChart( SeriesMaker maker, ChartType type ) {
 		ChartController controller
 				= new ChartController( MainApp.getEngine(), type, maker );
@@ -690,7 +703,7 @@ public class MainWindowController implements ShutdownListener {
 		try {
 			Scene scene = new Scene( loader.load() );
 			Stage stage = new Stage();
-			stage.setTitle( "Bar Chart" );
+			stage.setTitle( maker.getTitle() );
 			stage.setScene( scene );
 			controller.setStage( stage );
 			stage.show();

@@ -7,8 +7,8 @@ package com.ostrichemulators.jfxhacc.charting;
 
 import com.ostrichemulators.jfxhacc.model.Account;
 import java.time.LocalDate;
-import java.util.Collection;
-import javafx.scene.chart.XYChart.Series;
+import javafx.scene.chart.PieChart;
+import javafx.scene.chart.XYChart;
 
 /**
  *
@@ -20,6 +20,9 @@ public interface SeriesMaker {
 
 	public String getYLabel();
 
-	public Collection<Series<String, Number>> createSeries( Account account,
-			LocalDate start, LocalDate end );
+	public void createSeries( Account account,
+			LocalDate start, LocalDate end, XYChart<String, Number> chart );
+
+	public void createPieData( Account account,
+			LocalDate start, LocalDate end, PieChart chart );
 }

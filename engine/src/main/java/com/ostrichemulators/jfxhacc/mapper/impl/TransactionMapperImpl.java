@@ -470,10 +470,23 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 	}
 
 	@Override
-
 	public List<Transaction> getAll( Account acct ) throws MapperException {
+		return getAll( acct, null, null );
+	}
 
+	@Override
+	public List<Transaction> getAll( Account acct, Date from, Date to ) throws MapperException {
+		if ( null == from ) {
+			from = new Date( Long.MIN_VALUE );
+		}
+		if ( null == to ) {
+			to = new Date( Long.MAX_VALUE );
+		}
+
+		ValueFactory vf = new ValueFactoryImpl();
 		Map<String, Value> bindings = bindmap( "acct", acct.getId() );
+		bindings.put( "since", vf.createLiteral( from ) );
+		bindings.put( "until", vf.createLiteral( to ) );
 
 		// don't include recurring transactions
 		List<Transaction> transactions = query( "SELECT ?t ?p ?o WHERE {"
@@ -481,6 +494,8 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 				+ "  ?t a jfxhacc:transaction ."
 				+ "  ?s splits:account ?acct ."
 				+ "  ?t trans:journal ?jnl ."
+				+ "  ?t dcterms:created ?date . "
+				+ "  FILTER( ?date >= ?since && ?date < ?until ) ."
 				+ "  ?t ?p ?o "
 				+ "} ORDER BY ?t",
 				bindings, new QueryHandler<List<Transaction>>() {

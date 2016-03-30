@@ -166,15 +166,4 @@ public class AccountBalanceCache {
 			reco = new SimpleObjectProperty<>( r );
 		}
 	}
-
-	public static Money getSplitValueForAccount( Split s, Account a ){
-		Money m = s.getValue(); // split.getValue() is always positive
-		
-		if( a.getAccountType().isDebitPlus() == s.isDebit() ){
-			return m;
-		}
-		else {
-			return m.opposite();
-		}
-	}
 }

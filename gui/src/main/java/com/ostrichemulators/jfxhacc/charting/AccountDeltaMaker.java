@@ -10,17 +10,18 @@ import com.ostrichemulators.jfxhacc.mapper.TransactionMapper;
 import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.Split;
-import com.ostrichemulators.jfxhacc.utility.AccountBalanceCache;
+import com.ostrichemulators.jfxhacc.utility.AccountHelper;
+import java.text.DateFormat;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.Period;
 import java.time.ZoneId;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javafx.scene.chart.PieChart;
 import javafx.scene.chart.XYChart;
 import org.apache.log4j.Logger;
 
@@ -39,7 +40,7 @@ public class AccountDeltaMaker extends AbstractSeriesMakerBase {
 
 	@Override
 	public String getTitle() {
-		return "Account Balance";
+		return "Account Changes";
 	}
 
 	@Override
@@ -48,14 +49,21 @@ public class AccountDeltaMaker extends AbstractSeriesMakerBase {
 	}
 
 	@Override
-	public Collection<XYChart.Series<String, Number>> createSeries( Account acct,
-			final LocalDate start, final LocalDate end ) {
+	public void createPieData( Account account, LocalDate start, LocalDate end,
+			PieChart chart ) {
+	}
+
+	@Override
+	public void createSeries( Account acct, final LocalDate start,
+			final LocalDate end, XYChart<String, Number> chart ) {
 		XYChart.Series<String, Number> adds = new XYChart.Series<>();
 		XYChart.Series<String, Number> subs = new XYChart.Series<>();
 		XYChart.Series<String, Number> deltas = new XYChart.Series<>();
 		adds.setName( acct.getName() + " Additions" );
 		subs.setName( acct.getName() + " Withdrawals" );
 		deltas.setName( acct.getName() + " Delta" );
+
+		chart.getData().addAll( Arrays.asList( adds, subs, deltas ) );
 
 		LocalDate pfirst = start;
 		Instant instant = pfirst.atStartOfDay( ZoneId.systemDefault() ).toInstant();
@@ -72,6 +80,8 @@ public class AccountDeltaMaker extends AbstractSeriesMakerBase {
 			log.error( me, me );
 		}
 
+		DateFormat DF = DateFormat.getDateInstance( DateFormat.MEDIUM );
+
 		while ( pfirst.isBefore( end ) ) {
 			Money creds = new Money();
 			Money debs = new Money();
@@ -84,28 +94,43 @@ public class AccountDeltaMaker extends AbstractSeriesMakerBase {
 
 			for ( Split s : getSplits( splits, pfirst, plast ) ) {
 				if ( s.isCredit() ) {
-					//log.debug( "credit: " + s.getId() + " " + s.getValue() );
 					creds = creds.add( s.getValue() );
 				}
 				else {
-					//log.debug( "debit: " + s.getId() + " " + s.getValue() );
 					debs = debs.add( s.getValue() );
 				}
-				Money change = AccountBalanceCache.getSplitValueForAccount( s, acct );
+				Money change = AccountHelper.getSplitValueForAccount( s, acct );
 				delta = delta.add( change );
 			}
 
 			String label = getLabel( pfirst );
-			log.debug( label + " credits: " + creds + "; debits: " + debs + "; delta: " + delta );
+			log.debug( label + " credits: " + creds + "; debits: "
+					+ debs + "; delta: " + delta );
 
-			deltas.getData().add( new XYChart.Data<>( label, delta.toDouble() ) );
+			XYChart.Data<String, Number> deltadp = new XYChart.Data<>( label, delta.toDouble() );
+			XYChart.Data<String, Number> adp;
+			XYChart.Data<String, Number> sdp;
+
+			deltas.getData().add( deltadp );
+			installTooltip( deltadp.getNode(), pfirst, delta, DF );
+
 			if ( acct.getAccountType().isDebitPlus() ) {
-				adds.getData().add( new XYChart.Data<>( label, debs.toDouble() ) );
-				subs.getData().add( new XYChart.Data<>( label, creds.opposite().toDouble() ) );
+				adp = new XYChart.Data<>( label, debs.toDouble() );
+				sdp = new XYChart.Data<>( label, creds.opposite().toDouble() );
+				adds.getData().add( adp );
+				subs.getData().add( sdp );
+
+				installTooltip( adp.getNode(), pfirst, debs, DF );
+				installTooltip( sdp.getNode(), pfirst, creds.opposite(), DF );
 			}
 			else {
-				adds.getData().add( new XYChart.Data<>( label, creds.toDouble() ) );
-				subs.getData().add( new XYChart.Data<>( label, debs.opposite().toDouble() ) );
+				adp = new XYChart.Data<>( label, creds.toDouble() );
+				sdp = new XYChart.Data<>( label, debs.opposite().toDouble() );
+				adds.getData().add( adp );
+				subs.getData().add( sdp );
+
+				installTooltip( adp.getNode(), pfirst, creds, DF );
+				installTooltip( sdp.getNode(), pfirst, debs.opposite(), DF );
 			}
 
 			// see if we have any "leftover" days in the next month to worry about
@@ -122,7 +147,5 @@ public class AccountDeltaMaker extends AbstractSeriesMakerBase {
 				}
 			}
 		}
-
-		return Arrays.asList( adds, subs, deltas );
 	}
 }

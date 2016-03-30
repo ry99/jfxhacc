@@ -38,6 +38,19 @@ public interface TransactionMapper extends DataMapper<Transaction> {
 	public List<Transaction> getAll( Account acct ) throws MapperException;
 
 	/**
+	 * Gets transactions that have a split belonging to the given account.
+	 * Transactions that are not included in balance calculations are not included
+	 * in this list
+	 *
+	 * @param acct
+	 * @param from date of the earliest possible split. if null, get all splits
+	 * @param to date of the first split to exclude. if null, there is no upper limit
+	 * @return
+	 * @throws MapperException
+	 */
+	public List<Transaction> getAll( Account acct, Date from, Date to ) throws MapperException;
+
+	/**
 	 * Gets splits belonging to the given account between from(inclusive) and
 	 * to(exclusive). Splits that are not included in balance calculations are not
 	 * included in this list.
