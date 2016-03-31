@@ -33,7 +33,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Deque;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -154,8 +153,15 @@ public class MainWindowController implements ShutdownListener {
 		TreeItem<Account> toselect1 = null;
 		try {
 			// String jidstr = prefs.get( JNL_SELECTED, null );
-
-			toselect1 = retree( amap, root, selected );
+			Map<Account, TreeItem<Account>> treemap
+					= GuiUtils.makeAccountTree( amap.getParentMap(), root );
+			for ( Map.Entry<Account, TreeItem<Account>> en : treemap.entrySet() ) {
+				en.getValue().setExpanded( true );
+				
+				if ( en.getKey().getId().equals( selected ) ) {
+					toselect1 = en.getValue();
+				}
+			}
 
 			List<Account> accts = amap.getPopularAccounts( 10 );
 			ToggleGroup bg = new ToggleGroup();
@@ -386,34 +392,6 @@ public class MainWindowController implements ShutdownListener {
 			//accounts.getFocusModel().focus( row );
 			accounts.scrollTo( row );
 		}
-	}
-
-	private TreeItem<Account> retree( AccountMapper amap, TreeItem<Account> root,
-			URI selected ) throws MapperException {
-		Map<Account, TreeItem<Account>> items = new HashMap<>();
-		Map<Account, Account> childparentlkp = new HashMap<>();
-		TreeItem<Account> toselect = null;
-
-		childparentlkp.putAll( amap.getParentMap() );
-		for ( Account acct : childparentlkp.keySet() ) {
-			TreeItem<Account> aitem = new TreeItem<>( acct );
-			items.put( acct, aitem );
-
-			if ( acct.getId().equals( selected ) ) {
-				toselect = aitem;
-			}
-		}
-
-		for ( Map.Entry<Account, Account> en : childparentlkp.entrySet() ) {
-			Account child = en.getKey();
-			Account parent = en.getValue();
-			TreeItem<Account> childitem = items.get( child );
-			TreeItem<Account> parentitem
-					= ( null == parent ? root : items.get( parent ) );
-			parentitem.getChildren().add( childitem );
-		}
-
-		return toselect;
 	}
 
 	private void updateBalancesLabel() {

@@ -5,6 +5,7 @@
  */
 package com.ostrichemulators.jfxhacc.controller;
 
+import com.ostrichemulators.jfxhacc.cells.AccountTreeCell;
 import com.ostrichemulators.jfxhacc.charting.SeriesMaker;
 import com.ostrichemulators.jfxhacc.engine.DataEngine;
 import com.ostrichemulators.jfxhacc.mapper.AccountMapper;
@@ -12,9 +13,10 @@ import com.ostrichemulators.jfxhacc.mapper.MapperException;
 import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.utility.GuiUtils;
 import java.time.LocalDate;
-import java.util.LinkedHashSet;
-import java.util.Set;
-import javafx.event.ActionEvent;
+import java.util.Comparator;
+import java.util.Map;
+import javafx.application.Platform;
+import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.scene.chart.AreaChart;
 import javafx.scene.chart.BarChart;
@@ -25,10 +27,14 @@ import javafx.scene.chart.PieChart;
 import javafx.scene.chart.StackedAreaChart;
 import javafx.scene.chart.StackedBarChart;
 import javafx.scene.chart.XYChart;
-import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
+import javafx.scene.control.SelectionMode;
+import javafx.scene.control.TreeCell;
+import javafx.scene.control.TreeItem;
+import javafx.scene.control.TreeView;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
+import javafx.util.Callback;
 import org.apache.log4j.Logger;
 
 /**
@@ -51,11 +57,10 @@ public class ChartController {
 	@FXML
 	private DatePicker enddate;
 	@FXML
-	private ComboBox<Account> accounts;
+	private TreeView<Account> accounttree;
 
 	private final SeriesMaker seriesmaker;
 	private final DataEngine engine;
-	private final Set<Account> selecteds = new LinkedHashSet<>();
 	private final AccountMapper amap;
 	private XYChart<String, Number> xychart;
 	private PieChart piechart;
@@ -75,12 +80,44 @@ public class ChartController {
 		startdate.setValue( LocalDate.now().minusYears( 1l ) );
 		enddate.setValue( LocalDate.now() );
 
+		TreeItem<Account> root = new TreeItem<>();
+		accounttree.setRoot( root );
+		accounttree.getSelectionModel().setSelectionMode( SelectionMode.MULTIPLE );
+		accounttree.setCellFactory( new Callback<TreeView<Account>, TreeCell<Account>>() {
+
+			@Override
+			public TreeCell<Account> call( TreeView<Account> p ) {
+				return new AccountTreeCell();
+			}
+		} );
+
+		Comparator<TreeItem<Account>> cmp = new Comparator<TreeItem<Account>>() {
+
+			@Override
+			public int compare( TreeItem<Account> o1, TreeItem<Account> o2 ) {
+				return o1.getValue().getName().toUpperCase().compareTo( o2.getValue().getName().toUpperCase() );
+			}
+		};
+
 		try {
-			GuiUtils.makeAccountCombo( accounts, amap.getAll(), amap );
+			Map<Account, TreeItem<Account>> map
+					= GuiUtils.makeAccountTree( amap.getParentMap(), root );
+
+			for ( TreeItem<Account> ti : map.values() ) {
+				ti.setExpanded( true );
+				ti.getChildren().sort( cmp );
+			}
 		}
 		catch ( MapperException me ) {
 			log.error( me, me );
 		}
+		root.getChildren().sort( cmp );
+		accounttree.getSelectionModel().getSelectedItems().addListener( new ListChangeListener<TreeItem<Account>>() {
+			@Override
+			public void onChanged( ListChangeListener.Change<? extends TreeItem<Account>> change ) {
+				replot();
+			}
+		} );
 
 		setChartType( type );
 	}
@@ -140,27 +177,22 @@ public class ChartController {
 
 	@FXML
 	public void replot() {
-		if ( null == piechart ) {
-			xychart.getData().clear();
-		}
-		else {
-			piechart.getData().clear();
-		}
-		
-		for ( Account a : selecteds ) {
-			plotSeries( a );
-		}
-	}
+		Platform.runLater( new Runnable() {
+			@Override
+			public void run() {
 
-	@FXML
-	public void addaccount( ActionEvent event ) {
-		Account acct = accounts.getValue();
-		if ( !selecteds.contains( acct ) ) {
-			selecteds.add( acct );
-			plotSeries( acct );
-		}
+				if ( null == piechart ) {
+					xychart.getData().clear();
+				}
+				else {
+					piechart.getData().clear();
+				}
 
-		accounts.setValue( null );
+				for ( TreeItem<Account> ti : accounttree.getSelectionModel().getSelectedItems() ) {
+					plotSeries( ti.getValue() );
+				}
+			}
+		} );
 	}
 
 	private void plotSeries( Account acct ) {
@@ -183,5 +215,10 @@ public class ChartController {
 	@FXML
 	public void close() {
 		stage.close();
+	}
+
+	@FXML
+	public void clear() {
+		accounttree.getSelectionModel().clearSelection();
 	}
 }

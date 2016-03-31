@@ -27,6 +27,7 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.control.TreeItem;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.util.Callback;
@@ -122,11 +123,11 @@ public class GuiUtils {
 			}
 		} );
 
-		field.valueProperty().addListener( new ChangeListener<Account>(){
+		field.valueProperty().addListener( new ChangeListener<Account>() {
 
 			@Override
 			public void changed( ObservableValue<? extends Account> ov, Account t, Account t1 ) {
-				if( null == t1 ){
+				if ( null == t1 ) {
 					filtered.setPredicate( null );
 				}
 			}
@@ -189,6 +190,26 @@ public class GuiUtils {
 				}
 			}
 		} );
+	}
 
+	public static Map<Account, TreeItem<Account>> makeAccountTree( Map<Account, Account> childparentlkp,
+			TreeItem<Account> root )  {
+		Map<Account, TreeItem<Account>> items = new HashMap<>();
+
+		for ( Account acct : childparentlkp.keySet() ) {
+			TreeItem<Account> aitem = new TreeItem<>( acct );
+			items.put( acct, aitem );
+		}
+
+		for ( Map.Entry<Account, Account> en : childparentlkp.entrySet() ) {
+			Account child = en.getKey();
+			Account parent = en.getValue();
+			TreeItem<Account> childitem = items.get( child );
+			TreeItem<Account> parentitem
+					= ( null == parent ? root : items.get( parent ) );
+			parentitem.getChildren().add( childitem );
+		}
+
+		return items;
 	}
 }
