@@ -120,9 +120,11 @@ public class AutoCompletePopupHandler {
 			item.setOnAction( new EventHandler<ActionEvent>() {
 				@Override
 				public void handle( ActionEvent actionEvent ) {
+					log.debug( "autocomplete item selected" );
 					text.setText( result );
 					text.positionCaret( result.length() );
 					entriesPopup.hide();
+					actionEvent.consume();
 				}
 			} );
 			menuItems.add( item );

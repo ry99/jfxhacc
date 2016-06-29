@@ -394,11 +394,6 @@ public class TransactionEntryController extends AnchorPane {
 
 	@FXML
 	protected void keyrelease( KeyEvent ke ) {
-		KeyCode code = ke.getCode();
-		if ( KeyCode.ENTER == code ) {
-			ke.consume();
-			save();
-		}
 	}
 
 	@FXML
@@ -413,15 +408,17 @@ public class TransactionEntryController extends AnchorPane {
 		}
 		else if ( KeyCode.UP == code ) {
 			LocalDate ld = datefield.getValue();
-			ld = ld.plusDays( 1 );
-			datefield.setValue( ld );
+			datefield.setValue( ld.plusDays( 1 ) );
 			ke.consume();
 		}
 		else if ( KeyCode.DOWN == code ) {
 			LocalDate ld = datefield.getValue();
-			ld = ld.minusDays( 1 );
-			datefield.setValue( ld );
+			datefield.setValue( ld.minusDays( 1 ) );
 			ke.consume();
+		}
+		else if ( KeyCode.ENTER == code ) {
+			ke.consume();
+			save();
 		}
 	}
 
