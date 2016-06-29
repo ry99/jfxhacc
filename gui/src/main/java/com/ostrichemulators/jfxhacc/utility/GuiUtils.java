@@ -9,6 +9,7 @@ import com.ostrichemulators.jfxhacc.cells.AccountListCell;
 import com.ostrichemulators.jfxhacc.mapper.AccountMapper;
 import com.ostrichemulators.jfxhacc.mapper.MapperException;
 import com.ostrichemulators.jfxhacc.model.Account;
+import static com.ostrichemulators.jfxhacc.utility.GuiUtils.log;
 import java.text.Collator;
 import java.util.Collection;
 import java.util.Comparator;
@@ -23,6 +24,7 @@ import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
 import javafx.event.EventHandler;
+import javafx.scene.Node;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
@@ -106,6 +108,19 @@ public class GuiUtils {
 					refilter = true;
 					current.append( t.getText() );
 				}
+				else if ( KeyCode.TAB == code ) {
+					// tab to the next element, if it exists
+					ObservableList<Node> siblings = field.getParent().getChildrenUnmodifiable();
+					int idx = siblings.indexOf( field );
+					for ( int i = idx + 1; i < siblings.size(); i++ ) {
+						Node child = siblings.get( i );
+						if ( child.isFocusTraversable() && !child.isDisabled() ) {
+							child.requestFocus();
+							break;
+						}
+					}
+					return;
+				}
 
 				log.debug( "account filter text is: " + current );
 
@@ -121,26 +136,34 @@ public class GuiUtils {
 				}
 				field.show();
 			}
-		} );
+		}
+		);
 
-		field.valueProperty().addListener( new ChangeListener<Account>() {
+		field.valueProperty()
+				.addListener( new ChangeListener<Account>() {
 
-			@Override
-			public void changed( ObservableValue<? extends Account> ov, Account t, Account t1 ) {
-				if ( null == t1 ) {
-					filtered.setPredicate( null );
+					@Override
+					public void changed( ObservableValue<? extends Account> ov, Account t, Account t1
+					) {
+						if ( null == t1 ) {
+							filtered.setPredicate( null );
+						}
+					}
 				}
-			}
-		} );
+				);
 
-		field.setButtonCell( new AccountListCell( amap, false ) );
-		field.setCellFactory( new Callback<ListView<Account>, ListCell<Account>>() {
+		field.setButtonCell(
+				new AccountListCell( amap, false ) );
+		field.setCellFactory(
+				new Callback<ListView<Account>, ListCell<Account>>() {
 
-			@Override
-			public ListCell<Account> call( ListView<Account> p ) {
-				return new AccountListCell( amap, false );
-			}
-		} );
+					@Override
+					public ListCell<Account> call( ListView<Account> p
+					) {
+						return new AccountListCell( amap, false );
+					}
+				}
+		);
 
 		return sorted;
 	}
@@ -193,7 +216,7 @@ public class GuiUtils {
 	}
 
 	public static Map<Account, TreeItem<Account>> makeAccountTree( Map<Account, Account> childparentlkp,
-			TreeItem<Account> root )  {
+			TreeItem<Account> root ) {
 		Map<Account, TreeItem<Account>> items = new HashMap<>();
 
 		for ( Account acct : childparentlkp.keySet() ) {

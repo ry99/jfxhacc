@@ -25,6 +25,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
+import org.apache.log4j.Logger;
 
 /**
  * This class is a TextField which implements an "autocomplete" functionality,
@@ -34,6 +35,7 @@ import javafx.collections.transformation.SortedList;
  */
 public class AutoCompletePopupHandler {
 
+	private static final Logger log = Logger.getLogger( AutoCompletePopupHandler.class );
 	private static final int maxShownEntries = 12;
 	private ContextMenu entriesPopup = new ContextMenu();
 	private final TextField text;
@@ -41,6 +43,9 @@ public class AutoCompletePopupHandler {
 
 	/**
 	 * Construct a new AutoCompleteTextField.
+	 *
+	 * @param text
+	 * @param completions
 	 */
 	public AutoCompletePopupHandler( TextField text, Collection<String> completions ) {
 		super();
@@ -53,7 +58,8 @@ public class AutoCompletePopupHandler {
 
 		text.textProperty().addListener( new ChangeListener<String>() {
 			@Override
-			public void changed( ObservableValue<? extends String> observableValue, String oldtext, String newtext ) {
+			public void changed( ObservableValue<? extends String> observableValue,
+					String oldtext, String newtext ) {
 				entriesPopup.hide();
 				filter.setPredicate( new Predicate<String>() {
 					@Override

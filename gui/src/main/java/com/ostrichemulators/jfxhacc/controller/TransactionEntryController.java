@@ -93,7 +93,6 @@ public class TransactionEntryController extends AnchorPane {
 	private PayeeMapper pmap;
 	private TransactionMapper tmap;
 	private final List<CloseListener> listenees = new ArrayList<>();
-	private AutoCompletePopupHandler autocomplete;
 
 	private final Map<String, Payee> payeemap = new HashMap<>();
 	private final List<Account> allaccounts = new ArrayList<>();
@@ -125,7 +124,9 @@ public class TransactionEntryController extends AnchorPane {
 		}
 	}
 
+	@FXML
 	public void save() {
+		log.debug( "saving" );
 		try {
 			Payee payee = pmap.createOrGet( payeefield.getText() );
 			Date tdate = getDate();
@@ -251,7 +252,6 @@ public class TransactionEntryController extends AnchorPane {
 
 			journalchsr.setValue( defaultjournal );
 
-
 			for ( Payee p : pmap.getAll() ) {
 				payeemap.put( p.getName(), p );
 			}
@@ -260,7 +260,8 @@ public class TransactionEntryController extends AnchorPane {
 			log.warn( x, x );
 		}
 
-		autocomplete = new AutoCompletePopupHandler( payeefield, payeemap.keySet() );
+		AutoCompletePopupHandler autocomplete = new AutoCompletePopupHandler( payeefield,
+				payeemap.keySet() );
 		accountfield.setButtonCell( makeAccountCell() );
 		accountfield.setCellFactory( new Callback<ListView<Account>, ListCell<Account>>() {
 
@@ -284,7 +285,8 @@ public class TransactionEntryController extends AnchorPane {
 		memofield.textProperty().bindBidirectional( mysplit.getMemoProperty() );
 
 		journalchsr.setItems( engine.getJournalMapper().getObservable() );
-		journalchsr.setValue( null == t.getJournal() ? defaultjournal : t.getJournal() );
+		journalchsr.setValue( null == t.getJournal() ? defaultjournal
+				: t.getJournal() );
 
 		if ( null != t.getPayee() ) {
 			payeefield.setText( t.getPayee().getName() );
@@ -391,6 +393,15 @@ public class TransactionEntryController extends AnchorPane {
 	}
 
 	@FXML
+	protected void keyrelease( KeyEvent ke ) {
+		KeyCode code = ke.getCode();
+		if ( KeyCode.ENTER == code ) {
+			ke.consume();
+			save();
+		}
+	}
+
+	@FXML
 	protected void keypress( KeyEvent ke ) {
 		KeyCode code = ke.getCode();
 		if ( KeyCode.ESCAPE == code ) {
@@ -399,6 +410,18 @@ public class TransactionEntryController extends AnchorPane {
 			for ( CloseListener cl : listenees ) {
 				cl.closed();
 			}
+		}
+		else if ( KeyCode.UP == code ) {
+			LocalDate ld = datefield.getValue();
+			ld = ld.plusDays( 1 );
+			datefield.setValue( ld );
+			ke.consume();
+		}
+		else if ( KeyCode.DOWN == code ) {
+			LocalDate ld = datefield.getValue();
+			ld = ld.minusDays( 1 );
+			datefield.setValue( ld );
+			ke.consume();
 		}
 	}
 
