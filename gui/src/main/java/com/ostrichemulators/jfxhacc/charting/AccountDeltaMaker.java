@@ -94,13 +94,13 @@ public class AccountDeltaMaker extends AbstractSeriesMakerBase {
 
 			for ( Split s : getSplits( splits, pfirst, plast ) ) {
 				if ( s.isCredit() ) {
-					creds = creds.add( s.getValue() );
+					creds = creds.plus( s.getValue() );
 				}
 				else {
-					debs = debs.add( s.getValue() );
+					debs = debs.plus( s.getValue() );
 				}
 				Money change = AccountHelper.getSplitValueForAccount( s, acct );
-				delta = delta.add( change );
+				delta = delta.plus( change );
 			}
 
 			String label = getLabel( pfirst );

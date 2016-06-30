@@ -645,7 +645,7 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 			RepositoryConnection rc ) throws RepositoryException {
 		// if a split is in both maps, update it
 		// if it's in the old but not the new, remove it
-		// if it's in the new but not the old, add it
+		// if it's in the new but not the old, plus it
 
 		Set<Split> realsplits = new HashSet<>();
 
@@ -669,7 +669,7 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 			}
 		}
 
-		// anything left in this map is a new transaction to add
+		// anything left in this map is a new transaction to plus
 		for ( Split s : newmap.values() ) {
 			Split newsplit = create( s, null, false );
 			realsplits.add( newsplit );

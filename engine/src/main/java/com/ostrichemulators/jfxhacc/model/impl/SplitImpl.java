@@ -202,7 +202,7 @@ public class SplitImpl extends IDableImpl implements Split {
 			old = old.opposite();
 		}
 
-		Money newmoney = old.add( m );
+		Money newmoney = old.plus( m );
 		setValue( newmoney );
 
 		return getValue();

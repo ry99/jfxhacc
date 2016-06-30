@@ -34,7 +34,7 @@ public final class Money implements Comparable<Money> {
 		this( 0 );
 	}
 
-	public Money add( Money m ) {
+	public Money plus( Money m ) {
 		return new Money( cents + m.cents );
 	}
 

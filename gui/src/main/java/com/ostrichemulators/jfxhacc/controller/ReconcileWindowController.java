@@ -126,16 +126,17 @@ public class ReconcileWindowController {
 			@Override
 			public String call() throws Exception {
 				Money opening = Money.valueOf( openbal.getText() );
-				Money stmt = Money.valueOf( stmtbal.getText() );
-
-				Money stmtdiff = stmt.minus( opening );
-
 				Money minuses = Money.valueOf( withdrawals.getText() );
 				Money pluses = Money.valueOf( deposits.getText() );
 
-				Money recdiff = pluses.minus( minuses );
+				Money recdiff = opening.plus( pluses ).minus( minuses );
 
-				return recdiff.minus( stmtdiff ).toString();
+				Money stmt = Money.valueOf( stmtbal.getText() );
+				Money stmtdiff = recdiff.minus( stmt );
+				log.debug( String.format( "opening/plus/minus: %s/%s/%s", opening, pluses, minuses ) );
+				log.debug( String.format( "  stmt/recdiff/stmtdiff: %s/%s/%s", stmt, recdiff, stmtdiff ) );
+
+				return stmtdiff.toString();
 			}
 		},
 				openbal.textProperty(), stmtbal.textProperty(), withdrawals.textProperty(),

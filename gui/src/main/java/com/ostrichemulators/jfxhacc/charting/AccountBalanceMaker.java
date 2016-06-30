@@ -86,7 +86,7 @@ public class AccountBalanceMaker extends AbstractSeriesMakerBase {
 		while ( pfirst.isBefore( end ) ) {
 			for ( Split s : splits.getOrDefault( pfirst, new ArrayList<>() ) ) {
 				Money change = AccountHelper.getSplitValueForAccount( s, acct );
-				value = value.add( change );
+				value = value.plus( change );
 			}
 
 			String label = pfirst.toString();

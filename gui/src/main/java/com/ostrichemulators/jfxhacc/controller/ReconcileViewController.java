@@ -220,7 +220,7 @@ public class ReconcileViewController extends TransactionViewController {
 	public void updated( Transaction t ) {
 		super.updated( t );
 		// see if this new transaction is in our
-		// current list...if not, we need to add it
+		// current list...if not, we need to plus it
 
 		final URI tid = t.getId();
 		if ( includable( t ) ) {

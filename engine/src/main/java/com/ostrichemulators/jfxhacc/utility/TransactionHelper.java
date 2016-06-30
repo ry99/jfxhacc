@@ -167,7 +167,7 @@ public class TransactionHelper {
 
 		if ( !( 0 == balval || null == mainacct ) ) {
 			// more credits than debits...if mainacct is a debit plus, we need to
-			// add this amount; if not, subtract it
+			// plus this amount; if not, subtract it
 			if ( mainacct.getAccountType().isDebitPlus() ) {
 				if ( !needDebits ) {
 					balval = ( balval > 0 ? 0 - balval : balval );

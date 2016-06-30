@@ -76,7 +76,7 @@ public class PieMaker extends AbstractSeriesMakerBase {
 					for ( Split s : TransactionHelper.getOthers( t, account ) ) {
 						Account a = s.getAccount();
 						Money saved = data.getOrDefault( a, new Money() );
-						data.put( a, saved.add( s.getValue() ) );
+						data.put( a, saved.plus( s.getValue() ) );
 					}
 				}
 			}
@@ -130,7 +130,7 @@ public class PieMaker extends AbstractSeriesMakerBase {
 			Money money = new Money();
 			while ( li.hasNext() ) {
 				Map.Entry<Account, Money> entry = li.next();
-				money = money.add( entry.getValue() );
+				money = money.plus( entry.getValue() );
 			}
 
 			moddata.put( "Other", money.toDouble() );

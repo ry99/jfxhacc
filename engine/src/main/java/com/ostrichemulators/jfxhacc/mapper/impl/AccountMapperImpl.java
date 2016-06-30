@@ -259,7 +259,7 @@ public class AccountMapperImpl extends SimpleEntityRdfMapper<Account> implements
 				balance = 0 - balance;
 			}
 
-			return a.getOpeningBalance().add( new Money( balance ) );
+			return a.getOpeningBalance().plus( new Money( balance ) );
 		}
 		catch ( MapperException me ) {
 			log.error( me, me );
@@ -297,7 +297,7 @@ public class AccountMapperImpl extends SimpleEntityRdfMapper<Account> implements
 				balance = 0 - balance;
 			}
 
-			return a.getOpeningBalance().add( new Money( balance ) );
+			return a.getOpeningBalance().plus( new Money( balance ) );
 		}
 		catch ( MapperException me ) {
 			log.error( me, me );
