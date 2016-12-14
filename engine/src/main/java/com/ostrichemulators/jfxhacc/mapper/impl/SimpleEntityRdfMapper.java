@@ -16,6 +16,7 @@ import org.openrdf.repository.RepositoryConnection;
  * depend on an Account; Accounts don't depend on anything).
  *
  * @author ryan
+ * @param <T>
  */
 public abstract class SimpleEntityRdfMapper<T extends IDable> extends RdfMapper<T> {
 

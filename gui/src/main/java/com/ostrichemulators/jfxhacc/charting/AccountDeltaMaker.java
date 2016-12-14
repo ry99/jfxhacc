@@ -10,7 +10,6 @@ import com.ostrichemulators.jfxhacc.mapper.TransactionMapper;
 import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.Split;
-import com.ostrichemulators.jfxhacc.utility.AccountHelper;
 import java.text.DateFormat;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -99,7 +98,7 @@ public class AccountDeltaMaker extends AbstractSeriesMakerBase {
 				else {
 					debs = debs.plus( s.getValue() );
 				}
-				Money change = AccountHelper.getSplitValueForAccount( s, acct );
+				Money change = acct.getAccountType().value( s );
 				delta = delta.plus( change );
 			}
 

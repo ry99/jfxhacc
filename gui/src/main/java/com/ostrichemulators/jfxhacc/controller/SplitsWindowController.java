@@ -12,7 +12,7 @@ import com.ostrichemulators.jfxhacc.engine.DataEngine;
 import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.Split;
-import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
+import com.ostrichemulators.jfxhacc.model.SplitBase.ReconcileState;
 import com.ostrichemulators.jfxhacc.model.impl.SplitImpl;
 import com.ostrichemulators.jfxhacc.utility.TransactionHelper;
 import java.util.HashSet;

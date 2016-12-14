@@ -6,14 +6,13 @@
 package com.ostrichemulators.jfxhacc.cells;
 
 import com.ostrichemulators.jfxhacc.controller.TransactionViewController.PAMData;
-import com.ostrichemulators.jfxhacc.model.Transaction;
+import com.ostrichemulators.jfxhacc.model.SplitStub;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.layout.GridPane;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontPosture;
-import javafx.scene.text.Text;
 import javafx.util.Callback;
 import org.apache.log4j.Logger;
 
@@ -21,7 +20,7 @@ import org.apache.log4j.Logger;
  *
  * @author ryan
  */
-public class PayeeAccountMemoCellFactory implements Callback<TableColumn<Transaction, PAMData>, TableCell<Transaction, PAMData>> {
+public class PayeeAccountMemoCellFactory implements Callback<TableColumn<SplitStub, PAMData>, TableCell<SplitStub, PAMData>> {
 
 	public static final Logger log = Logger.getLogger( PayeeAccountMemoCellFactory.class );
 	private final boolean reconciler;
@@ -31,8 +30,8 @@ public class PayeeAccountMemoCellFactory implements Callback<TableColumn<Transac
 	}
 
 	@Override
-	public TableCell<Transaction, PAMData> call( TableColumn<Transaction, PAMData> p ) {
-		return new TableCell<Transaction, PAMData>() {
+	public TableCell<SplitStub, PAMData> call( TableColumn<SplitStub, PAMData> p ) {
+		return new TableCell<SplitStub, PAMData>() {
 			@Override
 			protected void updateItem( PAMData t, boolean empty ) {
 				super.updateItem( t, empty );

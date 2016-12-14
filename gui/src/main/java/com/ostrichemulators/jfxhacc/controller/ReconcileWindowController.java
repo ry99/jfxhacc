@@ -87,7 +87,7 @@ public class ReconcileWindowController {
 		openbal.textProperty().bind( areco.asString() );
 		stmtbal.setText( new Money().toString() );
 
-		ObservableList<Split> minuses = transviewer.getWithdrawals();
+		ObservableList<Split> minuses = transviewer.getClearedCredits();
 		minuses.addListener( new InvalidationListener() {
 
 			@Override
@@ -100,7 +100,7 @@ public class ReconcileWindowController {
 			}
 		} );
 
-		ObservableList<Split> pluses = transviewer.getDeposits();
+		ObservableList<Split> pluses = transviewer.getClearedDebits();
 		pluses.addListener( new InvalidationListener() {
 
 			@Override

@@ -5,7 +5,7 @@
  */
 package com.ostrichemulators.jfxhacc.cells;
 
-import com.ostrichemulators.jfxhacc.model.Transaction;
+import com.ostrichemulators.jfxhacc.model.SplitStub;
 import java.text.DateFormat;
 import java.util.Date;
 import javafx.scene.control.TableCell;
@@ -17,15 +17,15 @@ import org.apache.log4j.Logger;
  *
  * @author ryan
  */
-public class DateCellFactory implements Callback<TableColumn<Transaction, Date>, TableCell<Transaction, Date>> {
+public class DateCellFactory implements Callback<TableColumn<SplitStub, Date>, TableCell<SplitStub, Date>> {
 
 	public static final Logger log = Logger.getLogger( DateCellFactory.class );
 
 	private final DateFormat SDF = DateFormat.getDateInstance( DateFormat.MEDIUM );
 
 	@Override
-	public TableCell<Transaction, Date> call( TableColumn<Transaction, Date> p ) {
-		return new TableCell<Transaction, Date>() {
+	public TableCell<SplitStub, Date> call( TableColumn<SplitStub, Date> p ) {
+		return new TableCell<SplitStub, Date>() {
 			@Override
 			protected void updateItem( Date t, boolean empty ) {
 				super.updateItem( t, empty );

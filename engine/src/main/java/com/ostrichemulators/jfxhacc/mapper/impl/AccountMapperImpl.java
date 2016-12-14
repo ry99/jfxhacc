@@ -12,7 +12,7 @@ import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.AccountType;
 import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.Payee;
-import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
+import com.ostrichemulators.jfxhacc.model.SplitBase.ReconcileState;
 import com.ostrichemulators.jfxhacc.model.impl.AccountImpl;
 import com.ostrichemulators.jfxhacc.model.vocabulary.Accounts;
 import com.ostrichemulators.jfxhacc.model.vocabulary.Splits;
@@ -96,30 +96,30 @@ public class AccountMapperImpl extends SimpleEntityRdfMapper<Account> implements
 		return query( "SELECT ?p ?o WHERE { ?id ?p ?o . FILTER isLiteral( ?o ) }",
 				bindings, new QueryHandler<Account>() {
 
-					@Override
-					public void handleTuple( BindingSet set, ValueFactory vf ) {
-						final URI uri = URI.class.cast( set.getValue( "p" ) );
-						final Literal literal = Literal.class.cast( set.getValue( "o" ) );
+			@Override
+			public void handleTuple( BindingSet set, ValueFactory vf ) {
+				final URI uri = URI.class.cast( set.getValue( "p" ) );
+				final Literal literal = Literal.class.cast( set.getValue( "o" ) );
 
-						if ( RDFS.LABEL.equals( uri ) ) {
-							acct.setName( literal.stringValue() );
-						}
-						else if ( Accounts.OBAL_PRED.equals( uri ) ) {
-							acct.setOpeningBalance( new Money( literal.intValue() ) );
-						}
-						else if ( Accounts.NOTES_PRED.equals( uri ) ) {
-							acct.setNotes( literal.stringValue() );
-						}
-						else if ( Accounts.NUMBER_PRED.equals( uri ) ) {
-							acct.setNumber( literal.stringValue() );
-						}
-					}
+				if ( RDFS.LABEL.equals( uri ) ) {
+					acct.setName( literal.stringValue() );
+				}
+				else if ( Accounts.OBAL_PRED.equals( uri ) ) {
+					acct.setOpeningBalance( new Money( literal.intValue() ) );
+				}
+				else if ( Accounts.NOTES_PRED.equals( uri ) ) {
+					acct.setNotes( literal.stringValue() );
+				}
+				else if ( Accounts.NUMBER_PRED.equals( uri ) ) {
+					acct.setNumber( literal.stringValue() );
+				}
+			}
 
-					@Override
-					public Account getResult() {
-						return acct;
-					}
-				} );
+			@Override
+			public Account getResult() {
+				return acct;
+			}
+		} );
 	}
 
 	@Override
@@ -178,20 +178,20 @@ public class AccountMapperImpl extends SimpleEntityRdfMapper<Account> implements
 				+ "} ORDER BY DESC( ?parent )",
 				bindmap( "type", type.getUri() ),
 				new QueryHandler<Map<URI, URI>>() {
-					Map<URI, URI> map = new LinkedHashMap<>();
+			Map<URI, URI> map = new LinkedHashMap<>();
 
-					@Override
-					public void handleTuple( BindingSet set, ValueFactory vf ) {
-						URI child = URI.class.cast( set.getValue( "child" ) );
-						URI parent = URI.class.cast( set.getValue( "parent" ) );
-						map.put( child, parent );
-					}
+			@Override
+			public void handleTuple( BindingSet set, ValueFactory vf ) {
+				URI child = URI.class.cast( set.getValue( "child" ) );
+				URI parent = URI.class.cast( set.getValue( "parent" ) );
+				map.put( child, parent );
+			}
 
-					@Override
-					public Map<URI, URI> getResult() {
-						return map;
-					}
-				} );
+			@Override
+			public Map<URI, URI> getResult() {
+				return map;
+			}
+		} );
 
 		Map<URI, Account> accts = new HashMap<>();
 		for ( Account acct : getAll() ) {
@@ -336,6 +336,8 @@ public class AccountMapperImpl extends SimpleEntityRdfMapper<Account> implements
 		Map<String, Value> bindings = bindmap( "payee", p.getId() );
 		bindings.put( "except", except.getId() );
 
+		log.debug( "calculating popular payees" );
+
 		return query( "SELECT ?acct (COUNT(?split) AS ?cnt) WHERE {"
 				+ "  ?tid trans:payee ?payee . "
 				+ "  ?tid trans:entry ?split ."
@@ -343,51 +345,52 @@ public class AccountMapperImpl extends SimpleEntityRdfMapper<Account> implements
 				+ "} GROUP BY ?acct ORDER BY DESC( ?cnt )",
 				bindings,
 				new QueryHandler<List<Account>>() {
-					List<Account> list = new ArrayList<>();
+			List<Account> list = new ArrayList<>();
 
-					@Override
-					public void handleTuple( BindingSet set, ValueFactory vf ) {
-						URI id = URI.class.cast( set.getValue( "acct" ) );
-						try {
-							list.add( get( id ) );
-						}
-						catch ( MapperException me ) {
-							log.error( me, me );
-						}
-					}
+			@Override
+			public void handleTuple( BindingSet set, ValueFactory vf ) {
+				URI id = URI.class.cast( set.getValue( "acct" ) );
+				try {
+					list.add( get( id ) );
+				}
+				catch ( MapperException me ) {
+					log.error( me, me );
+				}
+			}
 
-					@Override
-					public List<Account> getResult() {
-						return list;
-					}
-				} );
+			@Override
+			public List<Account> getResult() {
+				return list;
+			}
+		} );
 	}
 
 	@Override
 	public List<Account> getPopularAccounts( int topx ) throws MapperException {
+		log.debug( "calculating popular accounts" );
 		return query( "	SELECT ?acct (COUNT(?split) AS ?cnt) WHERE {"
 				+ "  ?split splits:account ?acct ."
 				+ "  ?acct accounts:accountType ?atype . FILTER ( ?atype != jfxhacc:expense ) "
 				+ "} GROUP BY ?acct ORDER BY DESC( ?cnt )",
 				null,
 				new QueryHandler<List<Account>>() {
-					List<Account> list = new ArrayList<>();
+			List<Account> list = new ArrayList<>();
 
-					@Override
-					public void handleTuple( BindingSet set, ValueFactory vf ) {
-						URI id = URI.class.cast( set.getValue( "acct" ) );
-						try {
-							list.add( get( id ) );
-						}
-						catch ( MapperException me ) {
-							log.error( me, me );
-						}
-					}
+			@Override
+			public void handleTuple( BindingSet set, ValueFactory vf ) {
+				URI id = URI.class.cast( set.getValue( "acct" ) );
+				try {
+					list.add( get( id ) );
+				}
+				catch ( MapperException me ) {
+					log.error( me, me );
+				}
+			}
 
-					@Override
-					public List<Account> getResult() {
-						return ( list.size() > topx ? list.subList( 0, topx ) : list );
-					}
-				} );
+			@Override
+			public List<Account> getResult() {
+				return ( list.size() > topx ? list.subList( 0, topx ) : list );
+			}
+		} );
 	}
 }

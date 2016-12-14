@@ -9,7 +9,6 @@ import com.ostrichemulators.jfxhacc.engine.DataEngine;
 import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.Transaction;
-import com.ostrichemulators.jfxhacc.model.impl.SplitImpl;
 import com.ostrichemulators.jfxhacc.model.impl.TransactionImpl;
 import java.io.IOException;
 import java.util.Date;
@@ -91,14 +90,7 @@ public class TransactionEntry extends StackPane {
 		setTransaction( t );
 	}
 
-	public void setTransaction( Transaction t ) {
-		trans = new TransactionImpl( t.getId(), t.getDate(), t.getNumber(), t.getPayee() );
-		trans.setJournal( t.getJournal() );
-		
-		for ( Split s : t.getSplits() ) {
-			trans.addSplit( new SplitImpl( s ) );
-		}
-
+	public void setTransaction( Transaction trans ) {
 		tec.setTransaction( trans );
 		swc.setSplits( trans.getSplits() );
 		reset();

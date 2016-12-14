@@ -15,6 +15,7 @@ import org.apache.log4j.Logger;
 /**
  *
  * @author ryan
+ * @param <T>
  */
 public class MoneyTableTreeCellFactory<T> implements Callback<TreeTableColumn<T, Money>, TreeTableCell<T, Money>> {
 

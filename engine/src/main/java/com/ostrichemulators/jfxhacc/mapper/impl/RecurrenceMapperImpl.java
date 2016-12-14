@@ -213,7 +213,7 @@ public class RecurrenceMapperImpl extends RdfMapper<Recurrence>
 		}
 		else if ( Loans.TYPE.equals( type ) ) {
 			Loan l = lmap.get( r );
-			
+
 			Money loanbalance = amap.getBalance( l.getPrincipalAccount(),
 					BalanceType.CURRENT, r.getNextRun() );
 			trans = new TransactionImpl();
@@ -235,7 +235,7 @@ public class RecurrenceMapperImpl extends RdfMapper<Recurrence>
 			payee.setAccount( l.getSourceAccount() );
 			princ.setAccount( l.getPrincipalAccount() );
 			inter.setAccount( l.getInterestAccount() );
-			
+
 			trans.addSplit( payee );
 			trans.addSplit( inter );
 			trans.addSplit( princ );
@@ -263,6 +263,7 @@ public class RecurrenceMapperImpl extends RdfMapper<Recurrence>
 
 	@Override
 	public List<Recurrence> getDue( Date d ) throws MapperException {
+		log.debug( "getting recurrences due" );
 		List<Recurrence> dues = new ArrayList<>();
 		Collection<Recurrence> recs = getAll();
 		for ( Recurrence r : recs ) {

@@ -39,6 +39,7 @@ import org.openrdf.repository.RepositoryException;
 /**
  *
  * @author ryan
+ * @param <T>
  */
 public abstract class RdfMapper<T extends IDable> implements DataMapper<T> {
 

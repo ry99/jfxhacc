@@ -6,7 +6,7 @@
 package com.ostrichemulators.jfxhacc.cells;
 
 import com.ostrichemulators.jfxhacc.model.Split;
-import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
+import com.ostrichemulators.jfxhacc.model.SplitBase.ReconcileState;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.scene.control.CheckBox;
@@ -18,6 +18,7 @@ import org.apache.log4j.Logger;
 /**
  *
  * @author ryan
+ * @param <T>
  */
 public class RecoCellFactory<T> implements Callback<TableColumn<T, ReconcileState>, TableCell<T, ReconcileState>> {
 

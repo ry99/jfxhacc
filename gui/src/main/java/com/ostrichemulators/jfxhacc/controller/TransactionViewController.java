@@ -14,34 +14,36 @@ import com.ostrichemulators.jfxhacc.cells.MoneyCellFactory;
 import com.ostrichemulators.jfxhacc.cells.PayeeAccountMemoCellFactory;
 import com.ostrichemulators.jfxhacc.cells.PayeeAccountMemoValueFactory;
 import com.ostrichemulators.jfxhacc.cells.RecoCellFactory;
-import com.ostrichemulators.jfxhacc.cells.RecoValueFactory;
+import com.ostrichemulators.jfxhacc.datamanager.AccountManager;
+import com.ostrichemulators.jfxhacc.datamanager.JournalManager;
+import com.ostrichemulators.jfxhacc.datamanager.PayeeManager;
+import com.ostrichemulators.jfxhacc.datamanager.SplitStubManager;
 import com.ostrichemulators.jfxhacc.mapper.MapperException;
-import com.ostrichemulators.jfxhacc.mapper.TransactionListener;
 import com.ostrichemulators.jfxhacc.mapper.TransactionMapper;
 import com.ostrichemulators.jfxhacc.model.Account;
-import com.ostrichemulators.jfxhacc.model.Journal;
 import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.Split;
-import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
+import com.ostrichemulators.jfxhacc.model.SplitBase.ReconcileState;
+import com.ostrichemulators.jfxhacc.model.SplitStub;
 import com.ostrichemulators.jfxhacc.model.Transaction;
 import com.ostrichemulators.jfxhacc.model.impl.SplitImpl;
-import com.ostrichemulators.jfxhacc.utility.TransactionHelper;
+import com.ostrichemulators.jfxhacc.model.impl.TransactionImpl;
+import com.ostrichemulators.jfxhacc.model.vocabulary.Transactions;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
+import java.util.function.Predicate;
 import java.util.prefs.Preferences;
 import javafx.beans.property.ReadOnlyStringWrapper;
-import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TableColumn;
@@ -58,78 +60,84 @@ import org.openrdf.model.URI;
  *
  * @author ryan
  */
-public class TransactionViewController implements ShutdownListener, TransactionListener {
+public class TransactionViewController implements ShutdownListener {
 
 	private static final Logger log = Logger.getLogger( TransactionViewController.class );
 
 	@FXML
 	private SplitPane splitter;
 	@FXML
-	protected TableView<Transaction> transtable;
+	protected TableView<SplitStub> transtable;
 	@FXML
-	private TableColumn<Transaction, Journal> jcol;
+	private TableColumn<SplitStub, URI> jcol;
 	@FXML
-	private TableColumn<Transaction, Date> date;
+	private TableColumn<SplitStub, Date> date;
 	@FXML
-	private TableColumn<Transaction, String> number;
+	private TableColumn<SplitStub, String> number;
 	@FXML
-	private TableColumn<Transaction, PAMData> payee;
+	private TableColumn<SplitStub, PAMData> payee;
 	@FXML
-	private TableColumn<Transaction, Money> credit;
+	private TableColumn<SplitStub, Money> credit;
 	@FXML
-	private TableColumn<Transaction, Money> debit;
+	private TableColumn<SplitStub, Money> debit;
 	@FXML
-	private TableColumn<Transaction, ReconcileState> reco;
+	private TableColumn<SplitStub, ReconcileState> reco;
 
 	private final TransactionEntry dataentry = new TransactionEntry( MainApp.getEngine() );
 
 	protected Account account;
-	private final PayeeAccountMemoValueFactory payeefac = new PayeeAccountMemoValueFactory();
-	private final RecoValueFactory recofac = new RecoValueFactory();
+	private final PayeeAccountMemoValueFactory payeefac;
 	private boolean firstload = true;
-	private Transaction transUnderMouse = null;
+	private SplitStub transUnderMouse = null;
 	protected double splitterpos;
 	protected TransactionMapper tmap;
-	protected final ObservableList<Transaction> transactions
-			= FXCollections.observableArrayList();
+	private final SplitStubManager stubman;
+	private final PayeeManager payman;
+	private final AccountManager acctman;
+	private final JournalManager jrnlman;
+
+	public TransactionViewController() {
+		try {
+			stubman = new SplitStubManager( MainApp.getEngine() );
+			payman = new PayeeManager( MainApp.getEngine() );
+			acctman = new AccountManager( MainApp.getEngine() );
+			jrnlman = new JournalManager( MainApp.getEngine() );
+			payeefac = new PayeeAccountMemoValueFactory( stubman, acctman, payman );
+		}
+		catch ( MapperException me ) {
+			throw new RuntimeException( me );
+		}
+	}
 
 	public void setAccount( Account acct ) {
 		account = acct;
 		payeefac.setAccount( acct );
-		recofac.setAccount( acct );
 		dataentry.setAccount( acct );
-		refresh();
-		transtable.scrollTo( transactions.size() - 1 );
 		splitter.setDividerPositions( 1.0 );
+		refresh();
+		transtable.scrollTo( getData().size() - 1 );
 	}
 
-	public ObservableList<Transaction> getData() {
-		return transactions;
+	protected ObservableList<SplitStub> getData() {
+		return transtable.getItems();
 	}
 
 	protected String getPrefPrefix() {
 		return "transviewer";
 	}
 
-	protected List<Transaction> getTransactions() {
-		try {
-			log.debug( "fetching transactions for " + account );
-			return tmap.getAll( account );
-		}
-		catch ( MapperException me ) {
-			log.error( me, me );
-		}
-		return new ArrayList<>();
+	protected Collection<Predicate<SplitStub>> getFilters() {
+		return Arrays.asList( MainApp.PF.account( account ) );
 	}
 
 	public void refresh() {
-		List<TableColumn<Transaction, ?>> sortcols = new ArrayList<>();
+		List<TableColumn<SplitStub, ?>> sortcols = new ArrayList<>();
 		sortcols.addAll( transtable.getSortOrder() );
 
-		transactions.setAll( getTransactions() );
-		log.debug( "populated transaction viewer with " + transactions.size()
+		transtable.setItems( stubman.getSplitStubs( getFilters() ) );
+
+		log.debug( "populated transaction viewer with " + transtable.getItems().size()
 				+ " transactions" );
-		transtable.setItems( transactions );
 
 		if ( firstload ) {
 			firstload = false;
@@ -137,12 +145,12 @@ public class TransactionViewController implements ShutdownListener, TransactionL
 			String PREF_SORTASC = getPrefPrefix() + ".sort.asc";
 
 			Preferences prefs = Preferences.userNodeForPackage( getClass() );
-			ObservableList<TableColumn<Transaction, ?>> cols = transtable.getColumns();
+			ObservableList<TableColumn<SplitStub, ?>> cols = transtable.getColumns();
 			int sortcol = prefs.getInt( PREF_SORTCOL, 0 );
 			boolean sortasc = prefs.getBoolean( PREF_SORTASC, true );
 
 			int i = 0;
-			for ( TableColumn<Transaction, ?> tc : cols ) {
+			for ( TableColumn<SplitStub, ?> tc : cols ) {
 				double size = prefs.getDouble( getPrefPrefix() + ".col" + ( i++ ), -1 );
 				if ( size > 0 ) {
 					tc.setPrefWidth( size );
@@ -156,8 +164,10 @@ public class TransactionViewController implements ShutdownListener, TransactionL
 			}
 		}
 
+		log.debug( "sorting data" );
 		transtable.getSortOrder().setAll( sortcols );
 		transtable.sort();
+		log.debug( "done sorting" );
 	}
 
 	protected double getRowHeight() {
@@ -174,31 +184,31 @@ public class TransactionViewController implements ShutdownListener, TransactionL
 		transtable.setOnKeyTyped( event -> keyTyped( event ) );
 
 		transtable.setFixedCellSize( getRowHeight() );
-		transtable.setItems( transactions );
 
-		jcol.setCellValueFactory( ( TableColumn.CellDataFeatures<Transaction, Journal> p )
-				-> p.getValue().getJournalProperty() );
-		jcol.setCellFactory( new JournalCellFactory() );
+		jcol.setCellValueFactory( ( TableColumn.CellDataFeatures<SplitStub, URI> p )
+				-> p.getValue().getJournalIdProperty() );
+		jcol.setCellFactory( new JournalCellFactory( MainApp.getEngine() ) );
 
-		date.setCellValueFactory( ( TableColumn.CellDataFeatures<Transaction, Date> p )
+		date.setCellValueFactory( ( TableColumn.CellDataFeatures<SplitStub, Date> p )
 				-> p.getValue().getDateProperty() );
 		date.setCellFactory( new DateCellFactory() );
 
 		payee.setCellValueFactory( payeefac );
 		payee.setCellFactory( getPayeeAccountMemoCellFactory() );
 
-		number.setCellValueFactory( ( TableColumn.CellDataFeatures<Transaction, String> p )
+		number.setCellValueFactory( ( TableColumn.CellDataFeatures<SplitStub, String> p )
 				-> new ReadOnlyStringWrapper( p.getValue().getNumber() ) );
 
-		reco.setCellValueFactory( recofac );
+		reco.setCellValueFactory( ( TableColumn.CellDataFeatures<SplitStub, ReconcileState> p )
+				-> p.getValue().getReconciledProperty() );
 		reco.setCellFactory( new RecoCellFactory<>( false ) );
 
-		credit.setCellValueFactory( ( TableColumn.CellDataFeatures<Transaction, Money> p )
-				-> p.getValue().getSplit( account ).getRawValueProperty() );
+		credit.setCellValueFactory( ( TableColumn.CellDataFeatures<SplitStub, Money> p )
+				-> p.getValue().getRawValueProperty() );
 		credit.setCellFactory( new MoneyCellFactory<>( true ) );
 
-		debit.setCellValueFactory( ( TableColumn.CellDataFeatures<Transaction, Money> p )
-				-> p.getValue().getSplit( account ).getRawValueProperty() );
+		debit.setCellValueFactory( ( TableColumn.CellDataFeatures<SplitStub, Money> p )
+				-> p.getValue().getRawValueProperty() );
 		debit.setCellFactory( new MoneyCellFactory<>( false ) );
 
 		splitter.getItems().add( dataentry );
@@ -208,10 +218,10 @@ public class TransactionViewController implements ShutdownListener, TransactionL
 		splitterpos = prefs.getDouble( PREF_SPLITTER, 0.70 );
 		splitter.setDividerPositions( 1.0 );
 
-		transtable.setRowFactory( new Callback<TableView<Transaction>, TableRow<Transaction>>() {
+		transtable.setRowFactory( new Callback<TableView<SplitStub>, TableRow<SplitStub>>() {
 			@Override
-			public TableRow<Transaction> call( TableView<Transaction> p ) {
-				TableRow<Transaction> row = new TableRow<>();
+			public TableRow<SplitStub> call( TableView<SplitStub> p ) {
+				TableRow<SplitStub> row = new TableRow<>();
 				row.setOnMouseEntered( event -> {
 					if ( null == row.getItem() ) {
 						transUnderMouse = null;
@@ -243,9 +253,6 @@ public class TransactionViewController implements ShutdownListener, TransactionL
 			}
 		} );
 
-		tmap = MainApp.getEngine().getTransactionMapper();
-		tmap.addMapperListener( this );
-
 		dataentry.addCloseListener( new CloseListener() {
 
 			@Override
@@ -271,7 +278,7 @@ public class TransactionViewController implements ShutdownListener, TransactionL
 		return ReconcileState.NOT_RECONCILED;
 	}
 
-	protected void mouseClick( Transaction t ) {
+	protected void mouseClick( SplitStub t ) {
 		if ( null == t ) {
 			openEditor( new Date(), getDefaultReconcileState() );
 		}
@@ -287,9 +294,10 @@ public class TransactionViewController implements ShutdownListener, TransactionL
 			item1 = new MenuItem();
 		}
 		else {
-			Split other = TransactionHelper.getOther( transUnderMouse, account );
+//			Split other = TransactionHelper.getOther( transUnderMouse, account );
+			Split other = null;
 			if ( null != other ) {
-				item1 = new MenuItem( "Flip to " + other.getAccount().getName() );
+				item1 = new MenuItem( "(broken) Flip to " + other.getAccount().getName() );
 				item1.setOnAction( new EventHandler<ActionEvent>() {
 					@Override
 					public void handle( ActionEvent e ) {
@@ -307,13 +315,20 @@ public class TransactionViewController implements ShutdownListener, TransactionL
 		return items;
 	}
 
-	public void openEditor( Transaction t ) {
+	public void openEditor( SplitStub t ) {
 		if ( null == t ) {
 			openEditor( new Date(), getDefaultReconcileState() );
 		}
 		else {
 			splitter.setDividerPositions( splitterpos );
-			dataentry.setTransaction( t );
+
+			List<SplitStub> stubs
+					= stubman.getSplitStubs( MainApp.PF.filter( Transactions.TYPE,
+							t.getTransactionId() ) );
+
+			Transaction trans
+					= SplitStubManager.toTransaction( stubs, acctman, jrnlman, payman );
+			dataentry.setTransaction( trans );
 		}
 	}
 
@@ -333,16 +348,16 @@ public class TransactionViewController implements ShutdownListener, TransactionL
 	@Override
 	public void shutdown() {
 		Preferences prefs = Preferences.userNodeForPackage( getClass() );
-		ObservableList<TableColumn<Transaction, ?>> cols = transtable.getColumns();
+		ObservableList<TableColumn<SplitStub, ?>> cols = transtable.getColumns();
 		int i = 0;
 
-		TableColumn<Transaction, ?> sortcol = null;
-		ObservableList<TableColumn<Transaction, ?>> sorts = transtable.getSortOrder();
+		TableColumn<SplitStub, ?> sortcol = null;
+		ObservableList<TableColumn<SplitStub, ?>> sorts = transtable.getSortOrder();
 		if ( !sorts.isEmpty() ) {
 			sortcol = sorts.get( 0 );
 		}
 
-		for ( TableColumn<Transaction, ?> tc : cols ) {
+		for ( TableColumn<SplitStub, ?> tc : cols ) {
 			prefs.putDouble( getPrefPrefix() + ".col" + ( i++ ), tc.getWidth() );
 
 			if ( tc.equals( sortcol ) ) {
@@ -363,7 +378,7 @@ public class TransactionViewController implements ShutdownListener, TransactionL
 	@FXML
 	public void keyTyped( KeyEvent ke ) {
 		String code = ke.getCharacter();
-		Transaction t = transtable.getSelectionModel().getSelectedItem();
+		SplitStub t = transtable.getSelectionModel().getSelectedItem();
 		if ( "I".equalsIgnoreCase( code ) ) {
 			ke.consume();
 			Date tdate = ( null == t ? new Date() : t.getDate() );
@@ -371,13 +386,15 @@ public class TransactionViewController implements ShutdownListener, TransactionL
 		}
 		else if ( "R".equalsIgnoreCase( code ) ) {
 			ke.consume();
-			Split s = t.getSplit( account );
+
+			//  Account a, Money m, String memo, ReconcileState rs
+			Split s = new SplitImpl( acctman.getMap().get( t.getAccountId() ),
+					t.getValue(), t.getMemo(), t.getReconciled() );
 			// cycle through the reconcile states
 			ReconcileState rs = s.getReconciled();
 			ReconcileState states[] = ReconcileState.values();
 			try {
 				tmap.reconcile( states[( rs.ordinal() + 1 ) % states.length], account, s );
-				updated( t );
 			}
 			catch ( MapperException me ) {
 				log.error( me, me );
@@ -388,75 +405,6 @@ public class TransactionViewController implements ShutdownListener, TransactionL
 		else if ( "E".equalsIgnoreCase( code ) ) {
 			ke.consume();
 			openEditor( transtable.getSelectionModel().getSelectedItem() );
-		}
-	}
-
-	protected boolean includable( Transaction t ) {
-		return ( null != t.getSplit( account ) );
-	}
-
-	@Override
-	public void added( Transaction t ) {
-		if ( includable( t ) ) {
-			transactions.add( t );
-			transtable.sort();
-		}
-	}
-
-	@Override
-	public void updated( Transaction t ) {
-		if ( includable( t ) ) {
-			ListIterator<Transaction> transit = transactions.listIterator();
-			while ( transit.hasNext() ) {
-				Transaction listt = transit.next();
-				if ( listt.equals( t ) ) {
-					transit.set( t );
-					transtable.sort();
-					break;
-				}
-			}
-		}
-	}
-
-	@Override
-	public void removed( URI uri ) {
-		ListIterator<Transaction> transit = transactions.listIterator();
-		while ( transit.hasNext() ) {
-			Transaction listt = transit.next();
-			if ( listt.getId().equals( uri ) ) {
-				transit.remove();
-				break;
-			}
-		}
-	}
-
-	@Override
-	public void reconciled( Account acct, Collection<Split> splits ) {
-		Map<URI, Transaction> revmap = new HashMap<>();
-		for ( Transaction t : transactions ) {
-			for ( Split s : t.getSplits() ) {
-				revmap.put( s.getId(), t );
-			}
-		}
-
-		for ( Split s : splits ) {
-			try {
-				Transaction t;
-				if ( revmap.containsKey( s.getId() ) ) {
-					t = revmap.get( s.getId() );
-				}
-				else {
-					t = tmap.getTransaction( s );
-				}
-
-				Split spl = t.getSplit( acct );
-				spl.setReconciled( s.getReconciled() );
-				// FIXME: don't need this anymore, I think
-				updated( t );
-			}
-			catch ( MapperException me ) {
-				log.error( me, me );
-			}
 		}
 	}
 

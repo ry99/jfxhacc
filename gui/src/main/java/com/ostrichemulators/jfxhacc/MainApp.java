@@ -5,6 +5,8 @@ import com.ostrichemulators.jfxhacc.engine.DataEngine;
 import com.ostrichemulators.jfxhacc.engine.impl.RdfDataEngine;
 import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.utility.DbUtil;
+import com.ostrichemulators.jfxhacc.utility.PredicateFactory;
+import com.ostrichemulators.jfxhacc.utility.PredicateFactoryImpl;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -13,7 +15,6 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.prefs.Preferences;
 import javafx.application.Application;
-import static javafx.application.Application.launch;
 import javafx.application.Platform;
 import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
@@ -26,6 +27,7 @@ import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.rio.RDFFormat;
 import org.openrdf.rio.RDFParseException;
+import static javafx.application.Application.launch;
 
 public class MainApp extends Application {
 
@@ -35,6 +37,7 @@ public class MainApp extends Application {
 	private static RdfDataEngine engine;
 	private static StageRememberer stager;
 	private static MainWindowController controller;
+	public static final PredicateFactory PF = new PredicateFactoryImpl();
 
 	public static DataEngine getEngine() {
 		return engine;

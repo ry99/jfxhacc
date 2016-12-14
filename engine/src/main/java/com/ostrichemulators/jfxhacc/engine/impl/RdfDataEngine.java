@@ -107,8 +107,8 @@ public class RdfDataEngine implements DataEngine {
 	 * determine the format (either nt, ttl, or rdf). If the extension parsing
 	 * fails for whatever reason, the dump will be in NTriples format
 	 *
-	 * @param de
 	 * @param out
+	 * @throws org.openrdf.repository.RepositoryException
 	 * @throws IOException
 	 */
 	public void dump( File out ) throws RepositoryException, IOException {

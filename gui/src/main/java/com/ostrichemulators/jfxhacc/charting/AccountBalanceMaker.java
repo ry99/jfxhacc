@@ -11,7 +11,6 @@ import com.ostrichemulators.jfxhacc.mapper.TransactionMapper;
 import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.Split;
-import com.ostrichemulators.jfxhacc.utility.AccountHelper;
 import java.text.DateFormat;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -85,7 +84,7 @@ public class AccountBalanceMaker extends AbstractSeriesMakerBase {
 
 		while ( pfirst.isBefore( end ) ) {
 			for ( Split s : splits.getOrDefault( pfirst, new ArrayList<>() ) ) {
-				Money change = AccountHelper.getSplitValueForAccount( s, acct );
+				Money change = acct.getAccountType().value( s );
 				value = value.plus( change );
 			}
 

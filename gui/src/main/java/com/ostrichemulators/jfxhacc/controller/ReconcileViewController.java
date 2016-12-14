@@ -5,18 +5,20 @@
  */
 package com.ostrichemulators.jfxhacc.controller;
 
+import com.ostrichemulators.jfxhacc.MainApp;
 import com.ostrichemulators.jfxhacc.cells.PayeeAccountMemoCellFactory;
 import com.ostrichemulators.jfxhacc.mapper.MapperException;
 import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.Split;
-import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
-import com.ostrichemulators.jfxhacc.model.Transaction;
+import com.ostrichemulators.jfxhacc.model.SplitBase.ReconcileState;
+import com.ostrichemulators.jfxhacc.model.SplitStub;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.function.Predicate;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -25,7 +27,6 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.input.KeyEvent;
 import org.apache.log4j.Logger;
-import org.openrdf.model.URI;
 
 /**
  * FXML Controller class
@@ -37,26 +38,20 @@ public class ReconcileViewController extends TransactionViewController {
 	private static final Logger log = Logger.getLogger( ReconcileViewController.class );
 	private Date date;
 	private final ObjectProperty<Money> reco = new SimpleObjectProperty<>( new Money() );
-	private final ObservableList<Split> deposits = FXCollections.observableArrayList();
-	private final ObservableList<Split> withdrawals = FXCollections.observableArrayList();
+	private ObservableList<Split> splits = FXCollections.observableArrayList();
+	private final ObservableList<Split> credits = FXCollections.observableArrayList();
+	private final ObservableList<Split> debits = FXCollections.observableArrayList();
 
 	@Override
-	protected List<Transaction> getTransactions() {
-		try {
-			List<Transaction> list = tmap.getUnreconciled( account, date );
-			return list;
-		}
-		catch ( MapperException ioe ) {
-			log.error( ioe, ioe );
-		}
-
-		return new ArrayList<>();
+	protected Collection<Predicate<SplitStub>> getFilters() {
+		List<Predicate<SplitStub>> filters = new ArrayList<>( super.getFilters() );
+		filters.add( MainApp.PF.state( ReconcileState.CLEARED, ReconcileState.NOT_RECONCILED ) );
+		filters.add( MainApp.PF.between( null, date ) );
+		return filters;
 	}
 
 	public void setAccount( Account acct, Date d ) {
 		reco.setValue( new Money() );
-		deposits.clear();
-		withdrawals.clear();
 		date = d;
 		super.setAccount( acct );
 	}
@@ -69,20 +64,16 @@ public class ReconcileViewController extends TransactionViewController {
 		return reco;
 	}
 
-	public Collection<Split> getSplits() {
-		List<Split> splits = new ArrayList<>();
-		for ( Transaction t : transactions ) {
-			splits.add( t.getSplit( account ) );
-		}
+	public ObservableList<Split> getSplits() {
 		return splits;
 	}
 
-	public ObservableList<Split> getWithdrawals() {
-		return withdrawals;
+	public ObservableList<Split> getClearedCredits() {
+		return credits;
 	}
 
-	public ObservableList<Split> getDeposits() {
-		return deposits;
+	public ObservableList<Split> getClearedDebits() {
+		return debits;
 	}
 
 	@Override
@@ -106,40 +97,25 @@ public class ReconcileViewController extends TransactionViewController {
 	}
 
 	@Override
-	protected void mouseClick( Transaction t ) {
+	protected void mouseClick( SplitStub t ) {
 		if ( null != t ) {
 			toggle( t );
 		}
 	}
 
-	private void toggle( Transaction t ) {
-		Split s = t.getSplit( account );
-		deposits.remove( s );
-		withdrawals.remove( s );
-
+	private void toggle( SplitStub s ) {
 		ReconcileState newrec = ( ReconcileState.CLEARED == s.getReconciled()
 				? ReconcileState.NOT_RECONCILED
 				: ReconcileState.CLEARED );
 
 		s.setReconciled( newrec );
 
-		if ( ReconcileState.NOT_RECONCILED != newrec ) {
-
-			if ( this.account.getAccountType().isDebitPlus() == s.isDebit() ) {
-				deposits.add( s );
-			}
-			else {
-				withdrawals.add( s );
-			}
-		}
-
 		int idx = transtable.getSelectionModel().getSelectedIndex();
 		if ( ReconcileState.CLEARED == newrec ) {
-			ListIterator<Transaction> it = transactions.listIterator( idx );
+			ListIterator<SplitStub> it = getData().listIterator( idx );
 			while ( it.hasNext() ) {
 				// move forward to our first unreconciled transaction
-				Transaction next = it.next();
-				Split nextsplit = next.getSplit( account );
+				SplitStub nextsplit = it.next();
 				if ( ReconcileState.NOT_RECONCILED == nextsplit.getReconciled() ) {
 					idx = it.nextIndex() - 1;
 					break;
@@ -147,13 +123,13 @@ public class ReconcileViewController extends TransactionViewController {
 			}
 		}
 
-		if ( idx < transactions.size() ) {
+		if ( idx < getData().size() ) {
 			transtable.getSelectionModel().clearAndSelect( idx );
 			transtable.getFocusModel().focus( idx );
 
 			// scroll, but not all the way...give a couple rows buffer
-			if ( idx - 2 > 0 ) {
-				transtable.scrollTo( idx - 2 );
+			if ( idx - 5 > 0 ) {
+				transtable.scrollTo( idx - 5 );
 			}
 		}
 
@@ -162,7 +138,7 @@ public class ReconcileViewController extends TransactionViewController {
 
 	private void updateRecoProp() {
 		int calc = 0;
-		for ( Split s : getSplits() ) {
+		for ( Split s : splits ) {
 			if ( ReconcileState.CLEARED == s.getReconciled() ) {
 				int cents = s.getValue().value();
 				if ( s.isCredit() ) {
@@ -185,7 +161,7 @@ public class ReconcileViewController extends TransactionViewController {
 	@Override
 	public void keyTyped( KeyEvent ke ) {
 		String code = ke.getCharacter();
-		Transaction t = transtable.getSelectionModel().getSelectedItem();
+		SplitStub t = transtable.getSelectionModel().getSelectedItem();
 		if ( "R".equalsIgnoreCase( code ) || " ".equals( code ) ) {
 			ke.consume();
 			toggle( t );
@@ -195,59 +171,8 @@ public class ReconcileViewController extends TransactionViewController {
 		}
 	}
 
-	@Override
-	protected boolean includable( Transaction t ) {
-		boolean ok = ( super.includable( t ) && !t.getDate().after( date ) );
-
-		// check to make sure this isn't an already-reconciled split
-		if ( ok ) {
-			Split s = t.getSplit( account );
-			ok = ( !( null == s || ReconcileState.RECONCILED == s.getReconciled() ) );
-		}
-
-		return ok;
-	}
-
-	@Override
-	public void added( Transaction t ) {
-		super.added( t );
-		if ( includable( t ) ) {
-			updateRecoProp();
-		}
-	}
-
-	@Override
-	public void updated( Transaction t ) {
-		super.updated( t );
-		// see if this new transaction is in our
-		// current list...if not, we need to plus it
-
-		final URI tid = t.getId();
-		if ( includable( t ) ) {
-			boolean found = false;
-			for ( Transaction tt : getData() ) {
-				if ( tt.getId().equals( tid ) ) {
-					found = true;
-					updateRecoProp();
-					break; // nothing more to do...it's already been updated in super
-				}
-			}
-
-			if ( !found ) {
-				super.added( t );
-			}
-		}
-		else {
-			// see if we need to remove this split (already reconciled)
-			removed( tid );
-			updateRecoProp();
-		}
-	}
-
 	public void upgradeSplits() {
-		List<Split> splits = new ArrayList<>();
-		for ( Transaction t : transactions ) {
-			Split s = t.getSplit( account );
+		for ( Split s : getSplits() ) {
 			if ( null != s && ReconcileState.CLEARED == s.getReconciled() ) {
 				splits.add( s );
 			}

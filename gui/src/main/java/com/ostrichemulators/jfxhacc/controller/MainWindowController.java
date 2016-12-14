@@ -9,39 +9,41 @@ import com.ostrichemulators.jfxhacc.charting.AccountDeltaMaker;
 import com.ostrichemulators.jfxhacc.charting.PieMaker;
 import com.ostrichemulators.jfxhacc.charting.SeriesMaker;
 import com.ostrichemulators.jfxhacc.controller.ChartController.ChartType;
+import com.ostrichemulators.jfxhacc.datamanager.AccountManager;
+import com.ostrichemulators.jfxhacc.datamanager.SplitStubManager;
 import com.ostrichemulators.jfxhacc.engine.DataEngine;
 import com.ostrichemulators.jfxhacc.engine.impl.RdfDataEngine;
 import com.ostrichemulators.jfxhacc.mapper.AccountMapper;
-import com.ostrichemulators.jfxhacc.mapper.AccountMapper.BalanceType;
 import com.ostrichemulators.jfxhacc.mapper.MapperException;
 import com.ostrichemulators.jfxhacc.mapper.MapperListener;
-import com.ostrichemulators.jfxhacc.mapper.TransactionListener;
 import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.Recurrence;
-import com.ostrichemulators.jfxhacc.model.Split;
-import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
-import com.ostrichemulators.jfxhacc.model.Transaction;
-import com.ostrichemulators.jfxhacc.utility.AccountBalanceCache;
-import com.ostrichemulators.jfxhacc.utility.AccountBalanceCache.MoneyPair;
+import com.ostrichemulators.jfxhacc.model.SplitBase.ReconcileState;
+import com.ostrichemulators.jfxhacc.model.SplitStub;
 import com.ostrichemulators.jfxhacc.utility.GuiUtils;
+import com.ostrichemulators.jfxhacc.utility.PredicateFactory;
+import com.ostrichemulators.jfxhacc.utility.PredicateFactoryImpl;
 import java.io.File;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Date;
 import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.Callable;
 import java.util.prefs.Preferences;
 import javafx.application.Platform;
+import javafx.beans.InvalidationListener;
+import javafx.beans.Observable;
 import javafx.beans.binding.Bindings;
+import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
-import javafx.collections.MapChangeListener;
+import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -114,8 +116,10 @@ public class MainWindowController implements ShutdownListener {
 	@FXML
 	private SplitMenuButton recurbtn;
 
+	private SplitStubManager ssm;
+	private AccountManager acb;
 	private final TransactionViewController transactions = new TransactionViewController();
-	private AccountBalanceCache acb;
+	private final ObservableList<SplitStub> seltrans = FXCollections.observableArrayList();
 
 	@FXML
 	public void initialize() {
@@ -126,7 +130,13 @@ public class MainWindowController implements ShutdownListener {
 		DataEngine engine = MainApp.getEngine();
 		AccountMapper amap = engine.getAccountMapper();
 
-		acb = new AccountBalanceCache( amap, engine.getTransactionMapper() );
+		try {
+			ssm = new SplitStubManager( engine );
+			acb = new AccountManager( engine, ssm );
+		}
+		catch ( RuntimeException me ) {
+			log.fatal( "could not create stub manager", me );
+		}
 
 		if ( log.isTraceEnabled() ) {
 			MenuItem mi = new MenuItem( "Dump Database" );
@@ -157,7 +167,7 @@ public class MainWindowController implements ShutdownListener {
 					= GuiUtils.makeAccountTree( amap.getParentMap(), root );
 			for ( Map.Entry<Account, TreeItem<Account>> en : treemap.entrySet() ) {
 				en.getValue().setExpanded( true );
-				
+
 				if ( en.getKey().getId().equals( selected ) ) {
 					toselect1 = en.getValue();
 				}
@@ -176,21 +186,6 @@ public class MainWindowController implements ShutdownListener {
 					TreeItem<Account> ti = findItem( a );
 					accounts.getSelectionModel().select( ti );
 					accounts.scrollTo( accounts.getRow( ti ) );
-				} );
-				accounts.getSelectionModel().selectedItemProperty().addListener( new ChangeListener<TreeItem<Account>>() {
-
-					@Override
-					public void changed( ObservableValue<? extends TreeItem<Account>> ov,
-							TreeItem<Account> t, TreeItem<Account> t1 ) {
-						if ( null == t1 ) {
-							return;
-						}
-
-						Account treeval = t1.getValue();
-						if ( treeval.equals( a ) ) {
-							btn.setSelected( true );
-						}
-					}
 				} );
 			}
 
@@ -225,6 +220,7 @@ public class MainWindowController implements ShutdownListener {
 			log.error( me, me );
 		}
 
+		log.debug( "creating accounts tree" );
 		final TreeItem<Account> toselect = toselect1;
 
 		accountName.setCellValueFactory( ( CellDataFeatures<Account, String> p )
@@ -245,11 +241,12 @@ public class MainWindowController implements ShutdownListener {
 		}
 
 		makeListeners( acb, engine, root );
+		log.debug( "done making listeners" );
 
 		Platform.runLater( new Runnable() {
 			@Override
 			public void run() {
-
+				log.debug( "running later" );
 				accounts.getSelectionModel().setSelectionMode( SelectionMode.SINGLE );
 
 				double splitterpos = prefs.getDouble( PREF_SPLITTER, 0.25 );
@@ -284,11 +281,51 @@ public class MainWindowController implements ShutdownListener {
 					accounts.scrollTo( accounts.getRow( toselect ) );
 				}
 
+				ReadOnlyObjectProperty<TreeItem<Account>> treesel
+						= accounts.getSelectionModel().selectedItemProperty();
+				PredicateFactory pf = new PredicateFactoryImpl();
+				treesel.addListener( new InvalidationListener() {
+					@Override
+					public void invalidated( Observable observable ) {
+						seltrans.setAll( ssm.getSplitStubs().filtered(
+								pf.account( treesel.getValue().getValue() ) ) );
+					}
+				} );
+
+				balrec.textProperty().bind( Bindings.createStringBinding( () -> {
+					if ( null == treesel.get() ) {
+						return "";
+					}
+					return acb.getRecoProperty( treesel.getValue().getValue() ).get().toString();
+				}, treesel, seltrans ) );
+
+				balcurr.textProperty().bind( Bindings.createStringBinding( () -> {
+					if ( null == treesel.get() ) {
+						return "";
+					}
+					return acb.getCurrentProperty( treesel.getValue().getValue() ).get().toString();
+				}, treesel, seltrans ) );
+
+				transnum.textProperty().bind( Bindings.createStringBinding( new Callable<String>() {
+					@Override
+					public String call() throws Exception {
+						if ( null == treesel.get() ) {
+							return "0 Transactions";
+						}
+
+						Account p = treesel.getValue().getValue();
+						int size = ssm.getSplitStubs().filtered( pf.account( p ) ).size();
+						return ( size + " " + ( 1 == size ? " Transaction" : " Transactions" ) );
+					}
+				}, Bindings.size( seltrans ) ) );
+
+				log.debug( "done running later" );
 			}
 		} );
 	}
 
-	private void makeListeners( AccountBalanceCache acb, DataEngine eng, TreeItem<Account> root ) {
+	private void makeListeners( AccountManager acb, DataEngine eng, TreeItem<Account> root ) {
+		log.debug( "making listeners" );
 		AccountMapper amap = eng.getAccountMapper();
 		accounts.getSelectionModel().selectedItemProperty().addListener( new ChangeListener<TreeItem<Account>>() {
 
@@ -303,21 +340,7 @@ public class MainWindowController implements ShutdownListener {
 				String fname = GuiUtils.getFullName( acct, amap );
 				acctname.setText( fname );
 				MainApp.getShutdownNotifier().getStage().setTitle( "JFXHacc - " + fname );
-				updateBalancesLabel();
 				recoBtn.setDisable( false );
-			}
-		} );
-
-		acb.getMap().addListener( new MapChangeListener<Account, MoneyPair>() {
-
-			@Override
-			public void onChanged( MapChangeListener.Change<? extends Account, ? extends MoneyPair> change ) {
-				TreeItem<Account> item = accounts.getSelectionModel().getSelectedItem();
-				Account acct = ( null == item ? null : item.getValue() );
-
-				if ( change.getKey().equals( acct ) ) {
-					updateBalancesLabel();
-				}
 			}
 		} );
 
@@ -346,36 +369,6 @@ public class MainWindowController implements ShutdownListener {
 				pnode.getParent().getChildren().remove( pnode );
 			}
 		} );
-
-		eng.getTransactionMapper().addMapperListener( new TransactionListener() {
-			private Account account() {
-				return accounts.getSelectionModel().getSelectedItem().getValue();
-			}
-
-			@Override
-			public void reconciled( Account acct, Collection<Split> splits ) {
-				if ( acct.equals( account() ) ) {
-					updateBalancesLabel();
-				}
-			}
-
-			@Override
-			public void added( Transaction t ) {
-				if ( null != t.getSplit( account() ) ) {
-					updateBalancesLabel();
-				}
-			}
-
-			@Override
-			public void updated( Transaction t ) {
-				added( t );
-			}
-
-			@Override
-			public void removed( URI uri ) {
-				updateBalancesLabel();
-			}
-		} );
 	}
 
 	public void select( Account acct ) {
@@ -391,21 +384,6 @@ public class MainWindowController implements ShutdownListener {
 			accounts.getSelectionModel().select( ti );
 			//accounts.getFocusModel().focus( row );
 			accounts.scrollTo( row );
-		}
-	}
-
-	private void updateBalancesLabel() {
-		TreeItem<Account> item = accounts.getSelectionModel().getSelectedItem();
-		if ( null != item ) {
-			Account acct = item.getValue();
-			Money curr = acb.get( acct, BalanceType.CURRENT );
-			Money rec = acb.get( acct, BalanceType.RECONCILED );
-			balrec.setText( rec.toString() );
-			balcurr.setText( curr.toString() );
-
-			int size = transactions.getData().size();
-			String transtxt = ( 1 == size ? " Transaction" : " Transactions" );
-			transnum.setText( size + transtxt );
 		}
 	}
 
@@ -570,6 +548,7 @@ public class MainWindowController implements ShutdownListener {
 	}
 
 	private Node makeTransactionViewer( TransactionViewController controller ) throws IOException {
+		log.debug( "making transaction viewer" );
 		FXMLLoader loader
 				= new FXMLLoader( getClass().getResource( "/fxml/TransactionViewer.fxml" ) );
 		loader.setController( controller );

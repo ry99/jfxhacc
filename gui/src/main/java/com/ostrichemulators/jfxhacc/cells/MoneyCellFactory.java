@@ -19,6 +19,7 @@ import org.apache.log4j.Logger;
 /**
  *
  * @author ryan
+ * @param <T>
  */
 public class MoneyCellFactory<T> implements Callback<TableColumn<T, Money>, TableCell<T, Money>> {
 

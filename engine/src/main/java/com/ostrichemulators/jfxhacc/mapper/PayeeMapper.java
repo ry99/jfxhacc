@@ -6,8 +6,6 @@
 package com.ostrichemulators.jfxhacc.mapper;
 
 import com.ostrichemulators.jfxhacc.model.Payee;
-import java.util.Map;
-import org.openrdf.model.URI;
 
 /**
  *
@@ -16,8 +14,6 @@ import org.openrdf.model.URI;
 public interface PayeeMapper extends DataMapper<Payee> {
 
 	public Payee create( String name ) throws MapperException;
-	
-	public Payee createOrGet( String name ) throws MapperException;
 
-	public Map<URI, String> getPayees() throws MapperException;
+	public Payee createOrGet( String name ) throws MapperException;
 }

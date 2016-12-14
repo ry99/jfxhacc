@@ -12,6 +12,7 @@ import org.openrdf.model.URI;
 /**
  *
  * @author ryan
+ * @param <T>
  */
 public interface DataMapper<T extends IDable> {
 

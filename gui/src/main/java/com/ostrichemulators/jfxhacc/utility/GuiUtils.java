@@ -157,12 +157,12 @@ public class GuiUtils {
 		field.setCellFactory(
 				new Callback<ListView<Account>, ListCell<Account>>() {
 
-					@Override
-					public ListCell<Account> call( ListView<Account> p
-					) {
-						return new AccountListCell( amap, false );
-					}
-				}
+			@Override
+			public ListCell<Account> call( ListView<Account> p
+			) {
+				return new AccountListCell( amap, false );
+			}
+		}
 		);
 
 		return sorted;

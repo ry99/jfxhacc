@@ -11,6 +11,7 @@ import org.openrdf.model.URI;
 /**
  *
  * @author ryan
+ * @param <T>
  */
 public interface MapperListener<T extends IDable> {
 

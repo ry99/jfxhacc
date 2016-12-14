@@ -18,10 +18,9 @@ import com.ostrichemulators.jfxhacc.model.Journal;
 import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.Payee;
 import com.ostrichemulators.jfxhacc.model.Split;
-import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
+import com.ostrichemulators.jfxhacc.model.SplitBase.ReconcileState;
 import com.ostrichemulators.jfxhacc.model.Transaction;
 import com.ostrichemulators.jfxhacc.model.impl.SplitImpl;
-import com.ostrichemulators.jfxhacc.model.impl.TransactionImpl;
 import com.ostrichemulators.jfxhacc.utility.GuiUtils;
 import com.ostrichemulators.jfxhacc.utility.TransactionHelper;
 import java.time.Instant;
@@ -85,7 +84,7 @@ public class TransactionEntryController extends AnchorPane {
 	@FXML
 	private Button splitsBtn;
 
-	private TransactionImpl trans;
+	private Transaction trans;
 	private Account account;
 	private Journal defaultjournal;
 	private boolean newtrans;
@@ -96,8 +95,6 @@ public class TransactionEntryController extends AnchorPane {
 
 	private final Map<String, Payee> payeemap = new HashMap<>();
 	private final List<Account> allaccounts = new ArrayList<>();
-	//private final ObservableList<Account> accounts
-	//		= FXCollections.observableArrayList();
 	private final DataEngine engine;
 
 	public TransactionEntryController( DataEngine en ) {
@@ -183,12 +180,8 @@ public class TransactionEntryController extends AnchorPane {
 
 		boolean to = ( "To".equals( tofromBtn.getText() ) );
 		Money money = Money.valueOf( moneystr );
-
-		if ( to ) {
-			money = money.opposite();
-		}
-
-		return money;
+		return ( to ? account.getAccountType().decrease( money )
+				: account.getAccountType().increase( money ) );
 	}
 
 	public String getMemo() {
@@ -272,7 +265,7 @@ public class TransactionEntryController extends AnchorPane {
 		} );
 	}
 
-	public void setTransaction( TransactionImpl t ) {
+	public void setTransaction( Transaction t ) {
 		clear();
 		trans = t;
 		newtrans = ( null == t.getId() );
@@ -399,26 +392,34 @@ public class TransactionEntryController extends AnchorPane {
 	@FXML
 	protected void keypress( KeyEvent ke ) {
 		KeyCode code = ke.getCode();
-		if ( KeyCode.ESCAPE == code ) {
-			log.debug( "esc pressed!" );
-			ke.consume();
-			for ( CloseListener cl : listenees ) {
-				cl.closed();
+		if ( null != code ) {
+			switch ( code ) {
+				case ESCAPE:
+					log.debug( "esc pressed!" );
+					ke.consume();
+					for ( CloseListener cl : listenees ) {
+						cl.closed();
+					}
+					break;
+				case UP: {
+					LocalDate ld = datefield.getValue();
+					datefield.setValue( ld.plusDays( 1 ) );
+					ke.consume();
+					break;
+				}
+				case DOWN: {
+					LocalDate ld = datefield.getValue();
+					datefield.setValue( ld.minusDays( 1 ) );
+					ke.consume();
+					break;
+				}
+				case ENTER:
+					ke.consume();
+					save();
+					break;
+				default:
+					break;
 			}
-		}
-		else if ( KeyCode.UP == code ) {
-			LocalDate ld = datefield.getValue();
-			datefield.setValue( ld.plusDays( 1 ) );
-			ke.consume();
-		}
-		else if ( KeyCode.DOWN == code ) {
-			LocalDate ld = datefield.getValue();
-			datefield.setValue( ld.minusDays( 1 ) );
-			ke.consume();
-		}
-		else if ( KeyCode.ENTER == code ) {
-			ke.consume();
-			save();
 		}
 	}
 
@@ -464,26 +465,24 @@ public class TransactionEntryController extends AnchorPane {
 				accountfield.getSelectionModel().select( other.getAccount() );
 			}
 		}
+		else if ( splits.size() <= 2 ) {
+			amountfield.setEditable( true );
+
+			amountfield.setDisable( false );
+			tofromBtn.setDisable( false );
+			accountfield.setDisable( false );
+
+			accountfield.getSelectionModel().select( other.getAccount() );
+			accountfield.setValue( other.getAccount() );
+		}
 		else {
-			if ( splits.size() <= 2 ) {
-				amountfield.setEditable( true );
-
-				amountfield.setDisable( false );
-				tofromBtn.setDisable( false );
-				accountfield.setDisable( false );
-
-				accountfield.getSelectionModel().select( other.getAccount() );
-				accountfield.setValue( other.getAccount() );
-			}
-			else {
-				// > 2 splits, so must use split editor
-				accountfield.getSelectionModel().select( null );
-				accountfield.setValue( null );
-				accountfield.setDisable( true );
-				amountfield.setEditable( false );
-				amountfield.setDisable( true );
-				tofromBtn.setDisable( true );
-			}
+			// > 2 splits, so must use split editor
+			accountfield.getSelectionModel().select( null );
+			accountfield.setValue( null );
+			accountfield.setDisable( true );
+			amountfield.setEditable( false );
+			amountfield.setDisable( true );
+			tofromBtn.setDisable( true );
 		}
 	}
 

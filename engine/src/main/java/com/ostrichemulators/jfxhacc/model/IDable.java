@@ -5,6 +5,7 @@
  */
 package com.ostrichemulators.jfxhacc.model;
 
+import javafx.beans.property.Property;
 import org.openrdf.model.URI;
 
 /**
@@ -16,6 +17,8 @@ public interface IDable {
 	public void setId( URI id );
 
 	public URI getId();
+
+	public Property<URI> getIdProperty();
 
 	public URI getType();
 }

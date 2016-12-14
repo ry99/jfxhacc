@@ -10,7 +10,8 @@ import com.ostrichemulators.jfxhacc.model.Journal;
 import com.ostrichemulators.jfxhacc.model.Payee;
 import com.ostrichemulators.jfxhacc.model.Recurrence;
 import com.ostrichemulators.jfxhacc.model.Split;
-import com.ostrichemulators.jfxhacc.model.Split.ReconcileState;
+import com.ostrichemulators.jfxhacc.model.SplitBase.ReconcileState;
+import com.ostrichemulators.jfxhacc.model.SplitStub;
 import com.ostrichemulators.jfxhacc.model.Transaction;
 import java.time.LocalDate;
 import java.util.Collection;
@@ -49,6 +50,8 @@ public interface TransactionMapper extends DataMapper<Transaction> {
 	 * @throws MapperException
 	 */
 	public List<Transaction> getAll( Account acct, Date from, Date to ) throws MapperException;
+
+	public List<SplitStub> getSplitStubs() throws MapperException;
 
 	/**
 	 * Gets splits belonging to the given account between from(inclusive) and
