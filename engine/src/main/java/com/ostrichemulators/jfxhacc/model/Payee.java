@@ -5,14 +5,11 @@
  */
 package com.ostrichemulators.jfxhacc.model;
 
+import com.ostrichemulators.jfxhacc.mapper.NamedIDable;
+
 /**
  *
  * @author ryan
  */
-public interface Payee extends IDable {
-
-	public void setName( String name );
-
-	public String getName();
-
+public interface Payee extends NamedIDable {
 }

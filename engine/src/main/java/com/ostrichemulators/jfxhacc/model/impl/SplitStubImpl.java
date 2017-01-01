@@ -10,6 +10,7 @@ import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.SplitStub;
 import com.ostrichemulators.jfxhacc.model.Transaction;
 import com.ostrichemulators.jfxhacc.model.vocabulary.Splits;
+import java.text.DateFormat;
 import java.util.Date;
 import java.util.Objects;
 import java.util.concurrent.Callable;
@@ -55,6 +56,7 @@ public class SplitStubImpl extends AbstractSplitBase implements SplitStub {
 	public SplitStubImpl( URI jrnl, URI trans, URI acct, URI sid, Money m,
 			String memo, URI payee, Date date, ReconcileState rs, String num ) {
 		super( m, memo, rs );
+		super.setId( sid );
 		this.acctid.setValue( acct );
 		this.jrnlid.setValue( jrnl );
 		this.tranid.setValue( trans );
@@ -86,29 +88,24 @@ public class SplitStubImpl extends AbstractSplitBase implements SplitStub {
 			}
 		}, getMemoProperty(), this.acctid, this.jrnlid, this.tranid,
 				this.getReconciledProperty(), this.getValueProperty(),
-				this.payee, this.date );
+				this.payee, this.date, this.number );
 	}
 
 	@Override
 	public String toString() {
-		return "SplitStubImpl{" + "date=" + date + ", payee=" + payee
-				+ ", memo=" + getMemo() + ", value=" + getValue() + ", isdebit=" + this.isDebit()
-				+ ", reco=" + getReconciled() + ", acctid=" + acctid + ", jrnlid=" + jrnlid
-				+ ", tranid=" + tranid + '}';
+		return "Stub {" + getId().getLocalName() + ", date="
+				+ DateFormat.getDateInstance( DateFormat.SHORT ).format( date.getValue() )
+				+ ", payee=" + payee.getValue().getLocalName() + ", memo=" + getMemo()
+				+ ( isCredit() ? ", credit=" : ", debit=" ) + getValue()
+				+ ", reco=" + getReconciled() + ", acctid=" + acctid.getValue().getLocalName()
+				+ ", jrnlid=" + jrnlid.getValue().getLocalName()
+				+ ", tranid=" + tranid.getValue().getLocalName() + '}';
 	}
 
 	@Override
 	public int hashCode() {
 		int hash = 7;
-		hash = 71 * hash + Objects.hashCode( this.date );
-		hash = 71 * hash + Objects.hashCode( this.payee );
-		hash = 71 * hash + Objects.hashCode( this.getMemo() );
-		hash = 71 * hash + Objects.hashCode( this.getValue() );
-		hash = 71 * hash + ( this.isDebit() ? 1 : 0 );
-		hash = 71 * hash + Objects.hashCode( this.getReconciled() );
-		hash = 71 * hash + Objects.hashCode( this.acctid );
-		hash = 71 * hash + Objects.hashCode( this.jrnlid );
-		hash = 71 * hash + Objects.hashCode( this.tranid );
+		hash = 71 * hash + Objects.hashCode( getId() );
 		return hash;
 	}
 
@@ -123,7 +120,7 @@ public class SplitStubImpl extends AbstractSplitBase implements SplitStub {
 		if ( getClass() != obj.getClass() ) {
 			return false;
 		}
-		final SplitStubImpl other = (SplitStubImpl) obj;
+
 		return super.equals( obj );
 	}
 

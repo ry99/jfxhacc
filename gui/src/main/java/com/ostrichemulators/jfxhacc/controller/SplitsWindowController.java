@@ -8,7 +8,8 @@ package com.ostrichemulators.jfxhacc.controller;
 import com.ostrichemulators.jfxhacc.cells.AccountCellFactory;
 import com.ostrichemulators.jfxhacc.cells.MoneyCellFactory;
 import com.ostrichemulators.jfxhacc.cells.RecoCellFactory;
-import com.ostrichemulators.jfxhacc.engine.DataEngine;
+import com.ostrichemulators.jfxhacc.datamanager.AccountManager;
+
 import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.Split;
@@ -24,7 +25,6 @@ import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
-import javafx.scene.control.ButtonBar;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.TextFieldTableCell;
@@ -51,17 +51,14 @@ public class SplitsWindowController {
 	@FXML
 	private TableColumn<Split, String> memo;
 	@FXML
-	private ButtonBar buttons;
-	@FXML
 	private Button okBtn;
 
-	private final DataEngine engine;
-	//private final ObservableList<Split> splits = FXCollections.observableArrayList();
 	private Account myacct;
 	private EventHandler<ActionEvent> okhandler = null;
+	private final AccountManager aman;
 
-	public SplitsWindowController( DataEngine eng ) {
-		engine = eng;
+	public SplitsWindowController( AccountManager mgr ) {
+		aman = mgr;
 	}
 
 	public void setOkButtonOnAction( EventHandler<ActionEvent> ae ) {
@@ -101,7 +98,9 @@ public class SplitsWindowController {
 		reco.setCellFactory( new RecoCellFactory<>( true ) );
 
 		credit.setCellValueFactory( ( TableColumn.CellDataFeatures<Split, Money> p )
-				-> p.getValue().getRawValueProperty() );
+				-> p.getValue().getCreditProperty() );
+		debit.setCellValueFactory( ( TableColumn.CellDataFeatures<Split, Money> p )
+				-> p.getValue().getDebitProperty() );
 
 		ChangeListener<Money> cl = new ChangeListener<Money>() {
 
@@ -111,14 +110,12 @@ public class SplitsWindowController {
 			}
 		};
 
-		credit.setCellFactory( new MoneyCellFactory<>( true, cl ) );
-		debit.setCellValueFactory( ( TableColumn.CellDataFeatures<Split, Money> p )
-				-> p.getValue().getRawValueProperty() );
-		debit.setCellFactory( new MoneyCellFactory<>( false, cl ) );
+		credit.setCellFactory( new MoneyCellFactory<>( cl ) );
+		debit.setCellFactory( new MoneyCellFactory<>( cl ) );
 
 		account.setCellValueFactory( ( TableColumn.CellDataFeatures<Split, Account> p )
 				-> p.getValue().getAccountProperty() );
-		account.setCellFactory( new AccountCellFactory<>( engine.getAccountMapper(), true ) );
+		account.setCellFactory( new AccountCellFactory<>( aman, true ) );
 
 		memo.setCellValueFactory( ( TableColumn.CellDataFeatures<Split, String> p )
 				-> p.getValue().getMemoProperty() );
@@ -139,9 +136,7 @@ public class SplitsWindowController {
 
 	public void setSplits( Set<Split> set ) {
 		for ( Split s : set ) {
-			log.debug( "setspls: " + s.getId().getLocalName() + " "
-					+ s.getAccount().getId().getLocalName() + " " + s + " "
-					+ s.getRawValueProperty().getValue().value() );
+			log.debug( "setspls: " + s );
 		}
 
 		splittable.getItems().setAll( set );
@@ -161,7 +156,7 @@ public class SplitsWindowController {
 			if ( s.getValue().isNonZero() ) {
 				set.add( s );
 			}
-			else{
+			else {
 				splitit.remove();
 			}
 		}
@@ -179,7 +174,12 @@ public class SplitsWindowController {
 		if ( null == myacct ) {
 			SplitImpl s = new SplitImpl();
 			splittable.getItems().add( s );
-			s.setValue( bal );
+			if ( bal.isPositive() == myacct.getAccountType().isDebitPlus() ) {
+				s.setDebit( bal );
+			}
+			else {
+				s.setCredit( bal );
+			}
 		}
 		else {
 			for ( Split s : splittable.getItems() ) {

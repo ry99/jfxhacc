@@ -22,7 +22,14 @@ public class JfxHacc {
 	public static final String NAMESPACE = BASE + "/";
 
 	public static final URI DATASET_TYPE = new URIImpl( NAMESPACE + "dataset" );
-	//public static final URI VOID_TYPE = new URIImpl( "http://rdfs.org/ns/void#Dataset" );
+	public static final URI DATASET_VERSION = new URIImpl( NAMESPACE + "version" );
+	public static final URI MAJOR_VERSION = new URIImpl( NAMESPACE + "major-version" );
+	public static final URI MINOR_VERSION = new URIImpl( NAMESPACE + "minor-version" );
+	public static final URI REVISION_VERSION = new URIImpl( NAMESPACE + "revision-version" );
+
+	public static final int MAJORV = 1;
+	public static final int MINORV = 0;
+	public static final int REVV = 0;
 
 	public static final URI ASSET = new URIImpl( NAMESPACE + "asset" );
 	public static final URI EQUITY = new URIImpl( NAMESPACE + "equity" );

@@ -21,6 +21,8 @@ import org.openrdf.model.URI;
  */
 public interface PredicateFactory {
 
+	public Predicate<SplitStub> id( URI uri );
+
 	public Predicate<SplitStub> account( Account p );
 
 	public Predicate<SplitStub> transaction( Transaction p );
@@ -34,4 +36,12 @@ public interface PredicateFactory {
 	public Predicate<SplitStub> between( Date from, Date to );
 
 	public Predicate<SplitStub> filter( URI type, URI id );
+
+	public Predicate<SplitStub> credits();
+
+	public Predicate<SplitStub> debits();
+
+	public Predicate<SplitStub> increases( Account a );
+
+	public Predicate<SplitStub> decreases( Account a );
 }

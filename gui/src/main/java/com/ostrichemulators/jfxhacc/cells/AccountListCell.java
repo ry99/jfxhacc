@@ -5,7 +5,7 @@
  */
 package com.ostrichemulators.jfxhacc.cells;
 
-import com.ostrichemulators.jfxhacc.mapper.AccountMapper;
+import com.ostrichemulators.jfxhacc.datamanager.AccountManager;
 import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.utility.GuiUtils;
 import javafx.scene.control.ListCell;
@@ -18,13 +18,12 @@ import org.apache.log4j.Logger;
 public class AccountListCell extends ListCell<Account> {
 
 	private static final Logger log = Logger.getLogger( AccountListCell.class );
-	private final AccountMapper amap;
+	private final AccountManager aman;
 	private final boolean useSplit;
 
-	public AccountListCell( AccountMapper amap, boolean saySplitOnEmpty ) {
-		this.amap = amap;
+	public AccountListCell( AccountManager amap, boolean saySplitOnEmpty ) {
+		this.aman = amap;
 		useSplit = saySplitOnEmpty;
-
 	}
 
 	@Override
@@ -34,7 +33,7 @@ public class AccountListCell extends ListCell<Account> {
 			setText( useSplit ? "Split" : null );
 		}
 		else {
-			setText( GuiUtils.getFullName( acct, amap ) );
+			setText( GuiUtils.getFullName( acct, aman ) );
 		}
 	}
 }

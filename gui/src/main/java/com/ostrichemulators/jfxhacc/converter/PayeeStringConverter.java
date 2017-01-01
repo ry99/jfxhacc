@@ -5,8 +5,8 @@
  */
 package com.ostrichemulators.jfxhacc.converter;
 
-import com.ostrichemulators.jfxhacc.datamanager.JournalManager;
-import com.ostrichemulators.jfxhacc.model.Journal;
+import com.ostrichemulators.jfxhacc.datamanager.PayeeManager;
+import com.ostrichemulators.jfxhacc.model.Payee;
 import javafx.util.StringConverter;
 import org.apache.log4j.Logger;
 
@@ -14,17 +14,17 @@ import org.apache.log4j.Logger;
  *
  * @author ryan
  */
-public class JournalStringConverter extends StringConverter<Journal> {
+public class PayeeStringConverter extends StringConverter<Payee> {
 
-	public static final Logger log = Logger.getLogger( JournalStringConverter.class );
-	private final JournalManager jman;
+	public static final Logger log = Logger.getLogger( PayeeStringConverter.class );
+	private final PayeeManager pman;
 
-	public JournalStringConverter( JournalManager jm ) {
-		jman = jm;
+	public PayeeStringConverter( PayeeManager pm ) {
+		pman = pm;
 	}
 
 	@Override
-	public String toString( Journal t ) {
+	public String toString( Payee t ) {
 		if ( null == t ) {
 			return null;
 		}
@@ -32,8 +32,8 @@ public class JournalStringConverter extends StringConverter<Journal> {
 	}
 
 	@Override
-	public Journal fromString( String string ) {
-		for ( Journal j : jman.getAll() ) {
+	public Payee fromString( String string ) {
+		for ( Payee j : pman.getAll() ) {
 			if ( j.getName().equals( string ) ) {
 				return j;
 			}

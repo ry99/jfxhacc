@@ -6,20 +6,21 @@
 package com.ostrichemulators.jfxhacc.utility;
 
 import com.ostrichemulators.jfxhacc.cells.AccountListCell;
-import com.ostrichemulators.jfxhacc.mapper.AccountMapper;
-import com.ostrichemulators.jfxhacc.mapper.MapperException;
+import com.ostrichemulators.jfxhacc.datamanager.AccountManager;
 import com.ostrichemulators.jfxhacc.model.Account;
 import static com.ostrichemulators.jfxhacc.utility.GuiUtils.log;
 import java.text.Collator;
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javafx.animation.AnimationTimer;
+import javafx.beans.InvalidationListener;
+import javafx.beans.Observable;
+import javafx.beans.binding.Bindings;
+import javafx.beans.binding.StringExpression;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
-import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
@@ -46,30 +47,32 @@ public class GuiUtils {
 	private GuiUtils() {
 	}
 
-	public static String getFullName( Account a, AccountMapper amap ) {
-		try {
-			List<Account> parents = amap.getParents( a );
-			StringBuilder sb = new StringBuilder();
-			for ( Account parent : parents ) {
-				sb.append( parent.getName() ).append( "::" );
-			}
-			sb.append( a.getName() );
-			return sb.toString();
+	public static String getFullName( Account a, AccountManager aman ) {
+		List<Account> parents = aman.getParents( a );
+		StringBuilder sb = new StringBuilder();
+		for ( Account parent : parents ) {
+			sb.append( parent.getName() ).append( "::" );
 		}
-		catch ( MapperException me ) {
-			log.warn( me, me );
-		}
+		sb.append( a.getName() );
+		return sb.toString();
+	}
 
-		return a.getName();
+	public static StringExpression getFullNameProperty( Account a, AccountManager aman ) {
+		List<Account> parents = aman.getParents( a );
+		StringBuilder sb = new StringBuilder();
+		for ( Account parent : parents ) {
+			sb.append( parent.getName() ).append( "::" );
+		}
+		return Bindings.concat( sb.toString(), a.getNameProperty() );
 	}
 
 	public static SortedList<Account> makeAccountCombo( ComboBox<Account> field,
-			Collection<Account> accts, AccountMapper amap ) {
-		ObservableList<Account> accounts = FXCollections.observableArrayList( accts );
+			AccountManager aman ) {
+		ObservableList<Account> accounts = aman.getAll();
 
 		Map<Account, String> fullnames = new HashMap<>();
 		for ( Account a : accounts ) {
-			fullnames.put( a, GuiUtils.getFullName( a, amap ) );
+			fullnames.put( a, GuiUtils.getFullName( a, aman ) );
 		}
 
 		SortedList<Account> sorted = new SortedList<>( accounts, new Comparator<Account>() {
@@ -139,31 +142,25 @@ public class GuiUtils {
 		}
 		);
 
-		field.valueProperty()
-				.addListener( new ChangeListener<Account>() {
-
-					@Override
-					public void changed( ObservableValue<? extends Account> ov, Account t, Account t1
-					) {
-						if ( null == t1 ) {
-							filtered.setPredicate( null );
-						}
-					}
-				}
-				);
-
-		field.setButtonCell(
-				new AccountListCell( amap, false ) );
-		field.setCellFactory(
-				new Callback<ListView<Account>, ListCell<Account>>() {
-
+		field.valueProperty().addListener( new ChangeListener<Account>() {
 			@Override
-			public ListCell<Account> call( ListView<Account> p
+			public void changed( ObservableValue<? extends Account> ov, Account t, Account t1
 			) {
-				return new AccountListCell( amap, false );
+				if ( null == t1 ) {
+					filtered.setPredicate( null );
+				}
 			}
 		}
 		);
+
+		field.setButtonCell( new AccountListCell( aman, false ) );
+		field.setCellFactory( new Callback<ListView<Account>, ListCell<Account>>() {
+
+			@Override
+			public ListCell<Account> call( ListView<Account> p ) {
+				return new AccountListCell( aman, false );
+			}
+		} );
 
 		return sorted;
 	}
@@ -234,5 +231,22 @@ public class GuiUtils {
 		}
 
 		return items;
+	}
+
+	public static class DebugInvalidationListener implements InvalidationListener {
+
+		private final Logger log;
+		private final String heading;
+
+		public DebugInvalidationListener( Logger l, String head ) {
+			log = l;
+			heading = head;
+		}
+
+		@Override
+		public void invalidated( Observable observable ) {
+			log.debug( heading + ": Invalidated!" );
+		}
+
 	}
 }

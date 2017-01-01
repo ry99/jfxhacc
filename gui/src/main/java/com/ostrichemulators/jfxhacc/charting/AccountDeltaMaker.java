@@ -5,11 +5,12 @@
  */
 package com.ostrichemulators.jfxhacc.charting;
 
-import com.ostrichemulators.jfxhacc.mapper.MapperException;
-import com.ostrichemulators.jfxhacc.mapper.TransactionMapper;
+import com.ostrichemulators.jfxhacc.MainApp;
+import com.ostrichemulators.jfxhacc.datamanager.SplitStubManager;
 import com.ostrichemulators.jfxhacc.model.Account;
+import com.ostrichemulators.jfxhacc.model.AccountType;
 import com.ostrichemulators.jfxhacc.model.Money;
-import com.ostrichemulators.jfxhacc.model.Split;
+import com.ostrichemulators.jfxhacc.model.SplitStub;
 import java.text.DateFormat;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -17,9 +18,7 @@ import java.time.Period;
 import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import javafx.collections.ObservableList;
 import javafx.scene.chart.PieChart;
 import javafx.scene.chart.XYChart;
 import org.apache.log4j.Logger;
@@ -31,9 +30,9 @@ import org.apache.log4j.Logger;
 public class AccountDeltaMaker extends AbstractSeriesMakerBase {
 
 	private static final Logger log = Logger.getLogger( AccountDeltaMaker.class );
-	private final TransactionMapper tmap;
+	private final SplitStubManager tmap;
 
-	public AccountDeltaMaker( TransactionMapper tmap ) {
+	public AccountDeltaMaker( SplitStubManager tmap ) {
 		this.tmap = tmap;
 	}
 
@@ -71,36 +70,27 @@ public class AccountDeltaMaker extends AbstractSeriesMakerBase {
 		Instant instant2 = end.atStartOfDay( ZoneId.systemDefault() ).toInstant();
 		Date endtime = Date.from( instant2 );
 
-		Map<LocalDate, List<Split>> splits = new HashMap<>();
-		try {
-			splits.putAll( tmap.getSplits( acct, starttime, endtime ) );
-		}
-		catch ( MapperException me ) {
-			log.error( me, me );
-		}
+		ObservableList<SplitStub> splits
+				= tmap.getSplitStubs( MainApp.PF.account( acct ),
+						MainApp.PF.between( starttime, endtime ) );
 
 		DateFormat DF = DateFormat.getDateInstance( DateFormat.MEDIUM );
 
 		while ( pfirst.isBefore( end ) ) {
-			Money creds = new Money();
-			Money debs = new Money();
-			Money delta = new Money();
-
 			LocalDate plast = pfirst.plusMonths( 1l );
 			if ( plast.isAfter( end ) ) {
 				plast = end;
 			}
 
-			for ( Split s : getSplits( splits, pfirst, plast ) ) {
-				if ( s.isCredit() ) {
-					creds = creds.plus( s.getValue() );
-				}
-				else {
-					debs = debs.plus( s.getValue() );
-				}
-				Money change = acct.getAccountType().value( s );
-				delta = delta.plus( change );
-			}
+			Instant i1 = pfirst.atStartOfDay().atZone( ZoneId.systemDefault() ).toInstant();
+			Instant i2 = plast.atStartOfDay().atZone( ZoneId.systemDefault() ).toInstant();
+			ObservableList<SplitStub> splitlist
+					= splits.filtered( MainApp.PF.between( Date.from( i1 ), Date.from( i2 ) ) );
+
+			AccountType at = acct.getAccountType();
+			Money creds = at.sum( splitlist.filtered( MainApp.PF.credits() ) );
+			Money debs = at.sum( splitlist.filtered( MainApp.PF.debits() ) );
+			Money delta = acct.getAccountType().sum( splitlist );
 
 			String label = getLabel( pfirst );
 			log.debug( label + " credits: " + creds + "; debits: "

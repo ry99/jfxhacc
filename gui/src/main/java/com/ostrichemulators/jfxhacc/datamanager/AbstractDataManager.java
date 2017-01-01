@@ -10,10 +10,17 @@ import com.ostrichemulators.jfxhacc.mapper.MapperException;
 import com.ostrichemulators.jfxhacc.mapper.MapperListener;
 import com.ostrichemulators.jfxhacc.model.IDable;
 import java.util.ListIterator;
+import java.util.function.Predicate;
+import javafx.beans.Observable;
+import javafx.beans.binding.Bindings;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
+import javafx.util.Callback;
+import org.apache.log4j.Logger;
 import org.openrdf.model.URI;
 
 /**
@@ -23,11 +30,20 @@ import org.openrdf.model.URI;
  */
 public abstract class AbstractDataManager<T extends IDable> {
 
-	protected final ObservableList<T> all;
+	private final static Logger log = Logger.getLogger( AbstractDataManager.class );
+
+	private final ObservableList<T> all;
 
 	public AbstractDataManager( DataMapper<T> mapper ) {
+		this( mapper, null );
+	}
+
+	public AbstractDataManager( DataMapper<T> mapper, Callback<T, Observable[]> cb ) {
 		try {
-			all = FXCollections.observableArrayList( mapper.getAll() );
+			all = ( null == cb
+					? FXCollections.observableArrayList()
+					: FXCollections.observableArrayList( cb ) );
+			all.addAll( mapper.getAll() );
 
 			mapper.addMapperListener( new MapperListener<T>() {
 				@Override
@@ -37,12 +53,12 @@ public abstract class AbstractDataManager<T extends IDable> {
 
 				@Override
 				public void updated( T t ) {
-					ListIterator<T> it = all.listIterator();
-					while ( it.hasNext() ) {
-						T a = it.next();
-						if ( a.getId().equals( t.getId() ) ) {
-							update( a, t );
-						}
+					T old = get( t.getId() );
+					if ( null == old ) {
+						added( t );
+					}
+					else {
+						update( old, t );
 					}
 				}
 
@@ -80,7 +96,13 @@ public abstract class AbstractDataManager<T extends IDable> {
 	}
 
 	public ObservableList<T> getAll() {
-		return all;
+		return FXCollections.unmodifiableObservableList( all );
+	}
+
+	public IntegerProperty sizeProperty() {
+		IntegerProperty ip = new SimpleIntegerProperty();
+		ip.bind( Bindings.size( getAll() ) );
+		return ip;
 	}
 
 	public ObservableMap<URI, T> getMap() {
@@ -118,6 +140,13 @@ public abstract class AbstractDataManager<T extends IDable> {
 	 * @return
 	 */
 	public T get( URI id ) {
-		return getMap().get( id );
+		ObservableList<T> l = getAll().filtered( new Predicate<T>() {
+			@Override
+			public boolean test( T t ) {
+				return t.getId().equals( id );
+			}
+		} );
+
+		return ( l.isEmpty() ? null : l.get( 0 ) );
 	}
 }

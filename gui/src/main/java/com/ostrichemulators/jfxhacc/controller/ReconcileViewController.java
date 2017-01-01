@@ -7,10 +7,11 @@ package com.ostrichemulators.jfxhacc.controller;
 
 import com.ostrichemulators.jfxhacc.MainApp;
 import com.ostrichemulators.jfxhacc.cells.PayeeAccountMemoCellFactory;
+import com.ostrichemulators.jfxhacc.datamanager.SplitStubManager;
 import com.ostrichemulators.jfxhacc.mapper.MapperException;
+import com.ostrichemulators.jfxhacc.mapper.TransactionMapper;
 import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.Money;
-import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.SplitBase.ReconcileState;
 import com.ostrichemulators.jfxhacc.model.SplitStub;
 import java.util.ArrayList;
@@ -19,6 +20,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.function.Predicate;
+import javafx.beans.InvalidationListener;
+import javafx.beans.Observable;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -38,9 +41,28 @@ public class ReconcileViewController extends TransactionViewController {
 	private static final Logger log = Logger.getLogger( ReconcileViewController.class );
 	private Date date;
 	private final ObjectProperty<Money> reco = new SimpleObjectProperty<>( new Money() );
-	private ObservableList<Split> splits = FXCollections.observableArrayList();
-	private final ObservableList<Split> credits = FXCollections.observableArrayList();
-	private final ObservableList<Split> debits = FXCollections.observableArrayList();
+	private final ObservableList<SplitStub> credits = FXCollections.observableArrayList();
+	private final ObservableList<SplitStub> debits = FXCollections.observableArrayList();
+	private final InvalidationListener listener;
+
+	public ReconcileViewController( TransactionMapper tm, SplitStubManager stubs ) {
+		super( tm, stubs );
+		listener = new InvalidationListener() {
+			@Override
+			public void invalidated( Observable observable ) {
+				credits.setAll( transtable.getItems().filtered( MainApp.PF.credits() ) );
+				debits.setAll( transtable.getItems().filtered( MainApp.PF.debits() ) );
+			}
+		};
+	}
+
+	@Override
+	public void refresh() {
+		super.refresh();
+		transtable.getItems().addListener( listener );
+		credits.setAll( transtable.getItems().filtered( MainApp.PF.credits() ) );
+		debits.setAll( transtable.getItems().filtered( MainApp.PF.debits() ) );
+	}
 
 	@Override
 	protected Collection<Predicate<SplitStub>> getFilters() {
@@ -64,16 +86,12 @@ public class ReconcileViewController extends TransactionViewController {
 		return reco;
 	}
 
-	public ObservableList<Split> getSplits() {
-		return splits;
+	public ObservableList<SplitStub> getClearedCredits() {
+		return credits.filtered( MainApp.PF.state( ReconcileState.CLEARED ) );
 	}
 
-	public ObservableList<Split> getClearedCredits() {
-		return credits;
-	}
-
-	public ObservableList<Split> getClearedDebits() {
-		return debits;
+	public ObservableList<SplitStub> getClearedDebits() {
+		return debits.filtered( MainApp.PF.state( ReconcileState.CLEARED ) );
 	}
 
 	@Override
@@ -133,28 +151,8 @@ public class ReconcileViewController extends TransactionViewController {
 			}
 		}
 
-		updateRecoProp();
-	}
-
-	private void updateRecoProp() {
-		int calc = 0;
-		for ( Split s : splits ) {
-			if ( ReconcileState.CLEARED == s.getReconciled() ) {
-				int cents = s.getValue().value();
-				if ( s.isCredit() ) {
-					calc += cents;
-				}
-				else {
-					calc -= cents;
-				}
-			}
-		}
-
-		if ( !account.getAccountType().isDebitPlus() ) {
-			calc = 0 - calc;
-		}
-
-		reco.set( new Money( calc ) );
+		reco.set( account.getAccountType().sum( getData().filtered(
+				MainApp.PF.state( ReconcileState.CLEARED ) ) ) );
 	}
 
 	@FXML
@@ -172,15 +170,10 @@ public class ReconcileViewController extends TransactionViewController {
 	}
 
 	public void upgradeSplits() {
-		for ( Split s : getSplits() ) {
-			if ( null != s && ReconcileState.CLEARED == s.getReconciled() ) {
-				splits.add( s );
-			}
-		}
+		List<SplitStub> splits = getData().filtered( MainApp.PF.state( ReconcileState.CLEARED ) );
 
 		try {
-			tmap.reconcile( ReconcileState.RECONCILED, account,
-					splits.toArray( new Split[0] ) );
+			tmap.reconcile( ReconcileState.RECONCILED, splits.toArray( new SplitStub[0] ) );
 		}
 		catch ( MapperException me ) {
 			log.error( me, me );

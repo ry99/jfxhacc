@@ -5,9 +5,10 @@
  */
 package com.ostrichemulators.jfxhacc.controller;
 
-import com.ostrichemulators.jfxhacc.AutoCompletePopupHandler;
 import com.ostrichemulators.jfxhacc.cells.AccountListCell;
 import com.ostrichemulators.jfxhacc.converter.MoneyStringConverter;
+import com.ostrichemulators.jfxhacc.datamanager.AccountManager;
+import com.ostrichemulators.jfxhacc.datamanager.PayeeManager;
 import com.ostrichemulators.jfxhacc.engine.DataEngine;
 import com.ostrichemulators.jfxhacc.mapper.AccountMapper;
 import com.ostrichemulators.jfxhacc.mapper.MapperException;
@@ -28,10 +29,8 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.prefs.Preferences;
 import javafx.beans.value.ChangeListener;
@@ -89,16 +88,18 @@ public class TransactionEntryController extends AnchorPane {
 	private Journal defaultjournal;
 	private boolean newtrans;
 	private AccountMapper amap;
+	private AccountManager aman;
 	private PayeeMapper pmap;
+	private PayeeManager pman;
 	private TransactionMapper tmap;
 	private final List<CloseListener> listenees = new ArrayList<>();
 
-	private final Map<String, Payee> payeemap = new HashMap<>();
-	private final List<Account> allaccounts = new ArrayList<>();
 	private final DataEngine engine;
 
-	public TransactionEntryController( DataEngine en ) {
+	public TransactionEntryController( DataEngine en, AccountManager aman, PayeeManager pman ) {
 		engine = en;
+		this.aman = aman;
+		this.pman = pman;
 	}
 
 	public void addCloseListener( CloseListener cc ) {
@@ -111,14 +112,7 @@ public class TransactionEntryController extends AnchorPane {
 
 	public void setAccount( Account a ) {
 		account = a;
-
-		try {
-			GuiUtils.makeAccountCombo( accountfield, amap.getAll(), amap );
-		}
-		catch ( MapperException me ) {
-			log.error( me, me );
-			// FIXME: tell the user
-		}
+		GuiUtils.makeAccountCombo( accountfield, aman );
 	}
 
 	@FXML
@@ -127,19 +121,13 @@ public class TransactionEntryController extends AnchorPane {
 		try {
 			Payee payee = pmap.createOrGet( payeefield.getText() );
 			Date tdate = getDate();
-			ReconcileState myreco = getReco();
-			Money mymoney = getSplitAmount();
 
-			Split mysplit = trans.getSplit( account );
-			mysplit.setReconciled( myreco );
-			mysplit.setValue( mymoney );
+			Set<Split> splits = getSplits();
+			trans.setSplits( splits );
 
-			Split other = TransactionHelper.getOther( trans, account );
-			if ( null != other ) {
-				other.setValue( mymoney.opposite() );
-				other.setAccount( getSelectedAccount() );
-				if ( null == other.getMemo() || other.getMemo().isEmpty() ) {
-					other.setMemo( memofield.getText() );
+			for ( Split s : splits ) {
+				if ( null == s.getMemo() || s.getMemo().isEmpty() ) {
+					s.setMemo( memofield.getText() );
 				}
 			}
 
@@ -150,6 +138,11 @@ public class TransactionEntryController extends AnchorPane {
 
 			Preferences prefs = Preferences.userNodeForPackage( getClass() );
 			prefs.put( JNL_SELECTED, defaultjournal.getId().stringValue() );
+
+			log.debug( "saving! " + trans );
+			for ( Split s : trans.getSplits() ) {
+				log.debug( "  " + s );
+			}
 
 			if ( newtrans ) {
 				tmap.create( trans );
@@ -172,16 +165,30 @@ public class TransactionEntryController extends AnchorPane {
 		}
 	}
 
-	public Money getSplitAmount() {
+	public Money getRawSplitAmount() {
 		String moneystr = amountfield.getText();
 		if ( null == moneystr || moneystr.isEmpty() ) {
-			return new Money();
+			moneystr = "0";
 		}
+		Money m = Money.valueOf( moneystr );
+		Money abs = m.abs();
+		boolean isneg = m.isNegative();
+		boolean isto = "To".equals( tofromBtn.getText() );
+		m = ( isto ? abs : abs.opposite() );
 
-		boolean to = ( "To".equals( tofromBtn.getText() ) );
-		Money money = Money.valueOf( moneystr );
-		return ( to ? account.getAccountType().decrease( money )
-				: account.getAccountType().increase( money ) );
+//		switch ( account.getAccountType() ) {
+//			case LIABILITY:
+//			case EXPENSE:
+//			case ASSET:
+//				break;
+//			case EQUITY:
+//			case REVENUE:
+//				m = ( isto ? abs.opposite() : abs );
+//				break;
+//			default:
+//				throw new RuntimeException( "Unknown Account Type: " + account.getAccountType() );
+//		}
+		return ( isneg ? m.opposite() : m );
 	}
 
 	public String getMemo() {
@@ -198,21 +205,15 @@ public class TransactionEntryController extends AnchorPane {
 
 			@Override
 			public void changed( ObservableValue<? extends String> ov, String t, String t1 ) {
-				if ( newtrans && payeemap.containsKey( t1 ) ) {
-					try {
-						List<Account> populars
-								= amap.getPopularAccounts( payeemap.get( t1 ), account );
-						if ( !populars.isEmpty() ) {
-							Account acct = populars.get( 0 );
-							accountfield.getSelectionModel().select( acct );
-							accountfield.setValue( acct );
-							amountfield.requestFocus();
-							amountfield.selectAll();
-						}
-
-					}
-					catch ( MapperException me ) {
-						log.error( me, me );
+				Payee p1 = pman.get( t1 );
+				if ( newtrans && null != p1 ) {
+					List<Account> populars = aman.getPopularAccounts( p1 );
+					if ( !populars.isEmpty() ) {
+						Account acct = populars.get( 0 );
+						accountfield.getSelectionModel().select( acct );
+						accountfield.setValue( acct );
+						amountfield.requestFocus();
+						amountfield.selectAll();
 					}
 				}
 			}
@@ -221,40 +222,27 @@ public class TransactionEntryController extends AnchorPane {
 		accountfield.setEditable( false );
 		recofield.setAllowIndeterminate( true );
 
-		try {
-			pmap = engine.getPayeeMapper();
-			amap = engine.getAccountMapper();
-			allaccounts.clear();
-			allaccounts.addAll( amap.getAll() );
-			tmap = engine.getTransactionMapper();
+		pmap = engine.getPayeeMapper();
+		amap = engine.getAccountMapper();
+		tmap = engine.getTransactionMapper();
 
-			journalchsr.setItems( engine.getJournalMapper().getObservable() );
+		journalchsr.setItems( engine.getJournalMapper().getObservable() );
 
-			Preferences prefs = Preferences.userNodeForPackage( getClass() );
-			String jid = prefs.get( JNL_SELECTED, "" );
-			if ( jid.isEmpty() ) {
-				defaultjournal = journalchsr.getItems().get( 0 );
-			}
-			else {
-				for ( Journal j : journalchsr.getItems() ) {
-					if ( j.getId().stringValue().equals( jid ) ) {
-						defaultjournal = j;
-					}
+		Preferences prefs = Preferences.userNodeForPackage( getClass() );
+		String jid = prefs.get( JNL_SELECTED, "" );
+		if ( jid.isEmpty() ) {
+			defaultjournal = journalchsr.getItems().get( 0 );
+		}
+		else {
+			for ( Journal j : journalchsr.getItems() ) {
+				if ( j.getId().stringValue().equals( jid ) ) {
+					defaultjournal = j;
 				}
 			}
-
-			journalchsr.setValue( defaultjournal );
-
-			for ( Payee p : pmap.getAll() ) {
-				payeemap.put( p.getName(), p );
-			}
-		}
-		catch ( Exception x ) {
-			log.warn( x, x );
 		}
 
-		AutoCompletePopupHandler autocomplete = new AutoCompletePopupHandler( payeefield,
-				payeemap.keySet() );
+		journalchsr.setValue( defaultjournal );
+
 		accountfield.setButtonCell( makeAccountCell() );
 		accountfield.setCellFactory( new Callback<ListView<Account>, ListCell<Account>>() {
 
@@ -287,7 +275,7 @@ public class TransactionEntryController extends AnchorPane {
 
 		if ( 1 == trans.getSplits().size() ) {
 			trans.addSplit( new SplitImpl( accountfield.getItems().get( 0 ),
-					getSplitAmount().opposite(), mysplit.getMemo(),
+					getRawSplitAmount().opposite(), mysplit.getMemo(),
 					ReconcileState.NOT_RECONCILED ) );
 		}
 
@@ -357,7 +345,12 @@ public class TransactionEntryController extends AnchorPane {
 	protected void switchToFrom() {
 		tofromBtn.setText( tofromBtn.getText().equals( "To" ) ? "From" : "To" );
 		for ( Split s : trans.getSplits() ) {
-			s.setValue( s.getRawValueProperty().getValue().opposite() );
+			if ( s.isCredit() ) {
+				s.setDebit( s.getValue() );
+			}
+			else {
+				s.setCredit( s.getValue() );
+			}
 		}
 	}
 
@@ -370,9 +363,17 @@ public class TransactionEntryController extends AnchorPane {
 			Split mysplit = trans.getSplit( account );
 			mysplit.setReconciled( getReco() );
 			Split other = TransactionHelper.getOther( trans, account );
+			other.setAccount( accountfield.getValue() );
 
-			mysplit.setValue( getSplitAmount() );
-			other.setValue( mysplit.getRawValueProperty().getValue().opposite() );
+			Money transval = getRawSplitAmount();
+			if ( transval.isNegative() ) {
+				mysplit.setDebit( transval.abs() );
+				other.setCredit( transval.abs() );
+			}
+			else {
+				mysplit.setCredit( transval.abs() );
+				other.setDebit( transval.abs() );
+			}
 
 			set.add( mysplit );
 			set.add( other );
@@ -424,7 +425,7 @@ public class TransactionEntryController extends AnchorPane {
 	}
 
 	private ListCell<Account> makeAccountCell() {
-		return new AccountListCell( amap, true );
+		return new AccountListCell( aman, true );
 	}
 
 	@FXML

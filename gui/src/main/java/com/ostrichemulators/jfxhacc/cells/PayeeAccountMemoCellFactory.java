@@ -41,14 +41,14 @@ public class PayeeAccountMemoCellFactory implements Callback<TableColumn<SplitSt
 					setGraphic( null );
 				}
 				else {
-					final double halfwidth = p.getWidth() / 2;
 					GridPane pane = new GridPane();
 					pane.setVgap( 5d );
 					pane.setPrefWidth( p.getWidth() );
 					pane.setMaxWidth( Double.MAX_VALUE );
 
-					Label payee = new Label( t.payee );
-					Label memo = new Label( t.memo );
+					String memsafe = t.memo.getValueSafe();
+					Label payee = new Label( t.payee.getValueSafe() );
+					Label memo = new Label( memsafe );
 
 					payee.setWrapText( false );
 					memo.setWrapText( false );
@@ -60,11 +60,11 @@ public class PayeeAccountMemoCellFactory implements Callback<TableColumn<SplitSt
 						payee.prefWidthProperty().bind( p.widthProperty().divide( 2 ) );
 					}
 					else {
-						Label acct = new Label( t.account );
+						Label acct = new Label( t.account.getValueSafe() );
 						acct.setWrapText( false );
 
 						pane.add( payee, 0, 0, 2, 1 );
-						if ( null == t.memo || t.memo.isEmpty() ) {
+						if ( memsafe.isEmpty() ) {
 							pane.add( acct, 0, 1, 2, 1 );
 						}
 						else {

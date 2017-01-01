@@ -97,8 +97,8 @@ public abstract class RdfMapper<T extends IDable> implements DataMapper<T> {
 	public void release() {
 	}
 
-	protected <X> X query( String sparql, Map<String, Value> bindings, QueryHandler<X> handler )
-			throws MapperException {
+	public static <X> X query( String sparql, Map<String, Value> bindings, 
+			QueryHandler<X> handler, RepositoryConnection rc ) throws RepositoryException {
 		try {
 			// Ugh: why isn't the repositoryconnection handling the namespaces for us?
 			StringBuilder sb = new StringBuilder();
@@ -123,11 +123,18 @@ public abstract class RdfMapper<T extends IDable> implements DataMapper<T> {
 		catch ( MalformedQueryException | QueryEvaluationException re ) {
 			log.error( "BUG: invalid sparql in mapper?: " + sparql );
 		}
+
+		return handler.getResult();
+	}
+
+	protected <X> X query( String sparql, Map<String, Value> bindings, QueryHandler<X> handler )
+			throws MapperException {
+		try {
+			return query( sparql, bindings, handler, rc );
+		}
 		catch ( RepositoryException re ) {
 			throw new MapperException( re );
 		}
-
-		return handler.getResult();
 	}
 
 	protected Value oneval( String sparql, Map<String, Value> bindings ) throws MapperException {

@@ -10,7 +10,6 @@ import com.ostrichemulators.jfxhacc.mapper.JournalMapper;
 import com.ostrichemulators.jfxhacc.mapper.MapperException;
 import com.ostrichemulators.jfxhacc.mapper.PayeeMapper;
 import com.ostrichemulators.jfxhacc.mapper.QueryHandler;
-import com.ostrichemulators.jfxhacc.mapper.TransactionListener;
 import com.ostrichemulators.jfxhacc.mapper.TransactionMapper;
 import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.Journal;
@@ -18,6 +17,7 @@ import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.Payee;
 import com.ostrichemulators.jfxhacc.model.Recurrence;
 import com.ostrichemulators.jfxhacc.model.Split;
+import com.ostrichemulators.jfxhacc.model.SplitBase;
 import com.ostrichemulators.jfxhacc.model.SplitBase.ReconcileState;
 import com.ostrichemulators.jfxhacc.model.SplitStub;
 import com.ostrichemulators.jfxhacc.model.Transaction;
@@ -41,7 +41,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import org.apache.log4j.Logger;
@@ -56,6 +55,7 @@ import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.query.BindingSet;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
+import com.ostrichemulators.jfxhacc.mapper.SplitListener;
 
 /**
  *
@@ -68,7 +68,7 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 	private final PayeeMapper pmap;
 	private final AccountMapper amap;
 	private final JournalMapper jmap;
-	private final List<TransactionListener> listenees = new ArrayList<>();
+	private final List<SplitListener> listenees = new ArrayList<>();
 	private final List<SplitStub> allstubs = new ArrayList<>();
 
 	public TransactionMapperImpl( RepositoryConnection repoc, AccountMapper amap,
@@ -82,24 +82,15 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 		this.pmap = pmap;
 		this.amap = amap;
 		this.jmap = jmap;
-
-		try {
-			allstubs.addAll( fetchSplitStubs() );
-		}
-		catch ( MapperException me ) {
-			log.fatal( "could not fetch splits", me );
-		}
 	}
 
 	@Override
-	public void addMapperListener( TransactionListener tl ) {
-		super.addMapperListener( tl );
+	public void addSplitListener( SplitListener tl ) {
 		listenees.add( tl );
 	}
 
 	@Override
-	public void removeMapperListener( TransactionListener tl ) {
-		super.removeMapperListener( tl );
+	public void removeSplitListener( SplitListener tl ) {
 		listenees.remove( tl );
 	}
 
@@ -272,7 +263,7 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 		try {
 			rc.begin();
 
-			Set<Split> realsplits = updateSplits( getSplitMap( t.getId() ),
+			Map<Split, SplitOp> realsplits = updateSplits( getSplitSet( t.getId() ),
 					new HashSet<>( t.getSplits() ), rc );
 
 			URI id = t.getId();
@@ -294,19 +285,36 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 				rc.add( id, Transactions.NUMBER_PRED, vf.createLiteral( t.getNumber() ) );
 			}
 
-			for ( Split split : realsplits ) {
-				rc.add( id, Transactions.SPLIT_PRED, split.getId() );
+			Set<Split> newsplits = new HashSet<>();
+			for ( Map.Entry<Split, SplitOp> en : realsplits.entrySet() ) {
+				if ( SplitOp.REMOVED != en.getValue() ) {
+					rc.add( id, Transactions.SPLIT_PRED, en.getKey().getId() );
+					newsplits.add( en.getKey() );
+				}
 			}
 			rc.commit();
 
-			t.setSplits( realsplits );
+			t.setSplits( newsplits );
 
-			for ( Split s : t.getSplits() ) {
-				ListIterator<SplitStub> li = allstubs.listIterator();
-				allstubs.add( new SplitStubImpl( t, s ) );
+			// now update our stub cache
+			for ( Map.Entry<Split, SplitOp> en : realsplits.entrySet() ) {
+				Split s = en.getKey();
+				SplitStub ss = new SplitStubImpl( t, s );
+
+				log.debug( "splitop: " + s.getId().getLocalName() + "  " + en.getValue() );
+				log.debug( "  ss: " + ss.getId().getLocalName() );
+
+				allstubs.remove( ss );
+				if ( SplitOp.REMOVED != en.getValue() ) {
+					allstubs.add( ss );
+				}
 			}
 
 			notifyUpdated( t );
+
+			for ( SplitListener sl : listenees ) {
+				sl.updated( t, realsplits );
+			}
 		}
 		catch ( RepositoryException re ) {
 			rollback( rc );
@@ -325,7 +333,7 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 			}
 
 			Transaction trans = get( URI.class.cast( stmts.get( 0 ).getSubject() ) );
-			trans.setSplits( getSplitMap( trans.getId() ) );
+			trans.setSplits( getSplitSet( trans.getId() ) );
 			return trans;
 		}
 		catch ( RepositoryException re ) {
@@ -380,7 +388,7 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 		} );
 	}
 
-	protected Set<Split> getSplitMap( URI transid ) throws MapperException {
+	protected Set<Split> getSplitSet( URI transid ) throws MapperException {
 		Map<URI, Account> accounts = new HashMap<>();
 		Map<Split, URI> splitos = getSplits( transid );
 		Set<Split> splits = new HashSet<>();
@@ -400,20 +408,20 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 	}
 
 	@Override
-	public void reconcile( ReconcileState rs, Account acct, Split... splits ) throws MapperException {
+	public void reconcile( ReconcileState rs, SplitBase... splits ) throws MapperException {
 		RepositoryConnection rc = getConnection();
 		try {
 			rc.begin();
-			for ( Split s : splits ) {
+			for ( SplitBase s : splits ) {
 				rc.remove( s.getId(), Splits.RECO_PRED, null );
 				rc.add( s.getId(), Splits.RECO_PRED, new LiteralImpl( rs.toString() ) );
 				s.setReconciled( rs );
 			}
 			rc.commit();
 
-			List<Split> list = Arrays.asList( splits );
-			for ( TransactionListener tl : listenees ) {
-				tl.reconciled( acct, list );
+			List<SplitBase> list = Arrays.asList( splits );
+			for ( SplitListener tl : listenees ) {
+				tl.reconciled( list );
 			}
 		}
 		catch ( RepositoryException re ) {
@@ -581,6 +589,9 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 
 	@Override
 	public List<SplitStub> getSplitStubs() throws MapperException {
+		if ( allstubs.isEmpty() ) {
+			allstubs.addAll( fetchSplitStubs() );
+		}
 		return allstubs;
 	}
 
@@ -731,38 +742,44 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 		}
 	}
 
-	private Set<Split> updateSplits( Set<Split> oldsplits, Set<Split> newsplits,
+	private Map<Split, SplitOp> updateSplits( Set<Split> oldsplits, Set<Split> newsplits,
 			RepositoryConnection rc ) throws RepositoryException {
 		// if a split is in both maps, update it
 		// if it's in the old but not the new, remove it
-		// if it's in the new but not the old, plus it
+		// if it's in the new but not the old, add it
 
-		Set<Split> realsplits = new HashSet<>();
+		Map<Split, SplitOp> realsplits = new HashMap<>();
 
-		Map<Account, Split> newmap = new HashMap<>();
+		Map<URI, Split> newmap = new HashMap<>();
 		for ( Split s : newsplits ) {
-			newmap.put( s.getAccount(), s );
+			newmap.put( s.getAccount().getId(), s );
 		}
 
 		for ( Split oldsplit : oldsplits ) {
+			// get rid of all the old splits from the database...
 			Account oldacct = oldsplit.getAccount();
 			rc.remove( oldsplit.getId(), null, null );
+			realsplits.put( oldsplit, SplitOp.REMOVED );
 
-			if ( newmap.containsKey( oldacct ) ) {
-				Split newsplit = newmap.get( oldacct );
+			if ( newmap.containsKey( oldacct.getId() ) ) {
+				// ...if we have an old split in our new set,
+				// then re-add it with its new values
+				Split newsplit = newmap.get( oldacct.getId() );
+
+				newsplit.setId( oldsplit.getId() );
 				URI newid = newsplit.getId();
 				rc.remove( newid, null, null );
 
 				newsplit = create( newsplit, newid, false );
-				realsplits.add( newsplit );
-				newmap.remove( oldacct );
+				realsplits.put( newsplit, SplitOp.UPDATED );
+				newmap.remove( oldacct.getId() );
 			}
 		}
 
-		// anything left in this map is a new transaction to plus
+		// anything left in the newmap is a new split to add
 		for ( Split s : newmap.values() ) {
 			Split newsplit = create( s, null, false );
-			realsplits.add( newsplit );
+			realsplits.put( newsplit, SplitOp.ADDED );
 		}
 
 		return realsplits;
@@ -778,7 +795,7 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 		}
 
 		Transaction t = get( URI.class.cast( val ) );
-		t.setSplits( getSplitMap( t.getId() ) );
+		t.setSplits( getSplitSet( t.getId() ) );
 		return t;
 	}
 }

@@ -51,7 +51,7 @@ public class AccountBalanceMaker extends AbstractSeriesMakerBase {
 	}
 
 	@Override
-	public void createPieData( Account account,	LocalDate start, LocalDate end,
+	public void createPieData( Account account, LocalDate start, LocalDate end,
 			PieChart chart ) {
 	}
 
@@ -83,10 +83,7 @@ public class AccountBalanceMaker extends AbstractSeriesMakerBase {
 		final DateFormat DF = DateFormat.getDateInstance( DateFormat.MEDIUM );
 
 		while ( pfirst.isBefore( end ) ) {
-			for ( Split s : splits.getOrDefault( pfirst, new ArrayList<>() ) ) {
-				Money change = acct.getAccountType().value( s );
-				value = value.plus( change );
-			}
+			value = acct.getAccountType().sum( splits.getOrDefault( pfirst, new ArrayList<>() ) );
 
 			String label = pfirst.toString();
 			boolean shownode = ( pfirst.getDayOfMonth() == dayOfMonth || pfirst.equals( plast ) );

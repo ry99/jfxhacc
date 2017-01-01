@@ -10,21 +10,17 @@
 	<items>
       <ScrollPane fx:id="transscroller" fitToHeight="true" fitToWidth="true">
          <content>
-      		<AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="398.0" prefWidth="746.0">
-      			<children>
-      				<TableView fx:id="transtable" prefHeight="398.0" prefWidth="690.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-      					<columns>
-      						<TableColumn fx:id="date" prefWidth="75.0" text="Date" />
-      						<TableColumn fx:id="number" prefWidth="75.0" text="Number" />
-      						<TableColumn fx:id="payee" prefWidth="255.0" text="Payee/Account/Memo" />
-      						<TableColumn fx:id="credit" minWidth="0.0" prefWidth="67.0" text="Deposit" />
-      						<TableColumn fx:id="debit" minWidth="5.0" prefWidth="73.0" text="Withdrawal" />
-      						<TableColumn fx:id="reco" editable="false" prefWidth="52.0" text="Rec" />
-                        <TableColumn fx:id="jcol" prefWidth="75.0" text="Journal" />
-      					</columns>
-      				</TableView>
-      			</children>
-      		</AnchorPane>
+				<TableView fx:id="transtable">
+					<columns>
+						<TableColumn fx:id="date" editable="false" prefWidth="75.0" text="Date" />
+						<TableColumn fx:id="number" editable="false" prefWidth="75.0" text="Number" />
+						<TableColumn fx:id="payee" editable="false" prefWidth="255.0" text="Payee/Account/Memo" />
+						<TableColumn fx:id="increase" editable="false" minWidth="0.0" prefWidth="67.0" text="Deposit" />
+						<TableColumn fx:id="decrease" editable="false" minWidth="5.0" prefWidth="73.0" text="Withdrawal" />
+						<TableColumn fx:id="reco" editable="false" prefWidth="52.0" text="Rec" />
+                  <TableColumn fx:id="jcol" editable="false" prefWidth="75.0" text="Journal" />
+					</columns>
+				</TableView>
          </content>
       </ScrollPane>
 	</items>

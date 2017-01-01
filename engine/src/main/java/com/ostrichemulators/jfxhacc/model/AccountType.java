@@ -43,49 +43,56 @@ public enum AccountType {
 	 * @param s
 	 * @return
 	 */
-	public <T extends SplitBase> int rawvalue( T s ) {
-		int cents = s.getValue().value(); // cents is always positive at this point
-		return ( debitPlus == s.isDebit() ? cents : -cents );
+	public <T extends SplitBase> int sumValue( T s ) {
+		Money m = s.getValue(); // m is always positive at this point
+		return ( isPositive( s ) ? m : m.opposite() ).value();
 	}
 
 	/**
-	 * Returns a positive Money if the split would increase the account's value
+	 * Gets the net positive/negative value of this list of splits
 	 *
-	 * @param <T>
-	 * @param s
+	 * @param splits
 	 * @return
 	 */
-	public <T extends SplitBase> Money value( T s ) {
-		return new Money( rawvalue( s ) );
-	}
-
-	/**
-	 * Set the money so that it decreases the value of the account
-	 *
-	 * @param m
-	 * @return
-	 */
-	public Money decrease( Money m ) {
-		return ( isPositive( m ) ? m.opposite() : m );
-	}
-
-	/**
-	 * Sets the money so that it increases the value of the account
-	 *
-	 * @param m
-	 * @return
-	 */
-	public Money increase( Money m ) {
-		return ( isPositive( m ) ? m : m.opposite() );
-	}
-
 	public Money sum( Collection<? extends SplitBase> splits ) {
 		int cents = 0;
 		for ( SplitBase s : splits ) {
-			cents += rawvalue( s );
+			cents += sumValue( s );
 		}
 
 		return new Money( cents );
+	}
+
+	/**
+	 * Sets the split's value so that it increases the split account's value
+	 *
+	 * @param <T>
+	 * @param split
+	 * @param m
+	 */
+	public <T extends SplitBase> void increase( T split, Money m ) {
+		if ( debitPlus ) {
+			split.setDebit( m.abs() );
+		}
+		else {
+			split.setCredit( m.abs() );
+		}
+	}
+
+	/**
+	 * Sets the split's value so that it decreases the split account's value
+	 *
+	 * @param <T>
+	 * @param split
+	 * @param m
+	 */
+	public <T extends SplitBase> void decrease( T split, Money m ) {
+		if ( debitPlus ) {
+			split.setCredit( m.abs() );
+		}
+		else {
+			split.setDebit( m.abs() );
+		}
 	}
 
 	public boolean isPositive( Money m ) {

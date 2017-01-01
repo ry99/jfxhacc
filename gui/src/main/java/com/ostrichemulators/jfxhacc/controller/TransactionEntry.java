@@ -5,6 +5,8 @@
  */
 package com.ostrichemulators.jfxhacc.controller;
 
+import com.ostrichemulators.jfxhacc.datamanager.AccountManager;
+import com.ostrichemulators.jfxhacc.datamanager.PayeeManager;
 import com.ostrichemulators.jfxhacc.engine.DataEngine;
 import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.Split;
@@ -30,12 +32,12 @@ public class TransactionEntry extends StackPane {
 	private final SplitsWindowController swc;
 	private TransactionImpl trans;
 
-	public TransactionEntry( DataEngine eng ) {
+	public TransactionEntry( DataEngine eng, AccountManager mgr, PayeeManager pmgr ) {
 		setMinHeight( 0d );
 		setPrefHeight( 150d );
 
-		tec = new TransactionEntryController( eng );
-		swc = new SplitsWindowController( eng );
+		tec = new TransactionEntryController( eng, mgr, pmgr );
+		swc = new SplitsWindowController( mgr );
 
 		FXMLLoader deloader
 				= new FXMLLoader( getClass().getResource( "/fxml/TransactionEntry.fxml" ) );
@@ -91,6 +93,12 @@ public class TransactionEntry extends StackPane {
 	}
 
 	public void setTransaction( Transaction trans ) {
+		log.debug( "settrans: " );
+		log.debug( "  " + trans );
+		for ( Split s : trans.getSplits() ) {
+			log.debug( "    " + s );
+		}
+
 		tec.setTransaction( trans );
 		swc.setSplits( trans.getSplits() );
 		reset();

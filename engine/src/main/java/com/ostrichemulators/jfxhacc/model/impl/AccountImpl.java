@@ -94,7 +94,8 @@ public class AccountImpl extends IDableImpl implements Account {
 
 	@Override
 	public String toString() {
-		return name.get() + " (" + type + "): " + openingbal.get();
+		return name.get() + " (" + type + ( type.isDebitPlus() ? " debit+"
+				: " credit+" ) + ")";
 	}
 
 	@Override
@@ -125,5 +126,10 @@ public class AccountImpl extends IDableImpl implements Account {
 	@Override
 	public StringProperty getNumberProperty() {
 		return number;
+	}
+
+	@Override
+	public boolean isType( AccountType t ) {
+		return ( t == type );
 	}
 }

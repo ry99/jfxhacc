@@ -5,7 +5,6 @@
  */
 package com.ostrichemulators.jfxhacc.mapper.impl;
 
-import com.ostrichemulators.jfxhacc.mapper.TransactionListener;
 import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.AccountType;
 import com.ostrichemulators.jfxhacc.model.Journal;
@@ -29,6 +28,7 @@ import org.openrdf.model.impl.LiteralImpl;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.repository.RepositoryConnection;
+import com.ostrichemulators.jfxhacc.mapper.SplitListener;
 
 /**
  *
@@ -74,25 +74,7 @@ public class TransactionMapperImplTest {
 	@After
 	public void tearDown() {
 	}
-
-	//@Test
-	public void testAddMapperListener() {
-		System.out.println( "addMapperListener" );
-		TransactionListener tl = null;
-		TransactionMapperImpl instance = null;
-		instance.addMapperListener( tl );
-		fail( "The test case is a prototype." );
-	}
-
-	//@Test
-	public void testRemoveMapperListener() {
-		System.out.println( "removeMapperListener" );
-		TransactionListener tl = null;
-		TransactionMapperImpl instance = null;
-		instance.removeMapperListener( tl );
-		fail( "The test case is a prototype." );
-	}
-
+	
 	//@Test
 	public void testCreate_5args() throws Exception {
 		System.out.println( "create" );
@@ -165,19 +147,8 @@ public class TransactionMapperImplTest {
 		URI transid = null;
 		TransactionMapperImpl instance = null;
 		Set<Split> expResult = null;
-		Set<Split> result = instance.getSplitMap( transid );
+		Set<Split> result = instance.getSplitSet( transid );
 		assertEquals( expResult, result );
-		fail( "The test case is a prototype." );
-	}
-
-	//@Test
-	public void testReconcile() throws Exception {
-		System.out.println( "reconcile" );
-		Split.ReconcileState rs = null;
-		Account acct = null;
-		Split[] splits = null;
-		TransactionMapperImpl instance = null;
-		instance.reconcile( rs, acct, splits );
 		fail( "The test case is a prototype." );
 	}
 

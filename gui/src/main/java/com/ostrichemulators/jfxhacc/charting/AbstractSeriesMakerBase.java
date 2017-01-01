@@ -6,18 +6,13 @@
 package com.ostrichemulators.jfxhacc.charting;
 
 import com.ostrichemulators.jfxhacc.model.Money;
-import com.ostrichemulators.jfxhacc.model.Split;
 import java.text.DateFormat;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.Date;
-import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import javafx.event.EventHandler;
 import javafx.scene.Node;
 import javafx.scene.control.Tooltip;
@@ -40,22 +35,6 @@ public abstract class AbstractSeriesMakerBase implements SeriesMaker {
 				Calendar.SHORT_STANDALONE, Locale.getDefault() ) + " "
 				+ cal.get( Calendar.DAY_OF_MONTH ) + " "
 				+ cal.get( Calendar.YEAR );
-	}
-
-	public static Collection<Split> getSplits( Map<LocalDate, List<Split>> splits,
-			LocalDate firstInclusive, LocalDate lastExclusive ) {
-
-		List<Split> list = new ArrayList<>();
-
-		if ( firstInclusive.isBefore( lastExclusive ) ) {
-			LocalDate running = firstInclusive;
-			while ( running.isBefore( lastExclusive ) ) {
-				list.addAll( splits.getOrDefault( running, new ArrayList<>() ) );
-				running = running.plusDays( 1l );
-			}
-		}
-
-		return list;
 	}
 
 	public static Tooltip installTooltip( Node n, final LocalDate pfirst,

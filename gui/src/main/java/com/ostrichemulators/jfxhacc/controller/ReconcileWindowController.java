@@ -5,9 +5,12 @@
  */
 package com.ostrichemulators.jfxhacc.controller;
 
+import com.ostrichemulators.jfxhacc.datamanager.SplitStubManager;
+import com.ostrichemulators.jfxhacc.mapper.TransactionMapper;
 import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.Split;
+import com.ostrichemulators.jfxhacc.model.SplitStub;
 import com.ostrichemulators.jfxhacc.model.impl.SplitImpl;
 import java.io.IOException;
 import java.time.Instant;
@@ -59,11 +62,13 @@ public class ReconcileWindowController {
 
 	private Stage stage;
 	private Account account;
-	private final ReconcileViewController transviewer = new ReconcileViewController();
+	private final ReconcileViewController transviewer;
 	private final ObjectProperty<Money> areco;
 
-	public ReconcileWindowController( ObjectProperty<Money> prop ) {
+	public ReconcileWindowController( ObjectProperty<Money> prop,
+			TransactionMapper tmap, SplitStubManager ssm ) {
 		areco = prop;
+		transviewer = new ReconcileViewController( tmap, ssm );
 	}
 
 	/**
@@ -87,26 +92,26 @@ public class ReconcileWindowController {
 		openbal.textProperty().bind( areco.asString() );
 		stmtbal.setText( new Money().toString() );
 
-		ObservableList<Split> minuses = transviewer.getClearedCredits();
+		ObservableList<SplitStub> minuses = transviewer.getClearedCredits();
 		minuses.addListener( new InvalidationListener() {
 
 			@Override
 			public void invalidated( Observable o ) {
 				int val = 0;
-				for ( Split s : minuses ) {
+				for ( SplitStub s : minuses ) {
 					val += s.getValue().value();
 				}
 				withdrawals.setText( new Money( val ).toString() );
 			}
 		} );
 
-		ObservableList<Split> pluses = transviewer.getClearedDebits();
+		ObservableList<SplitStub> pluses = transviewer.getClearedDebits();
 		pluses.addListener( new InvalidationListener() {
 
 			@Override
 			public void invalidated( Observable o ) {
 				int val = 0;
-				for ( Split s : pluses ) {
+				for ( SplitStub s : pluses ) {
 					val += s.getValue().value();
 				}
 				deposits.setText( new Money( val ).toString() );
@@ -150,7 +155,7 @@ public class ReconcileWindowController {
 
 	@FXML
 	private void updateParams() {
-		Instant instant = Instant.from( stmtdate.getValue().atStartOfDay( ZoneId.systemDefault() ) );
+		Instant instant = Instant.from( stmtdate.getValue().atStartOfDay( ZoneId.systemDefault() ).plusDays( 1 ) );
 		Date d = Date.from( instant );
 		Date lastdate = transviewer.getDate();
 
@@ -168,11 +173,18 @@ public class ReconcileWindowController {
 	@FXML
 	public void balance( ActionEvent event ) {
 		Split split = new SplitImpl();
-		split.setValue( Money.valueOf( diff.getText() ).opposite() );
 		split.setMemo( "balance adjustment" );
 		split.setReconciled( transviewer.getDefaultReconcileState() );
 		Instant instant = Instant.from( stmtdate.getValue().atStartOfDay( ZoneId.systemDefault() ) );
 		split.setAccount( account );
+		Money m = Money.valueOf( diff.getText() );
+		if ( account.getAccountType().isPositive( m ) ) {
+			account.getAccountType().decrease( split, m );
+		}
+		else {
+			account.getAccountType().increase( split, m );
+		}
+
 		transviewer.openEditor( Date.from( instant ), split );
 	}
 

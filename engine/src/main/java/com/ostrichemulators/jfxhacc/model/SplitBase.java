@@ -14,6 +14,7 @@ import javafx.beans.property.StringProperty;
  * @author ryan
  */
 public interface SplitBase extends IDable {
+
 	public static enum ReconcileState {
 
 		NOT_RECONCILED, CLEARED, RECONCILED,
@@ -34,13 +35,23 @@ public interface SplitBase extends IDable {
 
 	public Property<Money> getValueProperty();
 
+	public void setCredit( Money m );
+
+	public void setDebit( Money m );
+
 	public ReadOnlyProperty<Money> getRawValueProperty();
+
+	public ReadOnlyProperty<Money> getCreditProperty();
+
+	public ReadOnlyProperty<Money> getDebitProperty();
 
 	/**
 	 * Sets the value of this split.
 	 *
 	 * @param m the value. If negative, {@link #isDebit()} will be true.
+	 * @deprecated
 	 */
+	@Deprecated
 	public void setValue( Money m );
 
 	public boolean isDebit();

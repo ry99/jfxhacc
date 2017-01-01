@@ -10,6 +10,7 @@ import com.ostrichemulators.jfxhacc.model.Journal;
 import com.ostrichemulators.jfxhacc.model.Payee;
 import com.ostrichemulators.jfxhacc.model.Recurrence;
 import com.ostrichemulators.jfxhacc.model.Split;
+import com.ostrichemulators.jfxhacc.model.SplitBase;
 import com.ostrichemulators.jfxhacc.model.SplitBase.ReconcileState;
 import com.ostrichemulators.jfxhacc.model.SplitStub;
 import com.ostrichemulators.jfxhacc.model.Transaction;
@@ -24,6 +25,10 @@ import java.util.Map;
  * @author ryan
  */
 public interface TransactionMapper extends DataMapper<Transaction> {
+
+	public static enum SplitOp {
+		ADDED, REMOVED, UPDATED
+	};
 
 	public Transaction getTransaction( Split s ) throws MapperException;
 
@@ -45,7 +50,8 @@ public interface TransactionMapper extends DataMapper<Transaction> {
 	 *
 	 * @param acct
 	 * @param from date of the earliest possible split. if null, get all splits
-	 * @param to date of the first split to exclude. if null, there is no upper limit
+	 * @param to date of the first split to exclude. if null, there is no upper
+	 * limit
 	 * @return
 	 * @throws MapperException
 	 */
@@ -60,7 +66,8 @@ public interface TransactionMapper extends DataMapper<Transaction> {
 	 *
 	 * @param acct
 	 * @param from date of the earliest possible split. if null, get all splits
-	 * @param to date of the first split to exclude. if null, there is no upper limit
+	 * @param to date of the first split to exclude. if null, there is no upper
+	 * limit
 	 * @return
 	 * @throws MapperException
 	 */
@@ -87,16 +94,15 @@ public interface TransactionMapper extends DataMapper<Transaction> {
 	 * and (for convenience) calls
 	 * {@link Split#setReconciled(com.ostrichemulators.jfxhacc.model.Split.ReconcileState) }
 	 *
-	 * @param rs the splits to change
-	 * @param splits the new state
-	 * @param acct the account containing all the splits
+	 * @param rs the new state
+	 * @param splits the splits to change
 	 * @throws MapperException
 	 */
-	public void reconcile( ReconcileState rs, Account acct, Split... splits ) throws MapperException;
+	public void reconcile( ReconcileState rs, SplitBase... splits ) throws MapperException;
 
-	public void addMapperListener( TransactionListener tl );
+	public void addSplitListener( SplitListener tl );
 
-	public void removeMapperListener( TransactionListener tl );
+	public void removeSplitListener( SplitListener tl );
 
 	public Transaction get( Recurrence r ) throws MapperException;
 }

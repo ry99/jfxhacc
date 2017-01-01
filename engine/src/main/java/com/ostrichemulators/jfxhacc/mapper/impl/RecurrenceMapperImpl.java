@@ -228,13 +228,21 @@ public class RecurrenceMapperImpl extends RdfMapper<Recurrence>
 			Money intpay = Money.valueOf( loanbalance.toDouble() * l.getApr() / 12 );
 			Money princpay = payment.minus( intpay );
 
-			payee.setValue( payment.opposite() );
-			princ.setValue( princpay );
-			inter.setValue( intpay );
-
 			payee.setAccount( l.getSourceAccount() );
 			princ.setAccount( l.getPrincipalAccount() );
 			inter.setAccount( l.getInterestAccount() );
+
+			// FIXME: need to use setCredit/setDebit for consistency!
+			if ( l.getSourceAccount().getAccountType().isDebitPlus() ) {
+				payee.setCredit( payment );
+				princ.setDebit( princpay );
+				inter.setDebit( intpay );
+			}
+			else {
+				payee.setDebit( payment );
+				princ.setCredit( princpay );
+				inter.setCredit( intpay );
+			}
 
 			trans.addSplit( payee );
 			trans.addSplit( inter );

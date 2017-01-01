@@ -8,7 +8,6 @@ package com.ostrichemulators.jfxhacc.model.impl;
 import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.Split;
-import java.util.Objects;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleObjectProperty;
 import org.openrdf.model.URI;
@@ -50,29 +49,9 @@ public class SplitImpl extends AbstractSplitBase implements Split {
 
 	@Override
 	public String toString() {
-		return ( isDebit() ? "debit" : "credit" ) + ": " + getValue()
-				+ " [" + acct.getValue().getName() + "] {"
+		return getId().getLocalName() + " " + ( isDebit() ? "debit" : "credit" )
+				+ ": " + getValue() + "; memo: " + getMemo() + " [" + acct.getValue() + "] {"
 				+ getReconciled().toString().charAt( 0 ) + "}";
-	}
-
-	@Override
-	public int hashCode() {
-		int hash = 7;
-		hash = 61 * hash + Objects.hashCode( this.acct );
-		return hash;
-	}
-
-	@Override
-	public boolean equals( Object obj ) {
-		if ( super.equals( obj ) ) {
-			final SplitImpl other = (SplitImpl) obj;
-			if ( !Objects.equals( this.acct, other.acct ) ) {
-				return false;
-			}
-			return true;
-		}
-
-		return false;
 	}
 
 	@Override

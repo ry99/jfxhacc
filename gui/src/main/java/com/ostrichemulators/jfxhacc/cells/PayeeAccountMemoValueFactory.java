@@ -10,19 +10,21 @@ import com.ostrichemulators.jfxhacc.controller.TransactionViewController.PAMData
 import com.ostrichemulators.jfxhacc.datamanager.AccountManager;
 import com.ostrichemulators.jfxhacc.datamanager.PayeeManager;
 import com.ostrichemulators.jfxhacc.datamanager.SplitStubManager;
-import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.model.SplitStub;
+import com.ostrichemulators.jfxhacc.model.vocabulary.Accounts;
 import com.ostrichemulators.jfxhacc.model.vocabulary.Transactions;
-import java.util.List;
-import java.util.Map;
+import com.ostrichemulators.jfxhacc.utility.GuiUtils;
+import javafx.beans.InvalidationListener;
+import javafx.beans.Observable;
+import javafx.beans.binding.Bindings;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.scene.control.TableColumn;
 import javafx.util.Callback;
 import org.apache.log4j.Logger;
-import org.openrdf.model.URI;
 
 /**
  *
@@ -31,44 +33,72 @@ import org.openrdf.model.URI;
 public class PayeeAccountMemoValueFactory implements Callback<TableColumn.CellDataFeatures<SplitStub, PAMData>, ObservableValue<PAMData>> {
 
 	public static final Logger log = Logger.getLogger( PayeeAccountMemoValueFactory.class );
-	private Account selected;
 	private final SplitStubManager stubman;
 	private final AccountManager acctman;
-	private final Map<URI, String> paynames;
-	private ObservableList<SplitStub> stubs = FXCollections.observableArrayList();
+	private final PayeeManager payman;
+	private final ObservableList<SplitStub> allstubs;
 
 	public PayeeAccountMemoValueFactory( SplitStubManager stubman, AccountManager aman,
 			PayeeManager pman ) {
 		this.stubman = stubman;
 		this.acctman = aman;
-		this.paynames = pman.getNameMap();
+		this.payman = pman;
+		allstubs = FXCollections.observableArrayList( ( SplitStub ss ) -> {
+			return new Observable[]{
+				ss.getAccountIdProperty(),
+				ss.getPayeeProperty(),
+				ss.getMemoProperty()
+			};
+		} );
+
+		allstubs.addListener( new ListChangeListener<SplitStub>() {
+			@Override
+			public void onChanged( ListChangeListener.Change<? extends SplitStub> c ) {
+				log.debug( "allstubs changed somehow" );
+			}
+		} );
+
+		Bindings.bindContent( allstubs, stubman.getAll() );
 	}
 
-	public void setAccount( Account a ) {
-		selected = a;
+	private void setPamData( PAMData data, SplitStub trans,
+			ObservableList<SplitStub> splits ) {
 
-		stubs = stubman.getAllSplitStubs( selected );
+		if ( splits.size() > 1 ) {
+			data.account.set( "Split" );
+		}
+		else {
+			// we don't want to show our current account here; we want the other one
+			SplitStub other = splits.get( 0 );
+			data.account.set( splits.isEmpty() ? "{BUG}"
+					: acctman.getMap().get( other.getAccountId() ).getName() );
+		}
+
+		data.memo.unbind();
+		data.memo.bind( trans.getMemoProperty() );
+
+		data.payee.unbind();
+		data.payee.bind( Bindings.createStringBinding( () -> {
+			return payman.get( trans.getPayee() ).getName();
+		}, trans.getPayeeProperty() ) );
 	}
 
 	@Override
 	public ObservableValue<PAMData> call( TableColumn.CellDataFeatures<SplitStub, PAMData> p ) {
 		SplitStub trans = p.getValue();
-		List<SplitStub> splits = stubs
-				.filtered( MainApp.PF.filter( Transactions.TYPE, trans.getTransactionId() ) )
-				.filtered( MainApp.PF.account( selected ).negate() );
-		String acct = "";
 
-		if ( splits.size() > 1 ) {
-			acct = "Split";
-		}
-		else {
-			// we don't want to show our current account here; we want the other one
-			acct = ( splits.isEmpty() ? "{BUG}"
-					: acctman.getMap().get( splits.get( 0 ).getAccountId() ).getName() );
-		}
+		PAMData data = new PAMData( payman.get( trans.getPayee() ).getName(),
+				null, trans.getMemo() );
 
-		PAMData data
-				= new PAMData( paynames.get( trans.getPayee() ), acct, trans.getMemo() );
+		allstubs.addListener( new ListChangeListener<SplitStub>() {
+			@Override
+			public void onChanged( ListChangeListener.Change<? extends SplitStub> c ) {
+				setPamData( data, trans, stubman.getOtherStubs( trans ) );
+			}
+		} );
+
+		setPamData( data, trans, stubman.getOtherStubs( trans ) );
+
 		return new ReadOnlyObjectWrapper<>( data );
 	}
 }

@@ -13,32 +13,9 @@ import org.openrdf.model.URI;
  *
  * @author ryan
  */
-public class PayeeImpl extends IDableImpl implements Payee {
-
-	private String name;
-
-	public PayeeImpl( String n ) {
-		super( Payees.TYPE );
-		name = n;
-	}
+public class PayeeImpl extends NamedIDableImpl implements Payee {
 
 	public PayeeImpl( URI id, String name ) {
-		super( Payees.TYPE, id );
-		this.name = name;
-	}
-
-	@Override
-	public String getName() {
-		return name;
-	}
-
-	@Override
-	public void setName( String n ) {
-		name = n;
-	}
-
-	@Override
-	public String toString() {
-		return name;
+		super( Payees.TYPE, id, name );
 	}
 }

@@ -7,6 +7,8 @@ package com.ostrichemulators.jfxhacc.controller;
 
 import com.ostrichemulators.jfxhacc.cells.RecurrenceListViewCellFactory;
 import com.ostrichemulators.jfxhacc.converter.JournalStringConverter;
+import com.ostrichemulators.jfxhacc.datamanager.AccountManager;
+import com.ostrichemulators.jfxhacc.datamanager.JournalManager;
 import com.ostrichemulators.jfxhacc.engine.DataEngine;
 import com.ostrichemulators.jfxhacc.mapper.MapperException;
 import com.ostrichemulators.jfxhacc.mapper.impl.RecurrenceMapperImpl;
@@ -63,23 +65,25 @@ public class RecurringTransactionWindowController {
 
 	private Stage stage;
 	private final DataEngine engine;
+	private final AccountManager aman;
 	private ScheduleDataWindowController scheduledata;
 	private SplitsWindowController splitdata;
 
-	public RecurringTransactionWindowController( DataEngine eng ) {
+	public RecurringTransactionWindowController( DataEngine eng, AccountManager mgr ) {
 		engine = eng;
+		aman = mgr;
 	}
 
 	@FXML
 	public void initialize() {
 		FXMLLoader loader
 				= new FXMLLoader( getClass().getResource( "/fxml/ScheduleDataWindow.fxml" ) );
-		scheduledata = new ScheduleDataWindowController( engine );
+		scheduledata = new ScheduleDataWindowController();
 		loader.setController( scheduledata );
 
 		FXMLLoader l2
 				= new FXMLLoader( getClass().getResource( "/fxml/SplitsWindow.fxml" ) );
-		splitdata = new SplitsWindowController( engine );
+		splitdata = new SplitsWindowController( aman );
 		l2.setController( splitdata );
 
 		try {
@@ -109,10 +113,10 @@ public class RecurringTransactionWindowController {
 				list.getSelectionModel().clearAndSelect( 0 );
 			}
 
-			Collection<Journal> journals = engine.getJournalMapper().getAll();
-			journal.getItems().setAll( journals );
-			journal.setConverter( new JournalStringConverter( journals ) );
-			journal.setDisable( 1 == journals.size() );
+			JournalManager jman = new JournalManager( engine );
+			journal.setItems( jman.getAll() );
+			journal.setConverter( new JournalStringConverter( jman ) );
+			journal.disableProperty().bind( jman.sizeProperty().lessThan( 2 ) );
 			journal.setValue( journal.getItems().get( 0 ) );
 		}
 		catch ( IOException | MapperException e ) {

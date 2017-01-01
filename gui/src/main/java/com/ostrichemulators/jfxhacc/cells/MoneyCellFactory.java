@@ -24,15 +24,13 @@ import org.apache.log4j.Logger;
 public class MoneyCellFactory<T> implements Callback<TableColumn<T, Money>, TableCell<T, Money>> {
 
 	public static final Logger log = Logger.getLogger( MoneyCellFactory.class );
-	private final boolean showcredit;
 	private final ChangeListener<Money> handler;
 
-	public MoneyCellFactory( boolean iscredit ) {
-		this( iscredit, null );
+	public MoneyCellFactory() {
+		this( null );
 	}
 
-	public MoneyCellFactory( boolean iscredit, ChangeListener<Money> changer ) {
-		showcredit = iscredit;
+	public MoneyCellFactory( ChangeListener<Money> changer ) {
 		handler = changer;
 	}
 
@@ -42,13 +40,11 @@ public class MoneyCellFactory<T> implements Callback<TableColumn<T, Money>, Tabl
 			@Override
 			public void updateItem( Money t, boolean empty ) {
 				super.updateItem( t, empty );
-				if ( null == t || empty
-						|| ( ( !showcredit && t.isPositive() )
-						|| ( showcredit && t.isNegative() ) ) ) {
+				if ( null == t || empty || t.isZero() ){
 					setText( null );
 				}
 				else {
-					setText( t.toPositiveString() );
+					setText( t.toString() );
 					this.setAlignment( Pos.TOP_RIGHT );
 				}
 			}
@@ -58,11 +54,13 @@ public class MoneyCellFactory<T> implements Callback<TableColumn<T, Money>, Tabl
 				Split split = Split.class.cast( getTableRow().getItem() );
 				Money old = split.getValue();
 
-				if ( !showcredit ) {
-					t = t.opposite();
+				if( split.isCredit() ){
+					split.setCredit( t );
+				}
+				else{
+					split.setDebit( t );
 				}
 
-				split.setValue( t );
 				if ( null != handler ) {
 					handler.changed( split.getValueProperty(), old, t );
 				}

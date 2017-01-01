@@ -7,6 +7,7 @@ package com.ostrichemulators.jfxhacc.controller;
 
 import com.ostrichemulators.jfxhacc.cells.RecurrenceListViewCellFactory;
 import com.ostrichemulators.jfxhacc.converter.MoneyStringConverter;
+import com.ostrichemulators.jfxhacc.datamanager.AccountManager;
 import com.ostrichemulators.jfxhacc.engine.DataEngine;
 import com.ostrichemulators.jfxhacc.mapper.AccountMapper;
 import com.ostrichemulators.jfxhacc.mapper.MapperException;
@@ -78,8 +79,9 @@ public class LoanWindowController {
 	private Stage stage;
 	private Recurrence recurrence;
 	private Loan loan;
+	private final AccountManager aman;
 	private final RateFormatter ratefmt = new RateFormatter();
-	private final ChangeListener<String> changer = new ChangeListener<String>(){
+	private final ChangeListener<String> changer = new ChangeListener<String>() {
 
 		@Override
 		public void changed( ObservableValue<? extends String> ov, String t, String t1 ) {
@@ -87,8 +89,9 @@ public class LoanWindowController {
 		}
 	};
 
-	public LoanWindowController( DataEngine eng ) {
+	public LoanWindowController( DataEngine eng, AccountManager mgr ) {
 		engine = eng;
+		aman = mgr;
 	}
 
 	public void setStage( Stage s ) {
@@ -99,7 +102,7 @@ public class LoanWindowController {
 	public void initialize() {
 		FXMLLoader loader
 				= new FXMLLoader( getClass().getResource( "/fxml/ScheduleDataWindow.fxml" ) );
-		scheduledata = new ScheduleDataWindowController( engine );
+		scheduledata = new ScheduleDataWindowController();
 		loader.setController( scheduledata );
 		try {
 			Node sched = loader.load();
@@ -111,9 +114,9 @@ public class LoanWindowController {
 
 			AccountMapper amap = engine.getAccountMapper();
 			Collection<Account> accts = amap.getAll();
-			GuiUtils.makeAccountCombo( payacct, accts, amap );
-			GuiUtils.makeAccountCombo( prinacct, accts, amap );
-			GuiUtils.makeAccountCombo( intacct, accts, amap );
+			GuiUtils.makeAccountCombo( payacct, aman );
+			GuiUtils.makeAccountCombo( prinacct, aman );
+			GuiUtils.makeAccountCombo( intacct, aman );
 
 			journalchsr.setItems( engine.getJournalMapper().getObservable() );
 			journalchsr.getSelectionModel().clearAndSelect( 0 );
@@ -148,7 +151,8 @@ public class LoanWindowController {
 			loan.setApr( null == ratefmt.getValue() ? 0d : ratefmt.getValue() );
 			loan.setNumberOfPayments( Integer.valueOf( numpayments.getText().isEmpty()
 					? "36" : numpayments.getText() ) );
-			loan.setInitialValue( Money.valueOf( amount.getText().isEmpty() ? "1000.00"
+			loan.setInitialValue( Money.valueOf( amount.getText().isEmpty()
+					? "1000.00"
 					: amount.getText() ) );
 
 			loan.setSourceAccount( payacct.getValue() );
@@ -261,7 +265,7 @@ public class LoanWindowController {
 						return 0d;
 					}
 
-					return Double.parseDouble( string.replaceAll( "%", "" ) )/100;
+					return Double.parseDouble( string.replaceAll( "%", "" ) ) / 100;
 				}
 			} );
 		}

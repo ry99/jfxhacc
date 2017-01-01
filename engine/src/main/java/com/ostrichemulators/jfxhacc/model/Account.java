@@ -39,4 +39,6 @@ public interface Account extends IDable {
 	public Property<Money> getOpeningBalanceProperty();
 
 	public StringProperty getNameProperty();
+
+	public boolean isType( AccountType t );
 }

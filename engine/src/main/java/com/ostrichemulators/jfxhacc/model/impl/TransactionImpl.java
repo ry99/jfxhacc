@@ -11,6 +11,7 @@ import com.ostrichemulators.jfxhacc.model.Payee;
 import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.Transaction;
 import com.ostrichemulators.jfxhacc.model.vocabulary.Transactions;
+import java.text.DateFormat;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Set;
@@ -157,4 +158,30 @@ public class TransactionImpl extends IDableImpl implements Transaction {
 	public Property<Journal> getJournalProperty() {
 		return jnl;
 	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder( "trans {" );
+		if ( null == getIdProperty().getValue() ) {
+			sb.append( "<no id>" );
+		}
+		else {
+			sb.append( getId().getLocalName() );
+		}
+
+		sb.append( ", date=" ).append( DateFormat.getDateInstance( DateFormat.SHORT ).format( getDate() ) );
+
+		if ( null != payee.getValue() ) {
+			sb.append( ", payee=" ).append( payee.getValue().getId().getLocalName() );
+		}
+		sb.append( ", num=" ).append( number.getValueSafe() );
+		sb.append( "," ).append( splits.size() ).append( " splits" );
+		if ( null != jnl.getValue() ) {
+			sb.append( ", jnl=" ).append( jnl.getValue().getId() );
+		}
+		sb.append( '}' );
+
+		return sb.toString();
+	}
+
 }

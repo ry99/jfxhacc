@@ -27,7 +27,6 @@ import com.ostrichemulators.jfxhacc.model.SplitBase.ReconcileState;
 import com.ostrichemulators.jfxhacc.model.SplitStub;
 import com.ostrichemulators.jfxhacc.model.Transaction;
 import com.ostrichemulators.jfxhacc.model.impl.SplitImpl;
-import com.ostrichemulators.jfxhacc.model.impl.TransactionImpl;
 import com.ostrichemulators.jfxhacc.model.vocabulary.Transactions;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -37,13 +36,14 @@ import java.util.List;
 import java.util.function.Predicate;
 import java.util.prefs.Preferences;
 import javafx.beans.property.ReadOnlyStringWrapper;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
-import javafx.scene.control.ScrollPane;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TableColumn;
@@ -77,13 +77,13 @@ public class TransactionViewController implements ShutdownListener {
 	@FXML
 	private TableColumn<SplitStub, PAMData> payee;
 	@FXML
-	private TableColumn<SplitStub, Money> credit;
+	private TableColumn<SplitStub, Money> increase;
 	@FXML
-	private TableColumn<SplitStub, Money> debit;
+	private TableColumn<SplitStub, Money> decrease;
 	@FXML
 	private TableColumn<SplitStub, ReconcileState> reco;
 
-	private final TransactionEntry dataentry = new TransactionEntry( MainApp.getEngine() );
+	private final TransactionEntry dataentry;
 
 	protected Account account;
 	private final PayeeAccountMemoValueFactory payeefac;
@@ -96,26 +96,40 @@ public class TransactionViewController implements ShutdownListener {
 	private final AccountManager acctman;
 	private final JournalManager jrnlman;
 
-	public TransactionViewController() {
-		try {
-			stubman = new SplitStubManager( MainApp.getEngine() );
-			payman = new PayeeManager( MainApp.getEngine() );
-			acctman = new AccountManager( MainApp.getEngine() );
-			jrnlman = new JournalManager( MainApp.getEngine() );
-			payeefac = new PayeeAccountMemoValueFactory( stubman, acctman, payman );
-		}
-		catch ( MapperException me ) {
-			throw new RuntimeException( me );
-		}
+	public TransactionViewController( TransactionMapper t, SplitStubManager stubs ) {
+		tmap = t;
+		stubman = stubs;
+		payman = new PayeeManager( MainApp.getEngine() );
+		acctman = new AccountManager( MainApp.getEngine(), stubs );
+		jrnlman = new JournalManager( MainApp.getEngine() );
+		dataentry = new TransactionEntry( MainApp.getEngine(), acctman, payman );
+		payeefac = new PayeeAccountMemoValueFactory( stubman, acctman, payman );
 	}
 
 	public void setAccount( Account acct ) {
 		account = acct;
-		payeefac.setAccount( acct );
 		dataentry.setAccount( acct );
 		splitter.setDividerPositions( 1.0 );
 		refresh();
 		transtable.scrollTo( getData().size() - 1 );
+
+		if ( acct.getAccountType().isDebitPlus() ) {
+			increase.setCellValueFactory( ( TableColumn.CellDataFeatures<SplitStub, Money> p )
+					-> p.getValue().getDebitProperty() );
+			decrease.setCellValueFactory( ( TableColumn.CellDataFeatures<SplitStub, Money> p )
+					-> p.getValue().getCreditProperty() );
+		}
+		else {
+			increase.setCellValueFactory( ( TableColumn.CellDataFeatures<SplitStub, Money> p )
+					-> p.getValue().getCreditProperty() );
+			decrease.setCellValueFactory( ( TableColumn.CellDataFeatures<SplitStub, Money> p )
+					-> p.getValue().getDebitProperty() );
+		}
+
+		log.debug( "acct: " + acct );
+		for ( SplitStub s : transtable.getItems() ) {
+			log.debug( s );
+		}
 	}
 
 	protected ObservableList<SplitStub> getData() {
@@ -203,13 +217,8 @@ public class TransactionViewController implements ShutdownListener {
 				-> p.getValue().getReconciledProperty() );
 		reco.setCellFactory( new RecoCellFactory<>( false ) );
 
-		credit.setCellValueFactory( ( TableColumn.CellDataFeatures<SplitStub, Money> p )
-				-> p.getValue().getRawValueProperty() );
-		credit.setCellFactory( new MoneyCellFactory<>( true ) );
-
-		debit.setCellValueFactory( ( TableColumn.CellDataFeatures<SplitStub, Money> p )
-				-> p.getValue().getRawValueProperty() );
-		debit.setCellFactory( new MoneyCellFactory<>( false ) );
+		increase.setCellFactory( new MoneyCellFactory<>() );
+		decrease.setCellFactory( new MoneyCellFactory<>() );
 
 		splitter.getItems().add( dataentry );
 
@@ -294,14 +303,14 @@ public class TransactionViewController implements ShutdownListener {
 			item1 = new MenuItem();
 		}
 		else {
-//			Split other = TransactionHelper.getOther( transUnderMouse, account );
-			Split other = null;
+			SplitStub other = stubman.getOtherStub( transUnderMouse );
 			if ( null != other ) {
-				item1 = new MenuItem( "(broken) Flip to " + other.getAccount().getName() );
+				Account acct = acctman.get( other.getAccountId() );
+				item1 = new MenuItem( "Flip to " + acct.getName() );
 				item1.setOnAction( new EventHandler<ActionEvent>() {
 					@Override
 					public void handle( ActionEvent e ) {
-						MainApp.select( other.getAccount() );
+						MainApp.select( acct );
 					}
 				} );
 			}
@@ -326,6 +335,10 @@ public class TransactionViewController implements ShutdownListener {
 					= stubman.getSplitStubs( MainApp.PF.filter( Transactions.TYPE,
 							t.getTransactionId() ) );
 
+			log.debug( "openeditor" );
+			for ( SplitStub s : stubs ) {
+				log.debug( s );
+			}
 			Transaction trans
 					= SplitStubManager.toTransaction( stubs, acctman, jrnlman, payman );
 			dataentry.setTransaction( trans );
@@ -387,14 +400,11 @@ public class TransactionViewController implements ShutdownListener {
 		else if ( "R".equalsIgnoreCase( code ) ) {
 			ke.consume();
 
-			//  Account a, Money m, String memo, ReconcileState rs
-			Split s = new SplitImpl( acctman.getMap().get( t.getAccountId() ),
-					t.getValue(), t.getMemo(), t.getReconciled() );
 			// cycle through the reconcile states
-			ReconcileState rs = s.getReconciled();
+			ReconcileState rs = t.getReconciled();
 			ReconcileState states[] = ReconcileState.values();
 			try {
-				tmap.reconcile( states[( rs.ordinal() + 1 ) % states.length], account, s );
+				tmap.reconcile( states[( rs.ordinal() + 1 ) % states.length], t );
 			}
 			catch ( MapperException me ) {
 				log.error( me, me );
@@ -410,14 +420,14 @@ public class TransactionViewController implements ShutdownListener {
 
 	public static final class PAMData implements Comparable<PAMData> {
 
-		public final String payee;
-		public final String account;
-		public final String memo;
+		public final StringProperty payee = new SimpleStringProperty();
+		public final StringProperty account = new SimpleStringProperty();
+		public final StringProperty memo = new SimpleStringProperty();
 
 		public PAMData( String payee, String account, String memo ) {
-			this.payee = payee;
-			this.account = account;
-			this.memo = memo;
+			this.payee.setValue( payee );
+			this.account.setValue( account );
+			this.memo.setValue( memo );
 		}
 
 		@Override
@@ -427,7 +437,7 @@ public class TransactionViewController implements ShutdownListener {
 
 		@Override
 		public String toString() {
-			return payee + account + memo;
+			return payee.getValueSafe() + account.getValueSafe() + memo.getValueSafe();
 		}
 	}
 }

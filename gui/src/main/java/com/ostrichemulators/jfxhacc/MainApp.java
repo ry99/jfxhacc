@@ -3,6 +3,7 @@ package com.ostrichemulators.jfxhacc;
 import com.ostrichemulators.jfxhacc.controller.MainWindowController;
 import com.ostrichemulators.jfxhacc.engine.DataEngine;
 import com.ostrichemulators.jfxhacc.engine.impl.RdfDataEngine;
+import com.ostrichemulators.jfxhacc.mapper.MapperException;
 import com.ostrichemulators.jfxhacc.model.Account;
 import com.ostrichemulators.jfxhacc.utility.DbUtil;
 import com.ostrichemulators.jfxhacc.utility.PredicateFactory;
@@ -57,7 +58,7 @@ public class MainApp extends Application {
 
 		URL loc = getClass().getResource( "/fxml/Scene.fxml" );
 		FXMLLoader fxmlloader = new FXMLLoader( loc );
-		controller = new MainWindowController();
+		controller = new MainWindowController( engine );
 		fxmlloader.setController( controller );
 
 		Parent root = fxmlloader.load();
@@ -81,7 +82,6 @@ public class MainApp extends Application {
 			final List<String> parameters = params.getRaw();
 
 			File defaultdb = new File( System.getProperty( "user.home" ), ".jfxhacc" );
-			boolean doinit = ( parameters.isEmpty() && !defaultdb.exists() );
 			List<File> filesToLoad = new ArrayList<>();
 
 			String database;
@@ -118,10 +118,6 @@ public class MainApp extends Application {
 
 			rc = DbUtil.createRepository( database );
 
-			if ( doinit ) {
-				initKb( rc );
-			}
-
 			for ( File file : filesToLoad ) {
 				String ufile = file.getName().toUpperCase();
 				RDFFormat fmt = RDFFormat.NTRIPLES;
@@ -137,6 +133,7 @@ public class MainApp extends Application {
 				rc.commit();
 			}
 
+			DbUtil.upgradeIfNecessary( rc );
 			engine = new RdfDataEngine( rc );
 		}
 		catch ( RepositoryException | IOException | RDFParseException e ) {
@@ -182,10 +179,6 @@ public class MainApp extends Application {
 	 */
 	public static void main( String[] args ) {
 		launch( args );
-	}
-
-	private static void initKb( RepositoryConnection rc ) throws RepositoryException {
-		// this is a good place to add the standard ontology
 	}
 
 	public static class StageRememberer implements EventHandler<WindowEvent> {

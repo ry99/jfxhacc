@@ -5,7 +5,6 @@
  */
 package com.ostrichemulators.jfxhacc.controller;
 
-import com.ostrichemulators.jfxhacc.engine.DataEngine;
 import com.ostrichemulators.jfxhacc.model.Recurrence;
 import com.ostrichemulators.jfxhacc.model.Recurrence.Frequency;
 import com.ostrichemulators.jfxhacc.model.impl.RecurrenceImpl;
@@ -37,11 +36,6 @@ public class ScheduleDataWindowController {
 
 	private final Map<Frequency, RadioButton> buttons = new HashMap<>();
 	private final ToggleGroup group = new ToggleGroup();
-	private final DataEngine engine;
-
-	public ScheduleDataWindowController( DataEngine eng ) {
-		engine = eng;
-	}
 
 	@FXML
 	public void initialize() {

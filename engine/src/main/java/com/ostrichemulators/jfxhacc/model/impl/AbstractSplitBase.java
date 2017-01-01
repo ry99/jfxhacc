@@ -8,7 +8,6 @@ package com.ostrichemulators.jfxhacc.model.impl;
 import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.SplitBase;
 import com.ostrichemulators.jfxhacc.model.vocabulary.Splits;
-import java.util.Objects;
 import java.util.concurrent.Callable;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.Property;
@@ -43,13 +42,13 @@ public abstract class AbstractSplitBase extends IDableImpl implements SplitBase 
 
 	protected AbstractSplitBase( Money m ) {
 		super( Splits.TYPE );
-		isdebit = m.isPositive();
+		isdebit = m.isNegative();
 		value.setValue( m.abs() );
 	}
 
 	protected AbstractSplitBase( URI id, Money m ) {
 		super( Splits.TYPE, id );
-		isdebit = m.isPositive();
+		isdebit = m.isNegative();
 		value.setValue( m.abs() );
 	}
 
@@ -80,8 +79,21 @@ public abstract class AbstractSplitBase extends IDableImpl implements SplitBase 
 	}
 
 	@Override
+	@Deprecated
 	public void setValue( Money m ) {
-		isdebit = m.isPositive();
+		isdebit = m.isNegative();
+		value.setValue( m.abs() );
+	}
+
+	@Override
+	public void setCredit( Money m ) {
+		isdebit = false;
+		value.setValue( m.abs() );
+	}
+
+	@Override
+	public void setDebit( Money m ) {
+		isdebit = true;
 		value.setValue( m.abs() );
 	}
 
@@ -122,9 +134,38 @@ public abstract class AbstractSplitBase extends IDableImpl implements SplitBase 
 			@Override
 			public Money call() throws Exception {
 				Money val = getValue();
-				return ( isdebit ? val : val.opposite() );
+				// val is always positive
+				// but we've arbitrarily declared that we'll use negative numbers
+				// to represent debits and positive ones to represent credits
+				return ( isdebit ? val.opposite() : val );
 			}
 		}, value ) );
+		return prop;
+	}
+
+	@Override
+	public ReadOnlyProperty<Money> getCreditProperty() {
+		SimpleObjectProperty<Money> prop = new SimpleObjectProperty<>();
+		prop.bind( Bindings.createObjectBinding( new Callable<Money>() {
+			@Override
+			public Money call() throws Exception {
+				return ( isdebit ? new Money() : value.getValue() );
+			}
+		}, value ) );
+
+		return prop;
+	}
+
+	@Override
+	public ReadOnlyProperty<Money> getDebitProperty() {
+		SimpleObjectProperty<Money> prop = new SimpleObjectProperty<>();
+		prop.bind( Bindings.createObjectBinding( new Callable<Money>() {
+			@Override
+			public Money call() throws Exception {
+				return ( isdebit ? value.getValue() : new Money() );
+			}
+		}, value ) );
+
 		return prop;
 	}
 
@@ -141,46 +182,14 @@ public abstract class AbstractSplitBase extends IDableImpl implements SplitBase 
 		}
 
 		Money newmoney = old.plus( m );
-		setValue( newmoney );
+		if( newmoney.isNegative() ){
+			setDebit( newmoney );
+		}
+		else{
+			setCredit( newmoney );
+		}
 
 		return getValue();
-	}
-
-	@Override
-	public int hashCode() {
-		int hash = 7;
-		hash = 19 * hash + Objects.hashCode( this.memo );
-		hash = 19 * hash + Objects.hashCode( this.value );
-		hash = 19 * hash + ( this.isdebit ? 1 : 0 );
-		hash = 19 * hash + Objects.hashCode( this.reco );
-		return hash;
-	}
-
-	@Override
-	public boolean equals( Object obj ) {
-		if ( this == obj ) {
-			return true;
-		}
-		if ( obj == null ) {
-			return false;
-		}
-		if ( getClass() != obj.getClass() ) {
-			return false;
-		}
-		final AbstractSplitBase other = (AbstractSplitBase) obj;
-		if ( this.isdebit != other.isdebit ) {
-			return false;
-		}
-		if ( !Objects.equals( this.memo, other.memo ) ) {
-			return false;
-		}
-		if ( !Objects.equals( this.value, other.value ) ) {
-			return false;
-		}
-		if ( !Objects.equals( this.reco, other.reco ) ) {
-			return false;
-		}
-		return true;
 	}
 
 	@Override

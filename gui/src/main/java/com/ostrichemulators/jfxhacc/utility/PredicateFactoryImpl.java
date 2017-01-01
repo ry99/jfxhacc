@@ -6,6 +6,7 @@
 package com.ostrichemulators.jfxhacc.utility;
 
 import com.ostrichemulators.jfxhacc.model.Account;
+import com.ostrichemulators.jfxhacc.model.AccountType;
 import com.ostrichemulators.jfxhacc.model.Journal;
 import com.ostrichemulators.jfxhacc.model.Payee;
 import com.ostrichemulators.jfxhacc.model.Split;
@@ -151,5 +152,51 @@ public class PredicateFactoryImpl implements PredicateFactory {
 		}
 
 		throw new IllegalArgumentException( "unknown type: " + type );
+	}
+
+	@Override
+	public Predicate<SplitStub> credits() {
+		return new Predicate<SplitStub>() {
+			@Override
+			public boolean test( SplitStub t ) {
+				return t.isCredit();
+			}
+		};
+	}
+
+	@Override
+	public Predicate<SplitStub> debits() {
+		return new Predicate<SplitStub>() {
+			@Override
+			public boolean test( SplitStub t ) {
+				return t.isDebit();
+			}
+		};
+	}
+
+	@Override
+	public Predicate<SplitStub> increases( Account a ) {
+		AccountType at = a.getAccountType();
+		return new Predicate<SplitStub>() {
+			@Override
+			public boolean test( SplitStub t ) {
+				return at.isPositive( t );
+			}
+		};
+	}
+
+	@Override
+	public Predicate<SplitStub> decreases( Account a ) {
+		return increases( a ).negate();
+	}
+
+	@Override
+	public Predicate<SplitStub> id( URI uri ) {
+		return new Predicate<SplitStub>() {
+			@Override
+			public boolean test( SplitStub t ) {
+				return t.getId().equals( uri );
+			}
+		};
 	}
 }

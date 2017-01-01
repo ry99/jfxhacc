@@ -5,17 +5,11 @@
  */
 package com.ostrichemulators.jfxhacc.model;
 
-import javafx.beans.property.StringProperty;
+import com.ostrichemulators.jfxhacc.mapper.NamedIDable;
 
 /**
  *
  * @author ryan
  */
-public interface Journal extends IDable {
-
-	public String getName();
-
-	public void setName( String name );
-
-	public StringProperty getNameProperty();
+public interface Journal extends NamedIDable {
 }

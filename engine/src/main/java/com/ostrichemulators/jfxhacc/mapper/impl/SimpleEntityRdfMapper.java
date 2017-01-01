@@ -10,6 +10,7 @@ import com.ostrichemulators.jfxhacc.model.IDable;
 import org.apache.log4j.Logger;
 import org.openrdf.model.URI;
 import org.openrdf.repository.RepositoryConnection;
+import org.openrdf.repository.RepositoryException;
 
 /**
  * A class to create entities that don't depend on something else (e.g., splits
@@ -32,7 +33,7 @@ public abstract class SimpleEntityRdfMapper<T extends IDable> extends RdfMapper<
 			getConnection().remove( id, null, null );
 			notifyRemoved( id );
 		}
-		catch ( Exception e ) {
+		catch ( RepositoryException e ) {
 			throw new MapperException( e );
 		}
 	}

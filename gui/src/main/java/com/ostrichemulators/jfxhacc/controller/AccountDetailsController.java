@@ -6,6 +6,7 @@
 package com.ostrichemulators.jfxhacc.controller;
 
 import com.ostrichemulators.jfxhacc.converter.MoneyStringConverter;
+import com.ostrichemulators.jfxhacc.datamanager.AccountManager;
 import com.ostrichemulators.jfxhacc.engine.DataEngine;
 import com.ostrichemulators.jfxhacc.mapper.MapperException;
 import com.ostrichemulators.jfxhacc.model.Account;
@@ -51,25 +52,19 @@ public class AccountDetailsController {
 	private EventHandler<ActionEvent> okhandler;
 	private final Account acct;
 	private final DataEngine engine;
-	private final Account original;
+	private final AccountManager aman;
 
-	public AccountDetailsController( Account acct, DataEngine eng ) {
-		this.original = acct;
+	public AccountDetailsController( Account acct, DataEngine eng, AccountManager mgr ) {
 		this.acct = ( null == acct ? null : new AccountImpl( acct ) );
-		this.engine = eng;
+		aman = mgr;
+		engine = eng;
 	}
 
 	@FXML
 	public void initialize() {
 		type.getItems().addAll( AccountType.values() );
 
-		List<Account> accounts = new ArrayList<>();
-		try {
-			accounts.addAll( engine.getAccountMapper().getAll() );
-		}
-		catch ( MapperException me ) {
-			log.error( me, me );
-		}
+		List<Account> accounts = new ArrayList<>( aman.getAll() );
 
 		if ( null == acct ) {
 			type.getSelectionModel().select( AccountType.ASSET );
@@ -83,28 +78,18 @@ public class AccountDetailsController {
 			notes.textProperty().bindBidirectional( acct.getNotesProperty() );
 			number.textProperty().bindBidirectional( acct.getNumberProperty() );
 
-			try {
-				TreeNode<Account> tree = engine.getAccountMapper().getAccounts( null );
-				TreeNode<Account> parent = tree.findChild( acct );
+			TreeNode<Account> tree = TreeNode.treeify( aman.getParentMap() );
+			TreeNode<Account> parent = tree.findChild( acct );
 
-				accounts.removeAll( parent.findChild( acct ).getAllChildren() );
-				accounts.remove( acct );
-			}
-			catch ( MapperException me ) {
-				log.error( me, me );
-			}
+			accounts.removeAll( parent.findChild( acct ).getAllChildren() );
+			accounts.remove( acct );
 		}
 
-		try {
-			GuiUtils.makeAccountCombo( parentacct, accounts, engine.getAccountMapper() );
-			if ( null != acct ) {
-				Account pp = engine.getAccountMapper().getParent( acct );
-				parentacct.getSelectionModel().select( pp );
-				parentacct.setValue( pp );
-			}
-		}
-		catch ( MapperException me ) {
-			log.error( me, me );
+		GuiUtils.makeAccountCombo( parentacct, aman );
+		if ( null != acct ) {
+			Account pp = aman.getParent( acct );
+			parentacct.getSelectionModel().select( pp );
+			parentacct.setValue( pp );
 		}
 	}
 
@@ -126,11 +111,6 @@ public class AccountDetailsController {
 						parentacct.getValue() );
 			}
 			else {
-				this.original.setOpeningBalance( Money.valueOf( balance.getText() ) );
-				this.original.setName( name.getText() );
-				this.original.setNotes( notes.getText() );
-				this.original.setNumber( number.getText() );
-
 				engine.getAccountMapper().update( acct );
 			}
 
