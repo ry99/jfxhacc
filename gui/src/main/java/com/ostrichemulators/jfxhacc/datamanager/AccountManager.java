@@ -45,6 +45,8 @@ public class AccountManager extends AbstractDataManager<Account> {
 	private final SplitStubManager stubman;
 	private final ObservableMap<Account, Account> childparentlkp
 			= FXCollections.observableHashMap();
+	private final Map<Account, ObjectProperty<Money>> currbals = new HashMap<>();
+	private final Map<Account, ObjectProperty<Money>> recbals = new HashMap<>();
 
 	public AccountManager( DataEngine de, SplitStubManager stubman ) {
 		super( de.getAccountMapper() );
@@ -101,12 +103,18 @@ public class AccountManager extends AbstractDataManager<Account> {
 	}
 
 	public ObjectProperty<Money> getCurrentProperty( Account acct ) {
-		return getBalanceProperty( acct, stubman.getSplitStubs( MainApp.PF.account( acct ) ) );
+		if ( !currbals.containsKey( acct ) ) {
+			currbals.put( acct, getBalanceProperty( acct, stubman.getSplitStubs( MainApp.PF.account( acct ) ) ) );
+		}
+		return currbals.get( acct );
 	}
 
 	public ObjectProperty<Money> getRecoProperty( Account acct ) {
-		return getBalanceProperty( acct, stubman.getSplitStubs( MainApp.PF.account( acct ),
-				MainApp.PF.state( ReconcileState.RECONCILED ) ) );
+		if ( !recbals.containsKey( acct ) ) {
+			recbals.put( acct, getBalanceProperty( acct, stubman.getSplitStubs( MainApp.PF.account( acct ),
+					MainApp.PF.state( ReconcileState.RECONCILED ) ) ) );
+		}
+		return recbals.get( acct );
 	}
 
 	private ObjectProperty<Money> getBalanceProperty( Account acct,

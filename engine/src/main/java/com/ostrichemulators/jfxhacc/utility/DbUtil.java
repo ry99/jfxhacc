@@ -231,7 +231,7 @@ public class DbUtil {
 				map.put( u, 0 );
 			}
 			else {
-				map.put( u, Literal.class.cast( stmts.get( 0 ) ).intValue() );
+				map.put( u, Literal.class.cast( stmts.get( 0 ).getObject() ).intValue() );
 			}
 		}
 
@@ -260,6 +260,7 @@ public class DbUtil {
 		currentversions.put( JfxHacc.REVISION_VERSION, JfxHacc.REVV );
 
 		Map<URI, Integer> map = getDbVersionMap( rc );
+		boolean upgraded = false;
 		for ( Map.Entry<URI, Integer> en : currentversions.entrySet() ) {
 			URI u = en.getKey();
 			final int version = en.getValue();
@@ -267,8 +268,23 @@ public class DbUtil {
 			int dbver = map.getOrDefault( u, 0 );
 			if ( dbver < version ) {
 				upgradeFromTo( rc, u, version, dbver );
+				upgraded = true;
 				break;
 			}
+		}
+
+		if ( upgraded ) {
+			URI dbid = getDbId( rc );
+			rc.begin();
+			ValueFactory vf = new ValueFactoryImpl();
+			for ( Map.Entry<URI, Integer> en : currentversions.entrySet() ) {
+				rc.remove( dbid, en.getKey(), null );
+				rc.add( dbid, en.getKey(), vf.createLiteral( en.getValue() ) );
+			}
+			rc.commit();
+		}
+		else {
+			log.info( "database at current revision...no upgrade necessary" );
 		}
 	}
 
