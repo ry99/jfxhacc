@@ -47,8 +47,10 @@ public class PayeeAccountMemoCellFactory implements Callback<TableColumn<SplitSt
 					pane.setMaxWidth( Double.MAX_VALUE );
 
 					String memsafe = t.memo.getValueSafe();
-					Label payee = new Label( t.payee.getValueSafe() );
-					Label memo = new Label( memsafe );
+					Label payee = new Label();// t.payee.getValueSafe() );
+					Label memo = new Label();// memsafe );
+					payee.textProperty().bind( t.payee );
+					memo.textProperty().bind( t.memo );
 
 					payee.setWrapText( false );
 					memo.setWrapText( false );
@@ -60,7 +62,8 @@ public class PayeeAccountMemoCellFactory implements Callback<TableColumn<SplitSt
 						payee.prefWidthProperty().bind( p.widthProperty().divide( 2 ) );
 					}
 					else {
-						Label acct = new Label( t.account.getValueSafe() );
+						Label acct = new Label();// t.account.getValueSafe() );
+						acct.textProperty().bind( t.account );
 						acct.setWrapText( false );
 
 						pane.add( payee, 0, 0, 2, 1 );

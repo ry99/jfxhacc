@@ -51,13 +51,6 @@ public class PayeeAccountMemoValueFactory implements Callback<TableColumn.CellDa
 			};
 		} );
 
-		allstubs.addListener( new ListChangeListener<SplitStub>() {
-			@Override
-			public void onChanged( ListChangeListener.Change<? extends SplitStub> c ) {
-				log.debug( "allstubs changed somehow" );
-			}
-		} );
-
 		Bindings.bindContent( allstubs, stubman.getAll() );
 	}
 
