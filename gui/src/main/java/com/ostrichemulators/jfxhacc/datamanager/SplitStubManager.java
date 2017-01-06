@@ -96,6 +96,9 @@ public class SplitStubManager extends AbstractDataManager<SplitStub> {
 
 	@Override
 	protected void update( SplitStub inlist, SplitStub newvals ) {
+		log.debug( "inlist: " + inlist );
+		log.debug( "  newvals: " + newvals );
+
 		if ( !newvals.getTransactionId().equals( inlist.getTransactionId() ) ) {
 			inlist.setTransactionId( newvals.getTransactionId() );
 		}

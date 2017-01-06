@@ -126,10 +126,10 @@ public class TransactionViewController implements ShutdownListener {
 					-> p.getValue().getDebitProperty() );
 		}
 
-		log.debug( "acct: " + acct );
-		for ( SplitStub s : transtable.getItems() ) {
-			log.debug( s );
-		}
+//		log.debug( "acct: " + acct );
+//		for ( SplitStub s : transtable.getItems() ) {
+//			log.debug( s );
+//		}
 	}
 
 	protected ObservableList<SplitStub> getData() {

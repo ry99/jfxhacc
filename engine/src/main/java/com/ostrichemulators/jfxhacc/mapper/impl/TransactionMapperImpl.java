@@ -301,8 +301,8 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 				Split s = en.getKey();
 				SplitStub ss = new SplitStubImpl( t, s );
 
-				log.debug( "splitop: " + s.getId().getLocalName() + "  " + en.getValue() );
-				log.debug( "  ss: " + ss.getId().getLocalName() );
+				//log.debug( "splitop: " + s + "  " + en.getValue() );
+				//log.debug( "  ss: " + ss );
 
 				allstubs.remove( ss );
 				if ( SplitOp.REMOVED != en.getValue() ) {
@@ -760,6 +760,7 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 			Account oldacct = oldsplit.getAccount();
 			rc.remove( oldsplit.getId(), null, null );
 			realsplits.put( oldsplit, SplitOp.REMOVED );
+			//log.debug( "upd old: " + oldsplit );
 
 			if ( newmap.containsKey( oldacct.getId() ) ) {
 				// ...if we have an old split in our new set,
@@ -771,6 +772,8 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 				rc.remove( newid, null, null );
 
 				newsplit = create( newsplit, newid, false );
+				//log.debug( "upd upd: " + newsplit );
+				realsplits.remove( oldsplit );
 				realsplits.put( newsplit, SplitOp.UPDATED );
 				newmap.remove( oldacct.getId() );
 			}
@@ -779,6 +782,7 @@ public class TransactionMapperImpl extends RdfMapper<Transaction>
 		// anything left in the newmap is a new split to add
 		for ( Split s : newmap.values() ) {
 			Split newsplit = create( s, null, false );
+			//log.debug( "upd new: " + newsplit );
 			realsplits.put( newsplit, SplitOp.ADDED );
 		}
 

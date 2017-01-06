@@ -27,6 +27,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -36,10 +37,10 @@ import javafx.application.Platform;
 import javafx.beans.InvalidationListener;
 import javafx.beans.Observable;
 import javafx.beans.binding.Bindings;
-import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -80,6 +81,7 @@ public class MainWindowController implements ShutdownListener {
 	private static final String PREF_SORTCOL = "accountviewer.sort.col";
 	private static final String PREF_SORTASC = "accountviewer.sort.asc";
 	private static final String PREF_SPLITTER = "stage.splitter.location";
+	private static final String PREF_FAVORITES = "stage.favories";
 
 	private static final Logger log = Logger.getLogger( MainWindowController.class );
 	@FXML
@@ -109,7 +111,11 @@ public class MainWindowController implements ShutdownListener {
 	@FXML
 	private VBox topxbox;
 	@FXML
+	private VBox favoritesBox;
+	@FXML
 	private Menu fileMenu;
+	@FXML
+	private MenuItem favoriteAcct;
 	@FXML
 	private SplitMenuButton recurbtn;
 
@@ -117,6 +123,7 @@ public class MainWindowController implements ShutdownListener {
 	private final SplitStubManager stubman;
 	private final AccountManager acctman;
 	private ObservableList<SplitStub> seltrans = null;
+	private ObservableList<Account> favorites = FXCollections.observableArrayList();
 
 	public MainWindowController( DataEngine engine ) {
 		stubman = new SplitStubManager( engine );
@@ -168,21 +175,92 @@ public class MainWindowController implements ShutdownListener {
 				}
 			}
 
+			favoriteAcct.textProperty().bind( Bindings.createStringBinding( () -> {
+				TreeItem<Account> item = accounts.getSelectionModel().getSelectedItem();
+				if ( null == item ) {
+					return "Add to Favorites";
+				}
+
+				Account acct = item.getValue();
+				return ( isFavorite( acct )
+						? "Remove from Favorites"
+						: "Add to Favorites" );
+			}, accounts.getSelectionModel().selectedItemProperty(), favorites ) );
+
+			ToggleGroup favebg = new ToggleGroup();
+			final Map<Account, ToggleButton> faves = new HashMap<>();
+
+			favorites.addListener( new ListChangeListener<Account>() {
+				@Override
+				public void onChanged( ListChangeListener.Change<? extends Account> c ) {
+					while ( c.next() ) {
+						if ( c.wasAdded() ) {
+							for ( Account a : c.getAddedSubList() ) {
+								ToggleButton btn = new ToggleButton( a.getName() );
+								faves.put( a, btn );
+								btn.prefWidthProperty().bind( favoritesBox.widthProperty() );
+								btn.prefHeightProperty().bind( favoritesBox.heightProperty().divide( Bindings.size( favorites ) ) );
+								btn.setToggleGroup( favebg );
+								favoritesBox.getChildren().add( btn );
+
+								btn.setOnAction( ( ActionEvent event ) -> {
+									TreeItem<Account> ti = findItem( a );
+									select( ti.getValue() );
+								} );
+							}
+						}
+						else if ( c.wasRemoved() ) {
+							for ( Account a : c.getRemoved() ) {
+								favoritesBox.getChildren().remove( faves.get( a ) );
+							}
+						}
+					}
+				}
+			} );
+
+			fetchFavorites( prefs, acctman );
+
+			Map<Account, ToggleButton> pops = new HashMap<>();
 			List<Account> accts = acctman.getPopularAccounts( 10 );
-			ToggleGroup bg = new ToggleGroup();
+			ToggleGroup topxbg = new ToggleGroup();
 			for ( Account a : accts ) {
 				ToggleButton btn = new ToggleButton( a.getName() );
 				btn.prefWidthProperty().bind( topxbox.widthProperty() );
 				btn.prefHeightProperty().bind( topxbox.heightProperty().divide( accts.size() ) );
-				btn.setToggleGroup( bg );
+				btn.setToggleGroup( topxbg );
 				topxbox.getChildren().add( btn );
+				pops.put( a, btn );
 
 				btn.setOnAction( ( ActionEvent event ) -> {
 					TreeItem<Account> ti = findItem( a );
-					accounts.getSelectionModel().select( ti );
-					accounts.scrollTo( accounts.getRow( ti ) );
+					select( ti.getValue() );
 				} );
 			}
+
+			accounts.getSelectionModel().selectedItemProperty().addListener( new ChangeListener<TreeItem<Account>>() {
+
+				@Override
+				public void changed( ObservableValue<? extends TreeItem<Account>> ov,
+						TreeItem<Account> oldsel, TreeItem<Account> newsel ) {
+					if ( null == newsel ) {
+						return;
+					}
+					Account acct = newsel.getValue();
+					if ( faves.containsKey( acct ) ) {
+						faves.get( acct ).setSelected( true );
+					}
+					else {
+						favebg.selectToggle( null );
+					}
+
+					if ( pops.containsKey( acct ) ) {
+						pops.get( acct ).setSelected( true );
+					}
+					else {
+						topxbg.selectToggle( null );
+					}
+				}
+			} );
 
 			List<Recurrence> recs = engine.getRecurrenceMapper().getDue( new Date() );
 
@@ -373,7 +451,6 @@ public class MainWindowController implements ShutdownListener {
 		if ( !accounts.getRoot().equals( ti ) ) {
 			int row = accounts.getRow( ti );
 			accounts.getSelectionModel().select( ti );
-			//accounts.getFocusModel().focus( row );
 			accounts.scrollTo( row );
 		}
 	}
@@ -660,5 +737,47 @@ public class MainWindowController implements ShutdownListener {
 		catch ( IOException ioe ) {
 			log.error( ioe, ioe );
 		}
+	}
+
+	@FXML
+	public void toggleFavorite( ActionEvent event ) {
+		Account acct = ( null == event
+				? null : accounts.getSelectionModel().getSelectedItem().getValue() );
+		Preferences prefs = Preferences.userNodeForPackage( getClass() );
+
+		// see if we're removing the account
+		if ( isFavorite( acct ) ) {
+			favorites.remove( acct );
+		}
+		else {
+			favorites.add( acct );
+		}
+
+		// write the preferences for next startup
+		StringBuilder sb = new StringBuilder();
+		for ( Account a : favorites ) {
+			if ( 0 != sb.length() ) {
+				sb.append( " " );
+			}
+			sb.append( a.getId() );
+		}
+		prefs.put( PREF_FAVORITES, sb.toString() );
+	}
+
+	private void fetchFavorites( Preferences prefs, AccountManager aman ) {
+		String faves = prefs.get( PREF_FAVORITES, "" );
+		for ( String aid : faves.split( " " ) ) {
+			aid = aid.trim();
+			if ( !aid.isEmpty() ) {
+				Account acct = aman.get( new URIImpl( aid ) );
+				if ( null != acct ) {
+					favorites.add( acct );
+				}
+			}
+		}
+	}
+
+	private boolean isFavorite( Account a ) {
+		return favorites.contains( a );
 	}
 }

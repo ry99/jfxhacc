@@ -10,7 +10,6 @@ import com.ostrichemulators.jfxhacc.converter.MoneyStringConverter;
 import com.ostrichemulators.jfxhacc.datamanager.AccountManager;
 import com.ostrichemulators.jfxhacc.datamanager.PayeeManager;
 import com.ostrichemulators.jfxhacc.engine.DataEngine;
-import com.ostrichemulators.jfxhacc.mapper.AccountMapper;
 import com.ostrichemulators.jfxhacc.mapper.MapperException;
 import com.ostrichemulators.jfxhacc.mapper.PayeeMapper;
 import com.ostrichemulators.jfxhacc.mapper.TransactionMapper;
@@ -87,10 +86,9 @@ public class TransactionEntryController extends AnchorPane {
 	private Account account;
 	private Journal defaultjournal;
 	private boolean newtrans;
-	private AccountMapper amap;
-	private AccountManager aman;
+	private final AccountManager aman;
 	private PayeeMapper pmap;
-	private PayeeManager pman;
+	private final PayeeManager pman;
 	private TransactionMapper tmap;
 	private final List<CloseListener> listenees = new ArrayList<>();
 
@@ -223,7 +221,6 @@ public class TransactionEntryController extends AnchorPane {
 		recofield.setAllowIndeterminate( true );
 
 		pmap = engine.getPayeeMapper();
-		amap = engine.getAccountMapper();
 		tmap = engine.getTransactionMapper();
 
 		journalchsr.setItems( engine.getJournalMapper().getObservable() );

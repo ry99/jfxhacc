@@ -7,6 +7,7 @@
 <?import javafx.scene.control.Menu?>
 <?import javafx.scene.control.MenuBar?>
 <?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.SplitMenuButton?>
 <?import javafx.scene.control.SplitPane?>
 <?import javafx.scene.control.TitledPane?>
@@ -52,7 +53,14 @@
 										</TitledPane>
 										<TitledPane animated="false" text="Favorites">
 											<content>
-												<AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
+												<AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                                       <children>
+                                          <ScrollPane fitToHeight="true" fitToWidth="true" layoutX="10.399999618530273" layoutY="10.399999618530273" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                             <content>
+                                                <VBox fx:id="favoritesBox" />
+                                             </content>
+                                          </ScrollPane>
+                                       </children></AnchorPane>
 											</content>
 										</TitledPane>
 										<TitledPane animated="false" text="Popular">
@@ -126,6 +134,11 @@
                                  <accelerator>
                                     <KeyCodeCombination alt="UP" code="R" control="UP" meta="UP" shift="UP" shortcut="DOWN" />
                                  </accelerator></MenuItem>
+                              <MenuItem fx:id="favoriteAcct" onAction="#toggleFavorite" text="_Add to Favorites">
+                                 <accelerator>
+                                    <KeyCodeCombination alt="UP" code="A" control="UP" meta="UP" shift="UP" shortcut="DOWN" />
+                                 </accelerator>
+                              </MenuItem>
                         </items>
                       </Menu>
                         <Menu text="_Journal">

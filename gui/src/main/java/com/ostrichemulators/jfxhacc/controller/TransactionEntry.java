@@ -110,6 +110,5 @@ public class TransactionEntry extends StackPane {
 	}
 
 	public void close() {
-
 	}
 }
