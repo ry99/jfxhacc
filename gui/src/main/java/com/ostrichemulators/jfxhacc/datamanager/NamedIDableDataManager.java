@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.function.Predicate;
 import javafx.beans.Observable;
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
@@ -71,6 +72,34 @@ public abstract class NamedIDableDataManager<T extends NamedIDable> extends Abst
 		} );
 
 		return FXCollections.unmodifiableObservableMap( pa );
+	}
+
+	public ObservableList<String> getNames() {
+		ObservableList<String> names = FXCollections.observableArrayList();
+		ObservableList<T> all = getAll();
+		for ( T t : all ) {
+			names.add( t.getName() );
+		}
+
+		all.addListener( new ListChangeListener<T>() {
+			@Override
+			public void onChanged( ListChangeListener.Change<? extends T> c ) {
+				while ( c.next() ) {
+					if ( c.wasAdded() ) {
+						for ( T t : c.getAddedSubList() ) {
+							names.add( t.getName() );
+						}
+					}
+					if ( c.wasRemoved() ) {
+						for ( T t : c.getRemoved() ) {
+							names.remove( t.getName() );
+						}
+					}
+				}
+			}
+		} );
+
+		return names;
 	}
 
 }

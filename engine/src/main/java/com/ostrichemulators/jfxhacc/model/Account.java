@@ -5,6 +5,7 @@
  */
 package com.ostrichemulators.jfxhacc.model;
 
+import com.ostrichemulators.jfxhacc.mapper.NamedIDable;
 import javafx.beans.property.Property;
 import javafx.beans.property.StringProperty;
 
@@ -12,11 +13,7 @@ import javafx.beans.property.StringProperty;
  *
  * @author ryan
  */
-public interface Account extends IDable {
-
-	public String getName();
-
-	public void setName( String n );
+public interface Account extends NamedIDable {
 
 	public AccountType getAccountType();
 
@@ -37,8 +34,6 @@ public interface Account extends IDable {
 	public StringProperty getNumberProperty();
 
 	public Property<Money> getOpeningBalanceProperty();
-
-	public StringProperty getNameProperty();
 
 	public boolean isType( AccountType t );
 }

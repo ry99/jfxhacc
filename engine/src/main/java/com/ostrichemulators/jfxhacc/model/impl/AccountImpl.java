@@ -20,9 +20,8 @@ import org.openrdf.model.URI;
  *
  * @author ryan
  */
-public class AccountImpl extends IDableImpl implements Account {
+public class AccountImpl extends NamedIDableImpl implements Account {
 
-	private final StringProperty name = new SimpleStringProperty();
 	private final StringProperty notes = new SimpleStringProperty();
 	private final StringProperty number = new SimpleStringProperty();
 	private final ObjectProperty<Money> openingbal = new SimpleObjectProperty<>();
@@ -34,37 +33,16 @@ public class AccountImpl extends IDableImpl implements Account {
 		openingbal.set( new Money( 0 ) );
 	}
 
-	public AccountImpl( AccountType atype ) {
-		super( Accounts.TYPE );
-		type = atype;
-		openingbal.set( new Money( 0 ) );
-	}
-
-	public AccountImpl( URI atype ) {
-		this( AccountType.valueOf( atype ) );
-	}
-
 	public AccountImpl( URI id, String name, AccountType atype, Money m ) {
-		this( atype );
-		this.name.set( name );
+		super( Accounts.TYPE, id, name );
+		type = atype;
 		openingbal.set( m );
-		setId( id );
 	}
 
 	public AccountImpl( Account acct ) {
 		this( acct.getId(), acct.getName(), acct.getAccountType(), acct.getOpeningBalance() );
 		notes.set( acct.getNotes() );
 		number.set( acct.getNumber() );
-	}
-
-	@Override
-	public String getName() {
-		return name.get();
-	}
-
-	@Override
-	public void setName( String n ) {
-		name.set( n );
 	}
 
 	@Override
@@ -88,13 +66,8 @@ public class AccountImpl extends IDableImpl implements Account {
 	}
 
 	@Override
-	public StringProperty getNameProperty() {
-		return name;
-	}
-
-	@Override
 	public String toString() {
-		return name.get() + " (" + type + ( type.isDebitPlus() ? " debit+"
+		return getName() + " (" + type + ( type.isDebitPlus() ? " debit+"
 				: " credit+" ) + ")";
 	}
 

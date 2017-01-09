@@ -39,7 +39,7 @@ import org.openrdf.model.URI;
  *
  * @author ryan
  */
-public class AccountManager extends AbstractDataManager<Account> {
+public class AccountManager extends NamedIDableDataManager<Account> {
 
 	private static final Logger log = Logger.getLogger( AccountManager.class );
 	private final SplitStubManager stubman;
@@ -190,12 +190,6 @@ public class AccountManager extends AbstractDataManager<Account> {
 				Money open = a.getOpeningBalance();
 				AccountType at = a.getAccountType();
 				Money sum = at.sum( splits );
-
-//				if ( "Serve Card".equals( a.getName() ) ) {
-//					for ( SplitStub ss : splits ) {
-//						log.debug( at.isPositive( ss ) + "  " + ss );
-//					}
-//				}
 				Money ret = open.plus( sum );
 				log.debug( a + "=> " + sum + "..." + ret );
 				return ret;
@@ -235,12 +229,13 @@ public class AccountManager extends AbstractDataManager<Account> {
 			@Override
 			public int compare( Account o1, Account o2 ) {
 				return counts.getOrDefault( o2, Integer.MIN_VALUE )
-						- counts.getOrDefault( o2, Integer.MIN_VALUE );
+						- counts.getOrDefault( o1, Integer.MIN_VALUE );
 			}
 		} );
 
 		for ( Account u : ret ) {
-			log.debug( "payee popular accts: " + u.getName() );
+			log.debug( payee.getName() + " popular acct: " + u.getName()
+					+ " (" + counts.getOrDefault( u, 0 ) + ")" );
 		}
 
 		return ret;

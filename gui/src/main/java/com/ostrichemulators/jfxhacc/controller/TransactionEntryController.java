@@ -5,6 +5,7 @@
  */
 package com.ostrichemulators.jfxhacc.controller;
 
+import com.ostrichemulators.jfxhacc.AutoCompletePopupHandler;
 import com.ostrichemulators.jfxhacc.cells.AccountListCell;
 import com.ostrichemulators.jfxhacc.converter.MoneyStringConverter;
 import com.ostrichemulators.jfxhacc.datamanager.AccountManager;
@@ -35,6 +36,7 @@ import java.util.prefs.Preferences;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -199,23 +201,6 @@ public class TransactionEntryController extends AnchorPane {
 	@FXML
 	public void initialize() {
 		payeefield.setEditable( true );
-		payeefield.textProperty().addListener( new ChangeListener<String>() {
-
-			@Override
-			public void changed( ObservableValue<? extends String> ov, String t, String t1 ) {
-				Payee p1 = pman.get( t1 );
-				if ( newtrans && null != p1 ) {
-					List<Account> populars = aman.getPopularAccounts( p1 );
-					if ( !populars.isEmpty() ) {
-						Account acct = populars.get( 0 );
-						accountfield.getSelectionModel().select( acct );
-						accountfield.setValue( acct );
-						amountfield.requestFocus();
-						amountfield.selectAll();
-					}
-				}
-			}
-		} );
 
 		accountfield.setEditable( false );
 		recofield.setAllowIndeterminate( true );
@@ -239,6 +224,31 @@ public class TransactionEntryController extends AnchorPane {
 		}
 
 		journalchsr.setValue( defaultjournal );
+
+		AutoCompletePopupHandler autocomplete
+				= new AutoCompletePopupHandler( payeefield, pman.getNames() );
+		payeefield.focusedProperty().addListener( event -> {
+			autocomplete.hidePopup();
+		} );
+		payeefield.textProperty().addListener( new ChangeListener<String>() {
+
+			@Override
+			public void changed( ObservableValue<? extends String> ov, String t, String t1 ) {
+				if ( !autocomplete.isPoppedUp() ) {
+					Payee p1 = pman.get( t1 );
+					if ( newtrans && null != p1 ) {
+						List<Account> populars = aman.getPopularAccounts( p1 );
+						if ( !populars.isEmpty() ) {
+							Account acct = populars.get( 0 );
+							accountfield.getSelectionModel().select( acct );
+							accountfield.setValue( acct );
+							amountfield.requestFocus();
+							amountfield.selectAll();
+						}
+					}
+				}
+			}
+		} );
 
 		accountfield.setButtonCell( makeAccountCell() );
 		accountfield.setCellFactory( new Callback<ListView<Account>, ListCell<Account>>() {

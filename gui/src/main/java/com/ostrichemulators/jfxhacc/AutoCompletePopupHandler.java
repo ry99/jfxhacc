@@ -7,7 +7,7 @@ package com.ostrichemulators.jfxhacc;
 
 import java.text.Collator;
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.HashMap;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
@@ -19,12 +19,13 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 
 import java.util.List;
+import java.util.Map;
 import java.util.function.Predicate;
 import javafx.application.Platform;
-import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
+import javafx.scene.control.MenuItem;
 import org.apache.log4j.Logger;
 
 /**
@@ -45,16 +46,40 @@ public class AutoCompletePopupHandler {
 	 * Construct a new AutoCompleteTextField.
 	 *
 	 * @param text
-	 * @param completions
+	 * @param choices
 	 */
-	public AutoCompletePopupHandler( TextField text, Collection<String> completions ) {
+	public AutoCompletePopupHandler( TextField text, ObservableList<String> choices ) {
 		super();
 		this.text = text;
 		Collator col = Collator.getInstance();
 		col.setStrength( Collator.SECONDARY ); // approximately case-insensitive
-		this.completions
-				= new SortedList<>( FXCollections.observableArrayList( completions ), col );
+
+		this.completions = new SortedList<>( choices, col );
 		FilteredList<String> filter = new FilteredList<>( this.completions );
+
+		ObservableList<MenuItem> menuItems = entriesPopup.getItems();
+		Map<String, CustomMenuItem> choicelkp = new HashMap<>();
+		
+		XXX need to worry about new entries being added to the choices list
+
+		for ( String result : filter ) {
+			Label entryLabel = new Label( result );
+			CustomMenuItem choice = new CustomMenuItem( entryLabel, true );
+			choicelkp.put( result, choice );
+
+			choice.setOnAction( new EventHandler<ActionEvent>() {
+				@Override
+				public void handle( ActionEvent actionEvent ) {
+					log.debug( "autocomplete item selected: " + result );
+					entriesPopup.hide();
+					text.setText( result );
+					text.positionCaret( result.length() );
+					actionEvent.consume();
+				}
+			} );
+			
+			menuItems.add( choice );
+		}
 
 		text.textProperty().addListener( new ChangeListener<String>() {
 			@Override
@@ -74,10 +99,10 @@ public class AutoCompletePopupHandler {
 				}
 			}
 		} );
+	}
 
-		text.focusedProperty().addListener( event -> {
-			entriesPopup.hide();
-		} );
+	public void hidePopup() {
+		entriesPopup.hide();
 	}
 
 	/**
@@ -87,6 +112,10 @@ public class AutoCompletePopupHandler {
 	 */
 	public ObservableList<String> getCompletions() {
 		return completions;
+	}
+
+	public boolean isPoppedUp() {
+		return entriesPopup.isShowing();
 	}
 
 	/**
@@ -116,18 +145,19 @@ public class AutoCompletePopupHandler {
 
 		for ( String result : showables ) {
 			Label entryLabel = new Label( result );
-			CustomMenuItem item = new CustomMenuItem( entryLabel, true );
-			item.setOnAction( new EventHandler<ActionEvent>() {
+			CustomMenuItem choice = new CustomMenuItem( entryLabel, true );
+			choice.setOnAction( new EventHandler<ActionEvent>() {
 				@Override
 				public void handle( ActionEvent actionEvent ) {
-					log.debug( "autocomplete item selected" );
+					log.debug( "autocomplete item selected: " + result );
+					entriesPopup.hide();
 					text.setText( result );
 					text.positionCaret( result.length() );
-					entriesPopup.hide();
 					actionEvent.consume();
 				}
 			} );
-			menuItems.add( item );
+
+			menuItems.add( choice );
 		}
 
 		if ( choices.size() > ( start + maxShownEntries ) ) {

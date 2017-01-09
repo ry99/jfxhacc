@@ -25,6 +25,15 @@ public class NamedIDableImpl extends IDableImpl implements NamedIDable {
 		this.name.setValue( name );
 	}
 
+	public NamedIDableImpl( URI type, URI id ) {
+		this( type, id, "" );
+	}
+
+	public NamedIDableImpl( URI type ) {
+		super( type );
+		this.name.setValue( "" );
+	}
+
 	@Override
 	public String getName() {
 		return name.get();
