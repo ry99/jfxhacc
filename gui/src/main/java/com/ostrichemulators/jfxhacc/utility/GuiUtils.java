@@ -21,7 +21,10 @@ import javafx.beans.binding.Bindings;
 import javafx.beans.binding.StringExpression;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.collections.FXCollections;
+import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
+import javafx.collections.ObservableMap;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
 import javafx.event.EventHandler;
@@ -35,6 +38,7 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.util.Callback;
 import org.apache.log4j.Logger;
+import org.openrdf.model.URI;
 
 /**
  *
@@ -68,14 +72,32 @@ public class GuiUtils {
 
 	public static SortedList<Account> makeAccountCombo( ComboBox<Account> field,
 			AccountManager aman ) {
-		ObservableList<Account> accounts = aman.getAll();
+		ObservableMap<URI, String> shortnames = aman.getNameMap();
+		ObservableMap<Account, String> fullnames = FXCollections.observableHashMap();
+		ObservableList<Account> accts = FXCollections.observableArrayList();
+		shortnames.addListener( new MapChangeListener<URI, String>() {
+			@Override
+			public void onChanged( MapChangeListener.Change<? extends URI, ? extends String> change ) {
+				URI key = change.getKey();
+				Account acct = aman.get( key );
+				if ( change.wasAdded() ) {
+					fullnames.put( acct, getFullName( acct, aman ) );
+					accts.add( acct );
+				}
+				else if ( change.wasRemoved() ) {
+					fullnames.remove( acct );
+					accts.remove( acct );
+				}
+			}
+		} );
 
-		Map<Account, String> fullnames = new HashMap<>();
-		for ( Account a : accounts ) {
-			fullnames.put( a, GuiUtils.getFullName( a, aman ) );
+		for ( URI u : shortnames.keySet() ) {
+			Account acct = aman.get( u );
+			accts.add( acct );
+			fullnames.put( acct, getFullName( acct, aman ) );
 		}
 
-		SortedList<Account> sorted = new SortedList<>( accounts, new Comparator<Account>() {
+		SortedList<Account> sorted = new SortedList<>( accts, new Comparator<Account>() {
 			@Override
 			public int compare( Account o1, Account o2 ) {
 				return Collator.getInstance().compare( fullnames.get( o1 ), fullnames.get( o2 ) );

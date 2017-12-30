@@ -7,7 +7,6 @@ package com.ostrichemulators.jfxhacc;
 
 import java.text.Collator;
 import java.util.ArrayList;
-import java.util.HashMap;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
@@ -19,13 +18,13 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 
 import java.util.List;
-import java.util.Map;
 import java.util.function.Predicate;
 import javafx.application.Platform;
+import javafx.beans.InvalidationListener;
+import javafx.beans.Observable;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
-import javafx.scene.control.MenuItem;
 import org.apache.log4j.Logger;
 
 /**
@@ -38,8 +37,6 @@ public class AutoCompletePopupHandler {
 
 	private static final Logger log = Logger.getLogger( AutoCompletePopupHandler.class );
 	private static final int maxShownEntries = 12;
-	private ContextMenu entriesPopup = new ContextMenu();
-	private final TextField text;
 	private final SortedList<String> completions;
 
 	/**
@@ -50,42 +47,16 @@ public class AutoCompletePopupHandler {
 	 */
 	public AutoCompletePopupHandler( TextField text, ObservableList<String> choices ) {
 		super();
-		this.text = text;
 		Collator col = Collator.getInstance();
 		col.setStrength( Collator.SECONDARY ); // approximately case-insensitive
 
 		this.completions = new SortedList<>( choices, col );
 		FilteredList<String> filter = new FilteredList<>( this.completions );
 
-		ObservableList<MenuItem> menuItems = entriesPopup.getItems();
-		Map<String, CustomMenuItem> choicelkp = new HashMap<>();
-		
-		XXX need to worry about new entries being added to the choices list
-
-		for ( String result : filter ) {
-			Label entryLabel = new Label( result );
-			CustomMenuItem choice = new CustomMenuItem( entryLabel, true );
-			choicelkp.put( result, choice );
-
-			choice.setOnAction( new EventHandler<ActionEvent>() {
-				@Override
-				public void handle( ActionEvent actionEvent ) {
-					log.debug( "autocomplete item selected: " + result );
-					entriesPopup.hide();
-					text.setText( result );
-					text.positionCaret( result.length() );
-					actionEvent.consume();
-				}
-			} );
-			
-			menuItems.add( choice );
-		}
-
 		text.textProperty().addListener( new ChangeListener<String>() {
 			@Override
 			public void changed( ObservableValue<? extends String> observableValue,
 					String oldtext, String newtext ) {
-				entriesPopup.hide();
 				filter.setPredicate( new Predicate<String>() {
 					@Override
 					public boolean test( String t ) {
@@ -94,15 +65,10 @@ public class AutoCompletePopupHandler {
 				} );
 
 				if ( !filter.isEmpty() ) {
-					populatePopup( filter, 0 );
-					entriesPopup.show( text, Side.BOTTOM, 0, 0 );
+					createAndShowMenu( text, filter, 0 );
 				}
 			}
 		} );
-	}
-
-	public void hidePopup() {
-		entriesPopup.hide();
 	}
 
 	/**
@@ -114,18 +80,15 @@ public class AutoCompletePopupHandler {
 		return completions;
 	}
 
-	public boolean isPoppedUp() {
-		return entriesPopup.isShowing();
-	}
-
 	/**
 	 * Populate the entry set with the given search results.
 	 *
 	 * @param choices The set of matching strings.
 	 */
-	private void populatePopup( ObservableList<String> choices, int start ) {
-		List<CustomMenuItem> menuItems = new ArrayList<>();
+	private static void createAndShowMenu( TextField tf,
+			ObservableList<String> choices, int start ) {
 
+		final ContextMenu menu = new ContextMenu();
 		int end = Math.min( choices.size(), start + maxShownEntries );
 
 		List<String> showables = new ArrayList<>( choices.subList( start, end ) );
@@ -134,55 +97,69 @@ public class AutoCompletePopupHandler {
 			Label moveup = new Label( "..." );
 			CustomMenuItem item = new CustomMenuItem( moveup, true );
 
-			menuItems.add( item );
+			menu.getItems().add( item );
 			moveup.setOnMouseEntered( event -> {
-				repopulateEntries( choices, start - 1 );
+				repopulateEntries( choices, start - 1, tf, menu );
 			} );
 			item.setOnAction( event -> {
-				repopulateEntries( choices, start - 1 );
+				repopulateEntries( choices, start - 1, tf, menu );
 			} );
 		}
 
-		for ( String result : showables ) {
-			Label entryLabel = new Label( result );
-			CustomMenuItem choice = new CustomMenuItem( entryLabel, true );
+		for ( String hit : showables ) {
+			CustomMenuItem choice = createMenuItem( hit );
+
 			choice.setOnAction( new EventHandler<ActionEvent>() {
 				@Override
 				public void handle( ActionEvent actionEvent ) {
-					log.debug( "autocomplete item selected: " + result );
-					entriesPopup.hide();
-					text.setText( result );
-					text.positionCaret( result.length() );
+					log.debug( "autocomplete item selected: " + hit );
+					menu.hide();
+					tf.setText( hit );
+					tf.positionCaret( hit.length() );
 					actionEvent.consume();
 				}
 			} );
 
-			menuItems.add( choice );
+			menu.getItems().add( choice );
 		}
 
 		if ( choices.size() > ( start + maxShownEntries ) ) {
 			Label movedown = new Label( "..." );
 			CustomMenuItem item = new CustomMenuItem( movedown, true );
 
-			menuItems.add( item );
+			menu.getItems().add( item );
 			movedown.setOnMouseEntered( event -> {
-				repopulateEntries( choices, start + 1 );
+				repopulateEntries( choices, start + 1, tf, menu );
 			} );
 			item.setOnAction( event -> {
-				repopulateEntries( choices, start + 1 );
+				repopulateEntries( choices, start + 1, tf, menu );
 			} );
 		}
 
-		entriesPopup.getItems().setAll( menuItems );
+		menu.show( tf, Side.BOTTOM, 0, 0 );
+		tf.textProperty().addListener( new InvalidationListener() {
+			@Override
+			public void invalidated( Observable observable ) {
+				menu.hide();
+			}
+		} );
 	}
 
-	private void repopulateEntries( ObservableList<String> choices, int start ) {
+	private static void repopulateEntries( ObservableList<String> choices, int start,
+			TextField tf, ContextMenu menu ) {
 		Platform.runLater( new Runnable() {
 
 			@Override
 			public void run() {
-				populatePopup( choices, start );
+				menu.hide();
+				createAndShowMenu( tf, choices, start );
 			}
 		} );
+	}
+
+	private static CustomMenuItem createMenuItem( String text ) {
+		Label entryLabel = new Label( text );
+		CustomMenuItem choice = new CustomMenuItem( entryLabel, true );
+		return choice;
 	}
 }

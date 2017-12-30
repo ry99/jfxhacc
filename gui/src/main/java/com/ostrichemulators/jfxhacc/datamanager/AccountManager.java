@@ -66,7 +66,8 @@ public class AccountManager extends NamedIDableDataManager<Account> {
 				@Override
 				public void added( Account t ) {
 					try {
-						childparentlkp.put( t, mymap.get( amap.getParent( t ).getId() ) );
+						Account parent = amap.getParent( t );
+						childparentlkp.put(  t, null == parent ? null : mymap.get( parent.getId() ) );
 					}
 					catch ( MapperException me ) {
 						log.error( "could not fetch parent for account: " + t );

@@ -6,10 +6,12 @@
 package com.ostrichemulators.jfxhacc.controller;
 
 import com.ostrichemulators.jfxhacc.AutoCompletePopupHandler;
+import com.ostrichemulators.jfxhacc.MainApp;
 import com.ostrichemulators.jfxhacc.cells.AccountListCell;
 import com.ostrichemulators.jfxhacc.converter.MoneyStringConverter;
 import com.ostrichemulators.jfxhacc.datamanager.AccountManager;
 import com.ostrichemulators.jfxhacc.datamanager.PayeeManager;
+import com.ostrichemulators.jfxhacc.datamanager.SplitStubManager;
 import com.ostrichemulators.jfxhacc.engine.DataEngine;
 import com.ostrichemulators.jfxhacc.mapper.MapperException;
 import com.ostrichemulators.jfxhacc.mapper.PayeeMapper;
@@ -20,8 +22,10 @@ import com.ostrichemulators.jfxhacc.model.Money;
 import com.ostrichemulators.jfxhacc.model.Payee;
 import com.ostrichemulators.jfxhacc.model.Split;
 import com.ostrichemulators.jfxhacc.model.SplitBase.ReconcileState;
+import com.ostrichemulators.jfxhacc.model.SplitStub;
 import com.ostrichemulators.jfxhacc.model.Transaction;
 import com.ostrichemulators.jfxhacc.model.impl.SplitImpl;
+import com.ostrichemulators.jfxhacc.model.vocabulary.Payees;
 import com.ostrichemulators.jfxhacc.utility.GuiUtils;
 import com.ostrichemulators.jfxhacc.utility.TransactionHelper;
 import java.time.Instant;
@@ -29,14 +33,16 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.prefs.Preferences;
+import javafx.beans.Observable;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -61,120 +67,123 @@ import org.apache.log4j.Logger;
  */
 public class TransactionEntryController extends AnchorPane {
 
-	private static final Logger log = Logger.getLogger( TransactionEntryController.class );
-	private static final String JNL_SELECTED = "journal.selected";
-	@FXML
-	private Button tofromBtn;
-	@FXML
-	private ComboBox<Account> accountfield;
-	@FXML
-	private CheckBox recofield;
-	@FXML
-	private DatePicker datefield;
-	@FXML
-	private TextField amountfield;
-	@FXML
-	private TextField memofield;
-	@FXML
-	private TextField numberfield;
-	@FXML
-	private TextField payeefield;
-	@FXML
-	private ChoiceBox<Journal> journalchsr;
-	@FXML
-	private Button splitsBtn;
+  private static final Logger log = Logger.getLogger( TransactionEntryController.class );
+  private static final String JNL_SELECTED = "journal.selected";
+  @FXML
+  private Button tofromBtn;
+  @FXML
+  private ComboBox<Account> accountfield;
+  @FXML
+  private CheckBox recofield;
+  @FXML
+  private DatePicker datefield;
+  @FXML
+  private TextField amountfield;
+  @FXML
+  private TextField memofield;
+  @FXML
+  private TextField numberfield;
+  @FXML
+  private TextField payeefield;
+  @FXML
+  private ChoiceBox<Journal> journalchsr;
+  @FXML
+  private Button splitsBtn;
 
-	private Transaction trans;
-	private Account account;
-	private Journal defaultjournal;
-	private boolean newtrans;
-	private final AccountManager aman;
-	private PayeeMapper pmap;
-	private final PayeeManager pman;
-	private TransactionMapper tmap;
-	private final List<CloseListener> listenees = new ArrayList<>();
+  private Transaction trans;
+  private Account account;
+  private Journal defaultjournal;
+  private boolean newtrans;
+  private final AccountManager aman;
+  private PayeeMapper pmap;
+  private final PayeeManager pman;
+  private final SplitStubManager stubs;
+  private TransactionMapper tmap;
+  private final List<CloseListener> listenees = new ArrayList<>();
 
-	private final DataEngine engine;
+  private final DataEngine engine;
 
-	public TransactionEntryController( DataEngine en, AccountManager aman, PayeeManager pman ) {
-		engine = en;
-		this.aman = aman;
-		this.pman = pman;
-	}
+  public TransactionEntryController( DataEngine en, AccountManager aman,
+      PayeeManager pman, SplitStubManager stubs ) {
+    engine = en;
+    this.aman = aman;
+    this.pman = pman;
+    this.stubs = stubs;
+  }
 
-	public void addCloseListener( CloseListener cc ) {
-		listenees.add( cc );
-	}
+  public void addCloseListener( CloseListener cc ) {
+    listenees.add( cc );
+  }
 
-	public void removeCloseListener( CloseListener cc ) {
-		listenees.remove( cc );
-	}
+  public void removeCloseListener( CloseListener cc ) {
+    listenees.remove( cc );
+  }
 
-	public void setAccount( Account a ) {
-		account = a;
-		GuiUtils.makeAccountCombo( accountfield, aman );
-	}
+  public void setAccount( Account a ) {
+    account = a;
+    GuiUtils.makeAccountCombo( accountfield, aman );
+  }
 
-	@FXML
-	public void save() {
-		log.debug( "saving" );
-		try {
-			Payee payee = pmap.createOrGet( payeefield.getText() );
-			Date tdate = getDate();
+  @FXML
+  public void save() {
+    log.debug( "saving" );
+    try {
+      Payee payee = pmap.createOrGet( payeefield.getText() );
+      Date tdate = getDate();
 
-			Set<Split> splits = getSplits();
-			trans.setSplits( splits );
+      Set<Split> splits = getSplits();
+      trans.setSplits( splits );
 
-			for ( Split s : splits ) {
-				if ( null == s.getMemo() || s.getMemo().isEmpty() ) {
-					s.setMemo( memofield.getText() );
-				}
-			}
+      for ( Split s : splits ) {
+        if ( null == s.getMemo() || s.getMemo().isEmpty() ) {
+          s.setMemo( memofield.getText() );
+        }
+      }
 
-			defaultjournal = journalchsr.getValue();
-			trans.setDate( tdate );
-			trans.setPayee( payee );
-			trans.setJournal( defaultjournal );
+      defaultjournal = journalchsr.getValue();
+      trans.setDate( tdate );
+      trans.setPayee( payee );
+      trans.setJournal( defaultjournal );
 
-			Preferences prefs = Preferences.userNodeForPackage( getClass() );
-			prefs.put( JNL_SELECTED, defaultjournal.getId().stringValue() );
+      Preferences prefs = Preferences.userNodeForPackage( getClass() );
+      prefs.put( JNL_SELECTED, defaultjournal.getId().stringValue() );
 
-			log.debug( "saving! " + trans );
-			for ( Split s : trans.getSplits() ) {
-				log.debug( "  " + s );
-			}
+      log.debug( "saving! " + trans );
+      for ( Split s : trans.getSplits() ) {
+        log.debug( "  " + s );
+      }
 
-			if ( newtrans ) {
-				tmap.create( trans );
-				for ( CloseListener c : listenees ) {
-					c.added( trans );
-				}
-				log.debug( "created new transaction" );
-			}
-			else {
-				tmap.update( trans );
-				for ( CloseListener c : listenees ) {
-					c.updated( trans );
-				}
-				log.debug( "updated old transaction" );
-			}
-		}
-		catch ( MapperException me ) {
-			log.error( me, me );
-			// FIXME: alert the user!
-		}
-	}
+      if ( newtrans ) {
+        tmap.create( trans );
+        for ( CloseListener c : listenees ) {
+          c.added( trans );
+        }
+        log.debug( "created new transaction" );
+      }
+      else {
+        tmap.update( trans );
+        for ( CloseListener c : listenees ) {
+          c.updated( trans );
+        }
+        log.debug( "updated old transaction" );
+      }
+    }
+    catch ( MapperException me ) {
+      log.error( me, me );
+      // FIXME: alert the user!
+    }
+  }
 
-	public Money getRawSplitAmount() {
-		String moneystr = amountfield.getText();
-		if ( null == moneystr || moneystr.isEmpty() ) {
-			moneystr = "0";
-		}
-		Money m = Money.valueOf( moneystr );
-		Money abs = m.abs();
-		boolean isneg = m.isNegative();
-		boolean isto = "To".equals( tofromBtn.getText() );
-		m = ( isto ? abs : abs.opposite() );
+  public Money getRawSplitAmount() {
+    String moneystr = amountfield.getText();
+    if ( null == moneystr || moneystr.isEmpty() ) {
+      moneystr = "0";
+    }
+    Money m = Money.valueOf( moneystr );
+    Money abs = m.abs();
+    boolean isneg = m.isNegative();
+    boolean isto = "To".equals( tofromBtn.getText() );
+    m = ( isto ? abs : abs.opposite() );
 
 //		switch ( account.getAccountType() ) {
 //			case LIABILITY:
@@ -188,318 +197,359 @@ public class TransactionEntryController extends AnchorPane {
 //			default:
 //				throw new RuntimeException( "Unknown Account Type: " + account.getAccountType() );
 //		}
-		return ( isneg ? m.opposite() : m );
-	}
+    return ( isneg ? m.opposite() : m );
+  }
 
-	public String getMemo() {
-		return memofield.getText();
-	}
+  public String getMemo() {
+    return memofield.getText();
+  }
 
-	/**
-	 * Initializes the controller class.
-	 */
-	@FXML
-	public void initialize() {
-		payeefield.setEditable( true );
+  /**
+   * Initializes the controller class.
+   */
+  @FXML
+  public void initialize() {
+    payeefield.setEditable( true );
 
-		accountfield.setEditable( false );
-		recofield.setAllowIndeterminate( true );
+    accountfield.setEditable( false );
+    recofield.setAllowIndeterminate( true );
 
-		pmap = engine.getPayeeMapper();
-		tmap = engine.getTransactionMapper();
+    pmap = engine.getPayeeMapper();
+    tmap = engine.getTransactionMapper();
 
-		journalchsr.setItems( engine.getJournalMapper().getObservable() );
+    journalchsr.setItems( engine.getJournalMapper().getObservable() );
 
-		Preferences prefs = Preferences.userNodeForPackage( getClass() );
-		String jid = prefs.get( JNL_SELECTED, "" );
-		if ( jid.isEmpty() ) {
-			defaultjournal = journalchsr.getItems().get( 0 );
-		}
-		else {
-			for ( Journal j : journalchsr.getItems() ) {
-				if ( j.getId().stringValue().equals( jid ) ) {
-					defaultjournal = j;
-				}
-			}
-		}
+    Preferences prefs = Preferences.userNodeForPackage( getClass() );
+    String jid = prefs.get( JNL_SELECTED, "" );
+    if ( jid.isEmpty() ) {
+      defaultjournal = journalchsr.getItems().get( 0 );
+    }
+    else {
+      for ( Journal j : journalchsr.getItems() ) {
+        if ( j.getId().stringValue().equals( jid ) ) {
+          defaultjournal = j;
+        }
+      }
+    }
 
-		journalchsr.setValue( defaultjournal );
+    journalchsr.setValue( defaultjournal );
 
-		AutoCompletePopupHandler autocomplete
-				= new AutoCompletePopupHandler( payeefield, pman.getNames() );
-		payeefield.focusedProperty().addListener( event -> {
-			autocomplete.hidePopup();
-		} );
-		payeefield.textProperty().addListener( new ChangeListener<String>() {
+    AutoCompletePopupHandler autocomplete
+        = new AutoCompletePopupHandler( payeefield, pman.getNames() );
+    payeefield.focusedProperty().addListener( ( Observable event ) -> {
+      if ( !payeefield.isFocused() ) {
+        //autocomplete.hidePopup();
+      }
+    } );
+    payeefield.textProperty().addListener( new ChangeListener<String>() {
 
-			@Override
-			public void changed( ObservableValue<? extends String> ov, String t, String t1 ) {
-				if ( !autocomplete.isPoppedUp() ) {
-					Payee p1 = pman.get( t1 );
-					if ( newtrans && null != p1 ) {
-						List<Account> populars = aman.getPopularAccounts( p1 );
-						if ( !populars.isEmpty() ) {
-							Account acct = populars.get( 0 );
-							accountfield.getSelectionModel().select( acct );
-							accountfield.setValue( acct );
-							amountfield.requestFocus();
-							amountfield.selectAll();
-						}
-					}
-				}
-			}
-		} );
+      @Override
+      public void changed( ObservableValue<? extends String> ov, String t, String t1 ) {
+        //FIXME: need to check if we're still typing!
+        Payee p1 = pman.get( t1 );
+        if ( newtrans && null != p1 ) {
+          List<Account> populars = aman.getPopularAccounts( p1 );
+          populars.remove( TransactionEntryController.this.account );
+          if ( !populars.isEmpty() ) {
+            Account acct = populars.get( 0 );
+            accountfield.getSelectionModel().select( acct );
+            accountfield.setValue( acct );
 
-		accountfield.setButtonCell( makeAccountCell() );
-		accountfield.setCellFactory( new Callback<ListView<Account>, ListCell<Account>>() {
+            List<SplitStub> allforpayee
+                = stubs.getSplitStubs( MainApp.PF.filter( Payees.TYPE, p1.getId() ),
+                    MainApp.PF.account( TransactionEntryController.this.account ) );
 
-			@Override
-			public ListCell<Account> call( ListView<Account> p ) {
-				return makeAccountCell();
-			}
-		} );
-	}
+            setFromToAndAmountFromHistory( allforpayee );
+            amountfield.requestFocus();
+            amountfield.selectAll();
+          }
+        }
+      }
+    } );
 
-	public void setTransaction( Transaction t ) {
-		clear();
-		trans = t;
-		newtrans = ( null == t.getId() );
+    accountfield.setButtonCell( makeAccountCell() );
+    accountfield.setCellFactory( new Callback<ListView<Account>, ListCell<Account>>() {
 
-		Split mysplit = t.getSplit( account );
-		memofield.setText( mysplit.getMemo() );
-		amountfield.textProperty().bindBidirectional( mysplit.getValueProperty(),
-				new MoneyStringConverter() );
+      @Override
+      public ListCell<Account> call( ListView<Account> p ) {
+        return makeAccountCell();
+      }
+    } );
+  }
 
-		memofield.textProperty().bindBidirectional( mysplit.getMemoProperty() );
+  /**
+   * Sets the From/To button based on the previous splits
+   *
+   * @param oldsplits
+   */
+  private void setFromToAndAmountFromHistory( List<SplitStub> oldsplits ) {
+    int counter = 0;
 
-		journalchsr.setItems( engine.getJournalMapper().getObservable() );
-		journalchsr.setValue( null == t.getJournal() ? defaultjournal
-				: t.getJournal() );
+    Money mostrecent = new Money( 0 );
+    Date lastdate = new Date( 0 );
 
-		if ( null != t.getPayee() ) {
-			payeefield.setText( t.getPayee().getName() );
-		}
+    for ( SplitStub s : oldsplits ) {
+      counter += ( s.isCredit() ? 1 : -1 );
 
-		if ( 1 == trans.getSplits().size() ) {
-			trans.addSplit( new SplitImpl( accountfield.getItems().get( 0 ),
-					getRawSplitAmount().opposite(), mysplit.getMemo(),
-					ReconcileState.NOT_RECONCILED ) );
-		}
+      if( s.getDate().after( lastdate ) ){
+        mostrecent = s.getValue();
+        lastdate = s.getDate();
+      }
+    }
 
-		updateSplitData();
+    amountfield.setText( mostrecent.toPositiveString() );
 
-		numberfield.textProperty().bindBidirectional( t.getNumberProperty() );
+    if ( counter < 0 ) {
+      // more debits than credits, so make this new transaction a debit, too
+      tofromBtn.setText( this.account.getAccountType().isDebitPlus() ? "From"
+          : "To" );
+    }
+    else {
+      tofromBtn.setText( this.account.getAccountType().isDebitPlus() ? "To"
+          : "From" );
+    }
+  }
 
-		setDate( t.getDate() );
+  public void setTransaction( Transaction t ) {
+    clear();
+    trans = t;
+    newtrans = ( null == t.getId() );
 
-		tofromBtn.setText( mysplit.isDebit() ? "From" : "To" );
+    Split mysplit = t.getSplit( account );
+    memofield.setText( mysplit.getMemo() );
+    amountfield.textProperty().bindBidirectional( mysplit.getValueProperty(),
+        new MoneyStringConverter() );
 
-		payeefield.requestFocus();
-	}
+    memofield.textProperty().bindBidirectional( mysplit.getMemoProperty() );
 
-	protected void clear() {
-		memofield.clear();
-		payeefield.clear();
-		amountfield.clear();
-		numberfield.clear();
-		recofield.setSelected( false );
-		recofield.setIndeterminate( false );
-		datefield.setValue( LocalDate.now() );
-		accountfield.setValue( accountfield.getItems().get( 0 ) );
-		journalchsr.setItems( FXCollections.emptyObservableList() );
+    journalchsr.setItems( engine.getJournalMapper().getObservable() );
+    journalchsr.setValue( null == t.getJournal() ? defaultjournal
+        : t.getJournal() );
 
-		memofield.textProperty().unbind();
-		amountfield.textProperty().unbind();
-		numberfield.textProperty().unbind();
-	}
+    if ( null != t.getPayee() ) {
+      payeefield.setText( t.getPayee().getName() );
+    }
 
-	protected final void setDate( Date t ) {
-		Instant instant = t.toInstant();
-		LocalDate ld = instant.atZone( ZoneId.systemDefault() ).toLocalDate();
-		datefield.setValue( ld );
-	}
+    if ( 1 == trans.getSplits().size() ) {
+      trans.addSplit( new SplitImpl( accountfield.getItems().get( 0 ),
+          getRawSplitAmount().opposite(), mysplit.getMemo(),
+          ReconcileState.NOT_RECONCILED ) );
+    }
 
-	protected final Date getDate() {
-		LocalDate localDate = datefield.getValue();
-		Instant instant = Instant.from( localDate.atStartOfDay( ZoneId.systemDefault() ) );
-		return Date.from( instant );
-	}
+    updateSplitData();
 
-	protected final void setReco( ReconcileState rs ) {
-		if ( ReconcileState.CLEARED == rs ) {
-			recofield.setIndeterminate( true );
-		}
-		else {
-			recofield.setSelected( ReconcileState.RECONCILED == rs );
-		}
-	}
+    numberfield.textProperty().bindBidirectional( t.getNumberProperty() );
 
-	public void setSplitsButtonOnAction( EventHandler<ActionEvent> ae ) {
-		splitsBtn.setOnAction( ae );
-	}
+    setDate( t.getDate() );
 
-	public final ReconcileState getReco() {
-		if ( recofield.isIndeterminate() ) {
-			return ReconcileState.CLEARED;
-		}
+    tofromBtn.setText( mysplit.isDebit() ? "From" : "To" );
 
-		return ( recofield.isSelected()
-				? ReconcileState.RECONCILED
-				: ReconcileState.NOT_RECONCILED );
-	}
+    payeefield.requestFocus();
+  }
 
-	@FXML
-	protected void switchToFrom() {
-		tofromBtn.setText( tofromBtn.getText().equals( "To" ) ? "From" : "To" );
-		for ( Split s : trans.getSplits() ) {
-			if ( s.isCredit() ) {
-				s.setDebit( s.getValue() );
-			}
-			else {
-				s.setCredit( s.getValue() );
-			}
-		}
-	}
+  protected void clear() {
+    memofield.clear();
+    payeefield.clear();
+    amountfield.clear();
+    numberfield.clear();
+    recofield.setSelected( false );
+    recofield.setIndeterminate( false );
+    datefield.setValue( LocalDate.now() );
+    accountfield.setValue( accountfield.getItems().get( 0 ) );
+    journalchsr.setItems( FXCollections.emptyObservableList() );
 
-	public Set<Split> getSplits() {
-		Set<Split> set = new HashSet<>();
-		if ( accountfield.isDisabled() ) {
-			set.addAll( trans.getSplits() );
-		}
-		else {
-			Split mysplit = trans.getSplit( account );
-			mysplit.setReconciled( getReco() );
-			Split other = TransactionHelper.getOther( trans, account );
-			other.setAccount( accountfield.getValue() );
+    memofield.textProperty().unbind();
+    amountfield.textProperty().unbind();
+    numberfield.textProperty().unbind();
+  }
 
-			Money transval = getRawSplitAmount();
-			if ( transval.isNegative() ) {
-				mysplit.setDebit( transval.abs() );
-				other.setCredit( transval.abs() );
-			}
-			else {
-				mysplit.setCredit( transval.abs() );
-				other.setDebit( transval.abs() );
-			}
+  protected final void setDate( Date t ) {
+    Instant instant = t.toInstant();
+    LocalDate ld = instant.atZone( ZoneId.systemDefault() ).toLocalDate();
+    datefield.setValue( ld );
+  }
 
-			set.add( mysplit );
-			set.add( other );
-		}
+  protected final Date getDate() {
+    LocalDate localDate = datefield.getValue();
+    Instant instant = Instant.from( localDate.atStartOfDay( ZoneId.systemDefault() ) );
+    return Date.from( instant );
+  }
 
-		return set;
-	}
+  protected final void setReco( ReconcileState rs ) {
+    if ( ReconcileState.CLEARED == rs ) {
+      recofield.setIndeterminate( true );
+    }
+    else {
+      recofield.setSelected( ReconcileState.RECONCILED == rs );
+    }
+  }
 
-	@FXML
-	protected void keytype( KeyEvent ke ) {
-	}
+  public void setSplitsButtonOnAction( EventHandler<ActionEvent> ae ) {
+    splitsBtn.setOnAction( ae );
+  }
 
-	@FXML
-	protected void keyrelease( KeyEvent ke ) {
-	}
+  public final ReconcileState getReco() {
+    if ( recofield.isIndeterminate() ) {
+      return ReconcileState.CLEARED;
+    }
 
-	@FXML
-	protected void keypress( KeyEvent ke ) {
-		KeyCode code = ke.getCode();
-		if ( null != code ) {
-			switch ( code ) {
-				case ESCAPE:
-					log.debug( "esc pressed!" );
-					ke.consume();
-					for ( CloseListener cl : listenees ) {
-						cl.closed();
-					}
-					break;
-				case UP: {
-					LocalDate ld = datefield.getValue();
-					datefield.setValue( ld.plusDays( 1 ) );
-					ke.consume();
-					break;
-				}
-				case DOWN: {
-					LocalDate ld = datefield.getValue();
-					datefield.setValue( ld.minusDays( 1 ) );
-					ke.consume();
-					break;
-				}
-				case ENTER:
-					ke.consume();
-					save();
-					break;
-				default:
-					break;
-			}
-		}
-	}
+    return ( recofield.isSelected()
+        ? ReconcileState.RECONCILED
+        : ReconcileState.NOT_RECONCILED );
+  }
 
-	private ListCell<Account> makeAccountCell() {
-		return new AccountListCell( aman, true );
-	}
+  @FXML
+  protected void switchToFrom() {
+    tofromBtn.setText( tofromBtn.getText().equals( "To" ) ? "From" : "To" );
+    for ( Split s : trans.getSplits() ) {
+      if ( s.isCredit() ) {
+        s.setDebit( s.getValue() );
+      }
+      else {
+        s.setCredit( s.getValue() );
+      }
+    }
+  }
 
-	@FXML
-	public void openSplits() {
-		setVisible( false );
-	}
+  public Set<Split> getSplits() {
+    Set<Split> set = new HashSet<>();
+    if ( accountfield.isDisabled() ) {
+      set.addAll( trans.getSplits() );
+    }
+    else {
+      Split mysplit = trans.getSplit( account );
+      mysplit.setReconciled( getReco() );
+      Split other = TransactionHelper.getOther( trans, account );
+      other.setAccount( accountfield.getValue() );
 
-	public Account getSelectedAccount() {
-		return accountfield.getValue();
-	}
+      Money transval = getRawSplitAmount();
+      if ( transval.isNegative() ) {
+        mysplit.setDebit( transval.abs() );
+        other.setCredit( transval.abs() );
+      }
+      else {
+        mysplit.setCredit( transval.abs() );
+        other.setDebit( transval.abs() );
+      }
 
-	public void updateSplitData() {
-		Set<Split> splits = trans.getSplits();
-		log.debug( "update split data (" + splits.size() + " splits)" );
-		Split mysplit = trans.getSplit( account );
+      set.add( mysplit );
+      set.add( other );
+    }
 
-		Split other = TransactionHelper.getOther( trans, account );
-		setReco( mysplit.getReconciled() );
+    return set;
+  }
 
-		if ( newtrans ) {
-			accountfield.getSelectionModel().clearSelection();
-			amountfield.setEditable( true );
+  @FXML
+  protected void keytype( KeyEvent ke ) {
+  }
 
-			accountfield.setDisable( false );
-			amountfield.setDisable( false );
-			tofromBtn.setDisable( false );
+  @FXML
+  protected void keyrelease( KeyEvent ke ) {
+  }
 
-			if ( null == other ) {
-				// > 2 splits, so must use split editor
-				accountfield.getSelectionModel().select( null );
-				accountfield.setValue( null );
-				accountfield.setDisable( true );
-				amountfield.setEditable( false );
-				amountfield.setDisable( true );
-				tofromBtn.setDisable( true );
-			}
-			else {
-				accountfield.getSelectionModel().select( other.getAccount() );
-			}
-		}
-		else if ( splits.size() <= 2 ) {
-			amountfield.setEditable( true );
+  @FXML
+  protected void keypress( KeyEvent ke ) {
+    KeyCode code = ke.getCode();
+    if ( null != code ) {
+      switch ( code ) {
+        case ESCAPE:
+          log.debug( "esc pressed!" );
+          ke.consume();
+          for ( CloseListener cl : listenees ) {
+            cl.closed();
+          }
+          break;
+        case UP: {
+          LocalDate ld = datefield.getValue();
+          datefield.setValue( ld.plusDays( 1 ) );
+          ke.consume();
+          break;
+        }
+        case DOWN: {
+          LocalDate ld = datefield.getValue();
+          datefield.setValue( ld.minusDays( 1 ) );
+          ke.consume();
+          break;
+        }
+        case ENTER:
+          ke.consume();
+          save();
+          break;
+        default:
+          break;
+      }
+    }
+  }
 
-			amountfield.setDisable( false );
-			tofromBtn.setDisable( false );
-			accountfield.setDisable( false );
+  private ListCell<Account> makeAccountCell() {
+    return new AccountListCell( aman, true );
+  }
 
-			accountfield.getSelectionModel().select( other.getAccount() );
-			accountfield.setValue( other.getAccount() );
-		}
-		else {
-			// > 2 splits, so must use split editor
-			accountfield.getSelectionModel().select( null );
-			accountfield.setValue( null );
-			accountfield.setDisable( true );
-			amountfield.setEditable( false );
-			amountfield.setDisable( true );
-			tofromBtn.setDisable( true );
-		}
-	}
+  @FXML
+  public void openSplits() {
+    setVisible( false );
+  }
 
-	public static interface CloseListener {
+  public Account getSelectedAccount() {
+    return accountfield.getValue();
+  }
 
-		public void closed();
+  public void updateSplitData() {
+    Set<Split> splits = trans.getSplits();
+    log.debug( "update split data (" + splits.size() + " splits)" );
+    Split mysplit = trans.getSplit( account );
 
-		public void added( Transaction t );
+    Split other = TransactionHelper.getOther( trans, account );
+    setReco( mysplit.getReconciled() );
 
-		public void updated( Transaction t );
-	}
+    if ( newtrans ) {
+      accountfield.getSelectionModel().clearSelection();
+      amountfield.setEditable( true );
+
+      accountfield.setDisable( false );
+      amountfield.setDisable( false );
+      tofromBtn.setDisable( false );
+
+      if ( null == other ) {
+        // > 2 splits, so must use split editor
+        accountfield.getSelectionModel().select( null );
+        accountfield.setValue( null );
+        accountfield.setDisable( true );
+        amountfield.setEditable( false );
+        amountfield.setDisable( true );
+        tofromBtn.setDisable( true );
+      }
+      else {
+        accountfield.getSelectionModel().select( other.getAccount() );
+      }
+    }
+    else if ( splits.size() <= 2 ) {
+      amountfield.setEditable( true );
+
+      amountfield.setDisable( false );
+      tofromBtn.setDisable( false );
+      accountfield.setDisable( false );
+
+      accountfield.getSelectionModel().select( other.getAccount() );
+      accountfield.setValue( other.getAccount() );
+    }
+    else {
+      // > 2 splits, so must use split editor
+      accountfield.getSelectionModel().select( null );
+      accountfield.setValue( null );
+      accountfield.setDisable( true );
+      amountfield.setEditable( false );
+      amountfield.setDisable( true );
+      tofromBtn.setDisable( true );
+    }
+  }
+
+  public static interface CloseListener {
+
+    public void closed();
+
+    public void added( Transaction t );
+
+    public void updated( Transaction t );
+  }
 }

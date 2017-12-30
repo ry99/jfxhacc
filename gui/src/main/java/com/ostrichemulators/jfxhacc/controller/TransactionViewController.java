@@ -39,6 +39,7 @@ import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.SortedList;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -102,7 +103,7 @@ public class TransactionViewController implements ShutdownListener {
 		payman = new PayeeManager( MainApp.getEngine() );
 		acctman = new AccountManager( MainApp.getEngine(), stubs );
 		jrnlman = new JournalManager( MainApp.getEngine() );
-		dataentry = new TransactionEntry( MainApp.getEngine(), acctman, payman );
+		dataentry = new TransactionEntry( MainApp.getEngine(), acctman, payman, stubman );
 		payeefac = new PayeeAccountMemoValueFactory( stubman, acctman, payman );
 	}
 
@@ -148,7 +149,10 @@ public class TransactionViewController implements ShutdownListener {
 		List<TableColumn<SplitStub, ?>> sortcols = new ArrayList<>();
 		sortcols.addAll( transtable.getSortOrder() );
 
-		transtable.setItems( stubman.getSplitStubs( getFilters() ) );
+		SortedList<SplitStub> sortableData
+				= new SortedList<>( stubman.getSplitStubs( getFilters() ) );
+		sortableData.comparatorProperty().bind( transtable.comparatorProperty() );
+		transtable.setItems( sortableData );
 
 		log.debug( "populated transaction viewer with " + transtable.getItems().size()
 				+ " transactions" );
