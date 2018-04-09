@@ -283,31 +283,55 @@ public class TransactionEntryController extends AnchorPane {
    * @param oldsplits
    */
   private void setFromToAndAmountFromHistory( List<SplitStub> oldsplits ) {
-    int counter = 0;
+    //int counter = 0;
 
-    Money mostrecent = new Money( 0 );
-    Date lastdate = new Date( 0 );
+    Map<Money, Integer> moneycountmap = new HashMap<>();
+
+    Money bestval = new Money( 0 );
+    int bestcount = Integer.MIN_VALUE;
 
     for ( SplitStub s : oldsplits ) {
-      counter += ( s.isCredit() ? 1 : -1 );
+      //counter += ( s.isCredit() ? 1 : -1 );
+      Money m = s.getRawValueProperty().getValue();
 
-      if( s.getDate().after( lastdate ) ){
-        mostrecent = s.getValue();
-        lastdate = s.getDate();
+      moneycountmap.put( m, moneycountmap.getOrDefault( m, 0 ) + 1 );
+
+      //if( s.getDate().after( lastdate ) ){
+      //  mostrecent = s.getValue();
+      //  lastdate = s.getDate();
+      //}
+    }
+
+    for ( Map.Entry<Money, Integer> en : moneycountmap.entrySet() ) {
+      if ( en.getValue() > bestcount ) {
+        bestval = en.getKey();
+        bestcount = en.getValue();
       }
     }
+    amountfield.setText( bestval.toPositiveString() );
 
-    amountfield.setText( mostrecent.toPositiveString() );
-
-    if ( counter < 0 ) {
-      // more debits than credits, so make this new transaction a debit, too
-      tofromBtn.setText( this.account.getAccountType().isDebitPlus() ? "From"
-          : "To" );
+    String val = "To";
+    boolean positive = this.account.getAccountType().isPositive( bestval );
+    switch ( this.account.getAccountType() ) {
+      case ASSET:
+        val = ( positive ? "From" : "To" );
+        break;
+      case LIABILITY:
+        val = ( positive ? "To" : "From" );
+        break;
+      case EQUITY:
+        val = ( positive ? "From" : "To" );
+        break;
+      case REVENUE:
+        val = ( positive ? "From" : "To" );
+        break;
+      case EXPENSE:
+        val = ( positive ? "To" : "From" );
+        break;
+      default:
+        // nothing...stick with "To"
     }
-    else {
-      tofromBtn.setText( this.account.getAccountType().isDebitPlus() ? "To"
-          : "From" );
-    }
+    tofromBtn.setText(  val );
   }
 
   public void setTransaction( Transaction t ) {

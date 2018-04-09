@@ -31,7 +31,6 @@ public class TransactionEntry extends StackPane {
 	private final Pane splitspane;
 	private final TransactionEntryController tec;
 	private final SplitsWindowController swc;
-	private TransactionImpl trans;
 
 	public TransactionEntry( DataEngine eng, AccountManager mgr, PayeeManager pmgr,
       SplitStubManager stubs ) {
@@ -68,7 +67,6 @@ public class TransactionEntry extends StackPane {
 		} );
 
 		swc.setOkButtonOnAction( event -> {
-			trans.setSplits( swc.getSplits() );
 			tec.updateSplitData();
 			gridpane.setVisible( true );
 			splitspane.setVisible( false );
